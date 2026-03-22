@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redefinição de senha</title>
+    <link rel="stylesheet" href="../css/redefinicao_de_senha.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap');
+    </style>
+</head>
+<header>
+    <h1>CRUZ-AZUL ✙</h1>
+</header>
+<body>
+    <div class="container">
+        <h2 id="subtitulo"> Redefinição de senha </h2>
+        <div class="condicoes">
+            <b><p id="condicao"> Sua nova senha: </p></b>
+            <p id="condicao1"> Precisa conter no mínimo 10 caracteres</p>
+            <p id="condicao2"> Precisa conter ao menos 1 caractere especial (@, #, $, %)</p>
+            <p id="condicao3"> Precisa conter números </p>
+            <p id="condicao4"> Não deve conter o mesmo nome do e-mail</p>
+            <p id="condicao5"> Não deve conter sequências alfanuméricas</p>
+        </div>
+        <!--Sugestão de senha segura -->
+        <div class="inputs">
+            <fieldset class="senha">
+                <legend class="legend"> Nova senha </legend>
+                <input id="input" type="password">
+            </fieldset>
+            <p>Confirme a nova senha</p>
+            <fieldset class="senha">
+                <legend class="legend"> Nova senha </legend>
+                <input id="input" type="password">
+            </fieldset>
+            <p id="erro">As senhas devem ser compatíveis</p>
+        </div>
+        <div class="botoes_avancar">
+            <button class="botao">Voltar</button>
+            <button class="botao">Avançar</button>
+        </div>
+    </div>
+</body>
+</html>

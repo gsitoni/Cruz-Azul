@@ -1,0 +1,94 @@
+header {
+    background-color: blue;
+    text-align: center;
+    font-family: "Google Sans", sans-serif;
+    color: white;
+    width: 70%;
+    margin: auto;
+    padding: 0.5rem;
+}
+
+#subtitulo {
+    text-align: center;
+    font-family: "Google Sans", sans-serif;
+    flex-shrink: 1;
+    margin: 2rem;
+}
+
+#descricao {
+    text-align: center;
+    font-size: 1.2rem;
+    font-family: "Google Sans", sans-serif;
+    margin: 3rem;
+    flex-shrink: 1;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    margin: 3rem;
+    flex-shrink: 1;
+}
+
+.email_box {
+    border-color: darkblue;
+    color: darkblue;
+    padding: 0%;
+    justify-content: center;
+    font-family: "Google Sans", sans-serif;
+    width: 40rem;
+    height: 4rem;
+    flex-shrink: 1;
+}
+
+#input {
+    margin: 0%;
+    height: 2.5rem;
+    font-size: 1rem;
+    border-style: none;
+    outline: 0;
+    font-family: "Google Sans", sans-serif;
+    flex-shrink: 1;
+    position: relative;
+    width: 99%;
+}
+
+#link_codigo {
+    text-align: center;
+    font-size: 1rem;
+    font-family: "Google Sans", sans-serif;
+    margin: 3rem;
+    cursor: pointer;
+}
+
+#link_codigo:hover {
+    color: darkblue;
+}
+
+.botoes_avancar {
+    display: flex;
+    gap: 1rem;
+    flex-shrink: 1;
+    justify-content: right;
+    width: 55rem;
+    margin: 1rem;
+}
+
+.botao {
+    background-color: blue;
+    color: white;
+    width: 5rem;
+    height: 2rem;
+    font-size: 1rem;
+    font-family: "Google Sans", sans-serif;
+    border: 2px solid darkblue;
+    text-align: center;
+    cursor: pointer;
+}
+
+.botao:hover {
+    background-color: darkblue;
+}
+

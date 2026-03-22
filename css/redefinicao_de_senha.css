@@ -1,0 +1,96 @@
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+header {
+    background-color: blue;
+    text-align: center;
+    font-family: "Google Sans", sans-serif;
+    color: white;
+    width: 56rem;
+    padding: 0.5rem;
+    flex-shrink: 1;
+}
+
+#subtitulo {
+    text-align: center;
+    font-family: "Google Sans", sans-serif;
+    flex-shrink: 1;
+    margin: 1em;
+}
+
+.condicoes {
+    text-align: left;
+    font-size: 1rem;
+    font-family: "Google Sans", sans-serif;
+    margin: 2em;
+    flex-shrink: 1;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 3em;
+    flex-shrink: 1;
+    font-family: "Google Sans", sans-serif;
+}
+
+.senha {
+    border-color: darkblue;
+    color: darkblue;
+    padding: 0%;
+    width: 30em;
+    height: 4em;
+    flex-shrink: 1;
+}
+
+.legend {
+    margin-left: 2em;
+}
+
+#input {
+    margin: 0%;
+    height: 1.8em;
+    font-size: 1.5em;
+    border-style: none;
+    outline: 0;
+    font-family: "Google Sans", sans-serif;
+    flex-shrink: 1;
+    position: relative;
+    width: 20em;
+    padding-inline: 0.5em;
+}
+
+#erro {
+    color: red;
+}
+
+.botoes_avancar {
+    display: flex;
+    gap: 1em;
+    flex-shrink: 1;
+    justify-content: right;
+    width: 55em;
+    margin: 1em;
+}
+
+.botao {
+    background-color: blue;
+    color: white;
+    width: 5em;
+    height: 2em;
+    font-size: 1em;
+    font-family: "Google Sans", sans-serif;
+    border: 2px solid darkblue;
+    text-align: center;
+    cursor: pointer;
+}
+
+.botao:hover {
+    background-color: darkblue;
+}
+
