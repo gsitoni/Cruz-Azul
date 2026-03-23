@@ -14,21 +14,6 @@ header {
     flex-shrink: 1;
 }
 
-#subtitulo {
-    text-align: center;
-    font-family: "Google Sans", sans-serif;
-    flex-shrink: 1;
-    margin: 1em;
-}
-
-.condicoes {
-    text-align: left;
-    font-size: 1rem;
-    font-family: "Google Sans", sans-serif;
-    margin: 2em;
-    flex-shrink: 1;
-}
-
 .container {
     display: flex;
     flex-direction: column;
@@ -37,6 +22,18 @@ header {
     margin: 3em;
     flex-shrink: 1;
     font-family: "Google Sans", sans-serif;
+}
+
+#subtitulo {
+    text-align: center;
+    flex-shrink: 1;
+}
+
+.condicoes {
+    text-align: left;
+    font-size: 1em;
+    margin: 2em;
+    flex-shrink: 1;
 }
 
 .senha {
@@ -58,7 +55,6 @@ header {
     font-size: 1.5em;
     border-style: none;
     outline: 0;
-    font-family: "Google Sans", sans-serif;
     flex-shrink: 1;
     position: relative;
     width: 20em;
@@ -75,7 +71,6 @@ header {
     flex-shrink: 1;
     justify-content: right;
     width: 55em;
-    margin: 1em;
 }
 
 .botao {
@@ -84,7 +79,6 @@ header {
     width: 5em;
     height: 2em;
     font-size: 1em;
-    font-family: "Google Sans", sans-serif;
     border: 2px solid darkblue;
     text-align: center;
     cursor: pointer;

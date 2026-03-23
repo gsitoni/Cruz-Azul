@@ -1,56 +1,59 @@
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 header {
     background-color: blue;
     text-align: center;
     font-family: "Google Sans", sans-serif;
     color: white;
-    width: 70%;
-    margin: auto;
+    width: 56rem;
     padding: 0.5rem;
-}
-
-#subtitulo {
-    text-align: center;
-    font-family: "Google Sans", sans-serif;
-    flex-shrink: 1;
-    margin: 2rem;
-}
-
-#descricao {
-    text-align: center;
-    font-size: 1.2rem;
-    font-family: "Google Sans", sans-serif;
-    margin: 3rem;
     flex-shrink: 1;
 }
 
 .container {
     display: flex;
-    justify-content: center;
     flex-direction: column;
+    justify-content: center;
     align-items: center;
-    margin: 3rem;
+    margin: 3em;
+    flex-shrink: 1;
+    font-family: "Google Sans", sans-serif;
+}
+
+#subtitulo {
+    text-align: center;
+    flex-shrink: 1;
+}
+
+#descricao {
+    text-align: center;
+    font-size: 1.rem;
+    margin: 3em;
     flex-shrink: 1;
 }
 
 .inputs {
     display: flex;
     justify-content: center;
-    gap: 0.7rem;
+    gap: 0.7em;
 }
 
 .input {
-   width: 4rem;
-   height: 4rem;
-   font-size: 3rem;
-   font-family: "Google Sans", sans-serif;
+   width: 1.5em;
+   height: 1.5em;
+   font-size: 2em;
    text-align: center;
+   border: 2px solid black;
 }
 
 #link_recuperacao_senha {
     text-align: center;
-    font-size: 1rem;
-    font-family: "Google Sans", sans-serif;
-    margin: 3rem;
+    font-size: 1em;
+    margin: 3em;
     cursor: pointer;
 }
 
@@ -60,20 +63,18 @@ header {
 
 .botoes_avancar {
     display: flex;
-    gap: 1rem;
+    gap: 1em;
     flex-shrink: 1;
     justify-content: right;
-    width: 55rem;
-    margin: 1rem;
+    width: 55em;
 }
 
 .botao {
     background-color: blue;
     color: white;
-    width: 5rem;
-    height: 2rem;
-    font-size: 1rem;
-    font-family: "Google Sans", sans-serif;
+    width: 5em;
+    height: 2em;
+    font-size: 1em;
     border: 2px solid darkblue;
     text-align: center;
     cursor: pointer;
