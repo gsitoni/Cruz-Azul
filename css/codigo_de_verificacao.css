@@ -6,12 +6,13 @@ body {
 
 header {
     background-color: blue;
+    border: 2px solid darkblue;
     text-align: center;
     font-family: "Google Sans", sans-serif;
     color: white;
-    width: 56rem;
+    width: 80%;
+    max-width: 56rem;
     padding: 0.5rem;
-    flex-shrink: 1;
 }
 
 .container {
@@ -19,27 +20,25 @@ header {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin: 3em;
-    flex-shrink: 1;
+    margin: 2em 1em;
     font-family: "Google Sans", sans-serif;
 }
 
 #subtitulo {
     text-align: center;
-    flex-shrink: 1;
 }
 
 #descricao {
     text-align: center;
-    font-size: 1.rem;
+    font-size: 1rem;
     margin: 3em;
-    flex-shrink: 1;
 }
 
 .inputs {
     display: flex;
     justify-content: center;
     gap: 0.7em;
+    flex-wrap: wrap;
 }
 
 .input {
@@ -64,7 +63,6 @@ header {
 .botoes_avancar {
     display: flex;
     gap: 1em;
-    flex-shrink: 1;
     justify-content: right;
     width: 55em;
 }
@@ -82,5 +80,46 @@ header {
 
 .botao:hover {
     background-color: darkblue;
+}
+
+@media (max-width: 768px) {
+    header {
+        width: 90%;
+    }
+
+    .botoes_avancar {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .botao {
+        width: 100%;
+        max-width: 5em;
+    }
+}
+
+@media (max-width: 480px) {
+    header {
+        width: 95%;
+        font-size: 0.9em;
+    }
+
+    #descricao {
+        font-size: 0.9em;
+        margin: 2em 1em;
+    }
+
+    .input {
+        width: 1.3em;
+        height: 1.3em;
+        font-size: 1.5em;
+    }
+
+    .botao {
+        width: 100%;
+        max-width: 10em;
+        height: 2.5em;
+        font-size: 0.9em;
+    }
 }
 

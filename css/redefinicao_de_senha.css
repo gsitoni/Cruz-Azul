@@ -6,12 +6,13 @@ body {
 
 header {
     background-color: blue;
+    border: 2px solid darkblue;
     text-align: center;
     font-family: "Google Sans", sans-serif;
     color: white;
-    width: 56rem;
+    width: 80%;
+    max-width: 56rem;
     padding: 0.5rem;
-    flex-shrink: 1;
 }
 
 .container {
@@ -19,21 +20,18 @@ header {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin: 3em;
-    flex-shrink: 1;
+    margin: 2em 1em;
     font-family: "Google Sans", sans-serif;
 }
 
 #subtitulo {
     text-align: center;
-    flex-shrink: 1;
 }
 
 .condicoes {
     text-align: left;
     font-size: 1em;
     margin: 2em;
-    flex-shrink: 1;
 }
 
 .senha {
@@ -42,23 +40,22 @@ header {
     padding: 0%;
     width: 30em;
     height: 4em;
-    flex-shrink: 1;
 }
 
 .legend {
     margin-left: 2em;
 }
 
-#input {
+.input {
     margin: 0%;
     height: 1.8em;
     font-size: 1.5em;
     border-style: none;
     outline: 0;
-    flex-shrink: 1;
     position: relative;
-    width: 20em;
-    padding-inline: 0.5em;
+    width: 100%;
+    max-width: 19em;
+    padding-inline-start: 0.5em;
 }
 
 #erro {
@@ -88,3 +85,49 @@ header {
     background-color: darkblue;
 }
 
+@media (max-width: 768px) {
+    header {
+        width: 90%;
+    }
+
+    .input {
+        max-width: 10em;
+    }
+
+    .senha {
+        width: 100%;
+    }
+
+    .botoes_avancar {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+
+    header {
+        width: 95%;
+        font-size: 0.9em;
+    }
+
+    .condicoes {
+        font-size: 0.9em;
+        margin: 1.5em 1em;
+    }
+
+    .senha {
+        height: auto;
+    }
+
+    .input {
+        font-size: 1.2em;
+    }
+
+    .botao {
+        width: 100%;
+        max-width: 10em;
+        height: 2.5em;
+        font-size: 0.9em;
+    }
+}

@@ -6,12 +6,13 @@ body {
 
 header {
     background-color: blue;
+    border: 2px solid darkblue;
     text-align: center;
     font-family: "Google Sans", sans-serif;
     color: white;
-    width: 56rem;
+    width: 80%;
+    max-width: 56rem;
     padding: 0.5rem;
-    flex-shrink: 1;
 }
 
 .container {
@@ -19,15 +20,13 @@ header {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin: 3em;
-    flex-shrink: 1;
+    margin: 2em 1em;
     font-family: "Google Sans", sans-serif;
+    flex-wrap: wrap;
 }
-
 
 #subtitulo {
     text-align: center;
-    flex-shrink: 1;
 }
 
 #descricao {
@@ -35,16 +34,15 @@ header {
     font-size: 1em;
     font-family: "Google Sans", sans-serif;
     margin: 2em;
-    flex-shrink: 1;
 }
 
 .email_box {
     border-color: darkblue;
     color: darkblue;
     padding: 0%;
-    width: 30em;
+    width: 100%;
+    max-width: 30em;
     height: 4em;
-    flex-shrink: 1;
 }
 
 #input {
@@ -53,10 +51,10 @@ header {
     font-size: 1.2em;
     border-style: none;
     outline: 0;
-    flex-shrink: 1;
     position: relative;
-    width: 30em;
-    padding-inline: 0.5em;
+    width: 100%;
+    max-width: 22.5em;
+    padding-inline-start: 0.5em;
 }
 
 #link_codigo {
@@ -74,9 +72,10 @@ header {
 .botoes_avancar {
     display: flex;
     gap: 1em;
-    flex-shrink: 1;
     justify-content: right;
+    align-items: center;
     width: 55em;
+    flex-wrap: wrap;
 }
 
 .botao {
@@ -88,9 +87,52 @@ header {
     border: 2px solid darkblue;
     text-align: center;
     cursor: pointer;
+    flex-wrap: wrap;
 }
 
 .botao:hover {
     background-color: darkblue;
 }
 
+@media (max-width: 768px) {
+    header {
+        width: 90%;
+    }
+
+    .botoes_avancar {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .botao {
+        width: 100%;
+        max-width: 5em;
+    }
+}
+
+@media (max-width: 480px) {
+
+    header {
+        width: 95%;
+        font-size: 0.9em;
+    }
+
+    #descricao {
+        font-size: 0.9em;
+        margin: 1.5em 1em;
+    }
+
+    .email_box {
+        height: auto;
+    }
+
+    #input {
+        font-size: 1em;
+        max-width: 18.5em;
+    }
+
+    .botao {
+        height: 2.5em;
+        font-size: 0.9em;
+    }
+}
