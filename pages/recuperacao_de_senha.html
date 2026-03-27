@@ -14,17 +14,20 @@
 </header>
 <body>
     <div class="container">
-        <h2 id="subtitulo"> Recuperação de senha </h2>
-        <p id="descricao"> Informe seu email no campo abaixo e aguarde o código de verificação</p>
+    <h2 id="subtitulo"> Recuperação de senha </h2>
+    <p id="descricao"> Informe seu email no campo abaixo e aguarde o código de verificação</p>
+    
+    <form action="processa_recuperacao.php" method="POST">
         <fieldset class="email_box">
             <legend> E-mail </legend>
-            <input id="input" type="email">
+            <input id="input" name="email" type="email" required>
         </fieldset>
-        <a href="codigo_de_verificacao.html "id="link_codigo">Já possuo o código de verificação</a>
+        
+        <a href="codigo_de_verificacao.html" id="link_codigo">Já possuo o código de verificação</a>
+        
         <div class="botoes_avancar">
-            <button class="botao">Voltar</button>
-            <button class="botao">Avançar</button>
+            <button type="button" class="botao">Voltar</button>
+            <button type="submit" class="botao">Avançar</button>
         </div>
-    </div>
-</body>
-</html>
+    </form>
+</div>
