@@ -1,6 +1,6 @@
 <?php
 // confirmar.php - Valida o token e ativa a conta
-require 'test_email_bismark/database.php';
+require 'database.php';
 
 $token = trim($_GET['token'] ?? '');
 $mensagem = '';

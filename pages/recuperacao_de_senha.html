@@ -14,6 +14,7 @@
 </header>
 <body>
     <div class="container">
+<<<<<<< HEAD
         <h2 id="subtitulo"> Recuperação de senha </h2>
         <p id="descricao"> Informe seu email no campo abaixo e aguarde o código de verificação</p>
         <fieldset class="email_box">
@@ -29,3 +30,17 @@
 </body>
 <script scr="../js/recuperacao_de_senha.js"> </script>
 </html>
+=======
+    <h2 id="subtitulo"> Recuperação de senha </h2>
+    <p id="descricao"> Informe seu email no campo abaixo e aguarde o código de verificação</p>
+    
+    <form action="../phps/processa_recuperacao.php" method="POST">
+    <fieldset class="email_box">
+        <legend> E-mail </legend>
+        <input id="input" name="email" type="email" required>
+    </fieldset>
+    
+    <button type="submit" class="botao">Avançar</button>
+</form>
+</div>
+>>>>>>> 15ab0d07345d752f44e39a3b6b48cd3d376efe61
