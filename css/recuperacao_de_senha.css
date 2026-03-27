@@ -45,6 +45,10 @@ header {
     height: 4em;
 }
 
+#legend {
+    margin-left: 1rem;
+}
+
 #input {
     margin: 0%;
     height: 1.8em;
@@ -69,7 +73,7 @@ header {
     color: darkblue;
 }
 
-.botoes_avancar {
+.botoes {
     display: flex;
     gap: 1em;
     justify-content: right;
@@ -78,8 +82,8 @@ header {
     flex-wrap: wrap;
 }
 
-.botao {
-    background-color: blue;
+.botoes * {
+     background-color: blue;
     color: white;
     width: 5em;
     height: 2em;
@@ -89,8 +93,8 @@ header {
     cursor: pointer;
     flex-wrap: wrap;
 }
-
-.botao:hover {
+    
+.botoes *:hover {
     background-color: darkblue;
 }
 
@@ -99,12 +103,12 @@ header {
         width: 90%;
     }
 
-    .botoes_avancar {
+    .botoes {
         width: 100%;
         justify-content: center;
     }
 
-    .botao {
+    .botoes * {
         width: 100%;
         max-width: 5em;
     }
@@ -131,7 +135,7 @@ header {
         max-width: 18.5em;
     }
 
-    .botao {
+    .botoes {
         height: 2.5em;
         font-size: 0.9em;
     }

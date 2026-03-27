@@ -67,7 +67,7 @@ header {
     width: 55em;
 }
 
-.botao {
+#botao_voltar {
     background-color: blue;
     color: white;
     width: 5em;

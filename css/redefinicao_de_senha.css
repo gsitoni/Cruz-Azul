@@ -42,8 +42,8 @@ header {
     height: 4em;
 }
 
-.legend {
-    margin-left: 2em;
+#legend {
+    margin-left: 1em;
 }
 
 .input {
