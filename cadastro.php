@@ -15,9 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // --- Validações ---
     if (empty($nome) || empty($email) || empty($senha)) {
         $resposta = ['ok' => false, 'msg' => 'Preencha todos os campos.'];
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    } elseif (!preg_match('/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/', $email)) {
         $resposta = ['ok' => false, 'msg' => 'E-mail inválido.'];
-    } elseif (strlen($senha) < 6) {
+    } elseif (!preg_match('/^.{6,}$/', $senha)) {
         $resposta = ['ok' => false, 'msg' => 'A senha deve ter pelo menos 6 caracteres.'];
     } else {
         $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
