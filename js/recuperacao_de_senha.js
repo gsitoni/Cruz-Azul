@@ -1,18 +1,18 @@
-let botao_voltar = document.querySelector("#botao_voltar").addEventListener("click", function() {
-    window.location.href = "../pages/recuperacao_de_senha";
-});
+const form = document.getElementById("form_recuperacao");
+const emailInput = document.getElementById("email_recuperacao");
 
-let botao_avancar = document.querySelector("#botao_avancar").addEventListener("click", function() {
-    window.location.href = "http:///Cruz-Azul/pages/codigo_de_recuperacao";
-});
+const regexEmail = /^[a-zA-Z0-9]+@[a-zA-Z]+\.[a-zA-Z]+$/;
 
-function validar() {
-    const valor = document.getElementById("input");
-    const regex = /^(email)@(dominio)$/;
-    if (regex.test(valor)) {
-        alert("Válido");
-    }
-    else {
-        alert("Inválido");
-    }
+function voltar() {
+    window.history.back();
 }
+
+form.addEventListener("submit", function(event) {
+    const email = emailInput.value.trim();
+    if (!regexEmail.test(email)) {
+        event.preventDefault();
+        alert("Digite um email válido! Ex: nome123@gmail.com");
+        emailInput.focus();
+        return;
+    }
+});

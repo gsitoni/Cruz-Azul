@@ -1,125 +1,105 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    font-family: "Google Sans", sans-serif;
+    min-height: 100vh;
 }
 
 header {
     background-color: blue;
     border: 2px solid darkblue;
-    text-align: center;
-    font-family: "Google Sans", sans-serif;
     color: white;
-    width: 80%;
-    max-width: 56rem;
-    padding: 0.5rem;
+    text-align: center;
+    width: 90%;
+    max-width: 900px;
+    padding: 10px;
 }
 
 .container {
+    width: 100%;
+    max-width: 400px;
+    margin: 30px 15px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    margin: 2em 1em;
-    font-family: "Google Sans", sans-serif;
 }
 
-#subtitulo {
+.form {
+    width: 100%;
     text-align: center;
 }
 
-#descricao {
+.descricao {
     text-align: center;
-    font-size: 1rem;
-    margin: 3em;
+    margin: 25px 0;
 }
 
 .inputs {
     display: flex;
+    gap: 5px;
     justify-content: center;
-    gap: 0.7em;
-    flex-wrap: wrap;
+    margin: 35px 0;
 }
 
 .input {
-   width: 1.5em;
-   height: 1.5em;
-   font-size: 2em;
-   text-align: center;
-   border: 2px solid black;
-}
-
-#link_recuperacao_senha {
+    width: 50px;
+    height: 50px;
     text-align: center;
-    font-size: 1em;
-    margin: 3em;
-    cursor: pointer;
+    font-size: 30px;
+    border: 2px solid black;
+    border-radius: 5px;
 }
 
-#link_recuperacao_senha:hover {
-    color: darkblue;
-}
-
-.botoes_avancar {
+.botoes {
     display: flex;
-    gap: 1em;
-    justify-content: right;
-    width: 55em;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 70px;
 }
 
-#botao_voltar {
+.botoes button {
     background-color: blue;
     color: white;
-    width: 5em;
-    height: 2em;
-    font-size: 1em;
+    width: 120px;
+    height: 40px;
     border: 2px solid darkblue;
-    text-align: center;
     cursor: pointer;
 }
 
-.botao:hover {
+.botoes button:hover {
     background-color: darkblue;
 }
 
-@media (max-width: 768px) {
-    header {
-        width: 90%;
-    }
+a {
+    text-align: center;
+}
 
-    .botoes_avancar {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .botao {
-        width: 100%;
-        max-width: 5em;
-    }
+a:hover {
+    color: darkblue;
 }
 
 @media (max-width: 480px) {
-    header {
-        width: 95%;
-        font-size: 0.9em;
-    }
-
-    #descricao {
-        font-size: 0.9em;
-        margin: 2em 1em;
+    .container {
+        max-width: 300px;
     }
 
     .input {
-        width: 1.3em;
-        height: 1.3em;
-        font-size: 1.5em;
+        width: 35px;
+        height: 40px;
+        font-size: 18px;
     }
 
-    .botao {
-        width: 100%;
-        max-width: 10em;
-        height: 2.5em;
-        font-size: 0.9em;
+    .botoes button {
+        width: 100px;
+        height: 35px;
     }
 }
-
