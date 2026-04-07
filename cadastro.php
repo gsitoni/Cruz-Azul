@@ -1,7 +1,8 @@
 <?php
 // cadastro.php - Processa o formulário de cadastro
 require 'test_email_bismark/database.php';
-require 'test_email_bismark/mailer.php';
+require '../phps/mailer.php';
+require 'valida_senha.php'; // Chama o arquivo da função de senha
 
 // Responde requisições AJAX em JSON
 $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
@@ -11,14 +12,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome  = trim($_POST['nome']  ?? '');
     $email = trim($_POST['email'] ?? '');
     $senha = trim($_POST['senha'] ?? '');
+    $lgpd  = $_POST['lgpd'] ?? ''; // Captura o aceite da LGPD
 
     // --- Validações ---
+    $resultadoSenha = validarSenhaForte($senha); // Chame a função aqui
+
     if (empty($nome) || empty($email) || empty($senha)) {
         $resposta = ['ok' => false, 'msg' => 'Preencha todos os campos.'];
+    } elseif ($lgpd !== 'true') { // Validação do aceite LGPD
+        $resposta = ['ok' => false, 'msg' => 'Você deve aceitar os termos da LGPD.'];
     } elseif (!preg_match('/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/', $email)) {
         $resposta = ['ok' => false, 'msg' => 'E-mail inválido.'];
-    } elseif (!preg_match('/^.{6,}$/', $senha)) {
-        $resposta = ['ok' => false, 'msg' => 'A senha deve ter pelo menos 6 caracteres.'];
+    } elseif ($resultadoSenha !== true) { // Substituição da validação antiga pela nova
+        $resposta = ['ok' => false, 'msg' => $resultadoSenha];
     } else {
         $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
         $stmt->execute([$email]);
@@ -98,6 +104,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         input:focus { outline: none; border-color: #007BFF; }
 
+        /* Estilo do HUD/Checkbox LGPD */
+        .lgpd-box {
+            margin-top: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .lgpd-box input { width: auto; margin-top: 3px; }
+        .lgpd-box label { margin-top: 0; font-weight: normal; font-size: 12px; }
+
         button {
             margin-top: 18px;
             width: 100%;
@@ -139,10 +155,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="email" id="email" name="email" required>
 
         <label>Senha</label>
-        <input type="password" id="senha" name="senha" required minlength="6">
+        <input type="password" id="senha" name="senha" required>
 
         <label>Confirmar Senha</label>
         <input type="password" id="confirmarSenha" required>
+
+        <div class="lgpd-box">
+            <input type="checkbox" id="lgpd" required>
+            <label for="lgpd">Aceito os <a href="privacidade.php" target="_blank">Termos de Privacidade</a>.</label>
+        </div>
 
         <div class="msg" id="mensagem"></div>
 
@@ -158,26 +179,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
 
-        // Limpa mensagem anterior
         msgDiv.className = 'msg';
         msgDiv.innerHTML = '';
 
         const senha          = document.getElementById('senha').value;
         const confirmarSenha = document.getElementById('confirmarSenha').value;
+        const lgpdChecked    = document.getElementById('lgpd').checked; // Verifica o checkbox
 
         if (senha !== confirmarSenha) {
             mostrarMsg('As senhas não coincidem!', 'erro');
             return;
         }
 
+        if (!lgpdChecked) { // Validação visual do aceite
+            mostrarMsg('Você precisa aceitar a LGPD.', 'erro');
+            return;
+        }
+
         btnCad.disabled    = true;
         btnCad.textContent = 'Aguarde...';
 
-        // Monta FormData para envio ao PHP
         const dados = new FormData();
         dados.append('nome',  document.getElementById('nome').value.trim());
         dados.append('email', document.getElementById('email').value.trim());
         dados.append('senha', senha);
+        dados.append('lgpd',  lgpdChecked); // Envia o estado do checkbox
 
         try {
             const res  = await fetch('cadastro.php', {
