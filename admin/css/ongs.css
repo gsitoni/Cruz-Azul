@@ -1,0 +1,166 @@
+/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Google Sans', Arial, sans-serif;
+    background: linear-gradient(135deg, #eef3fb, #f7f9fc);
+    color: #1a1a1a;
+}
+
+/* HEADER */
+.header {
+    background: linear-gradient(90deg, #0d47a1, #1565c0);
+    color: white;
+    padding: 18px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header nav a {
+    color: white;
+    margin-left: 20px;
+    text-decoration: none;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.header nav a:hover {
+    opacity: 1;
+    border-bottom: 2px solid white;
+}
+
+/* CONTAINER */
+.container {
+    padding: 30px;
+}
+
+h2 {
+    margin-bottom: 20px;
+}
+
+/* FILTROS */
+.filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.filters input,
+.filters select {
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.filters button {
+    padding: 8px 14px;
+    background: #1565c0;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.filters button:hover {
+    background: #0d47a1;
+}
+
+/* LISTA DE ONGs */
+.ongs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* CARD ONG */
+.ong-card {
+    display: flex;
+    justify-content: space-between;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+    transition: 0.2s;
+}
+
+.ong-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+
+.ong-info h3 {
+    margin-bottom: 8px;
+}
+
+.ong-info p {
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+/* AÇÕES */
+.ong-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+/* BADGE */
+.badge {
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.pendente {
+    background: #fff3e0;
+    color: #ef6c00;
+}
+
+/* BOTÕES */
+button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+button:hover {
+    transform: scale(1.03);
+}
+
+.btn-aprovar {
+    background: #2e7d32;
+    color: white;
+}
+
+.btn-aprovar:hover {
+    background: #1b5e20;
+}
+
+.btn-rejeitar {
+    background: #c62828;
+    color: white;
+}
+
+.btn-rejeitar:hover {
+    background: #8e0000;
+}
+
+/* FOOTER */
+footer {
+    text-align: center;
+    padding: 15px;
+    background: #0d47a1;
+    color: white;
+    margin-top: 30px;
+    font-size: 13px;
+}

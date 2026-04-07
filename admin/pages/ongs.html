@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitações de ONGs - Cruz Azul</title>
+    <link rel="stylesheet" href="../css/ongs.css">
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <h1>Cruz Azul ✙</h1>
+        <nav>
+            <a href="./dashboard.html">Dashboard</a>
+            <a href="./ongs.html">ONGs</a>
+            <a href="./logs.html">Logs</a>
+            <a href="./usuarios.html">Usuários</a>
+            <a href="./configuracoes.html">Config</a>
+            <a href="#">Sair</a>
+        </nav>
+    </header>
+
+    <main class="container">
+
+        <h2>Solicitações de ONGs</h2>
+
+        <!-- FILTROS -->
+        <section class="filters">
+            <input type="text" placeholder="Buscar ONG...">
+
+            <select>
+                <option>Status</option>
+                <option>Pendente</option>
+                <option>Aprovado</option>
+                <option>Rejeitado</option>
+            </select>
+
+            <select>
+                <option>Mais recentes</option>
+                <option>Mais antigas</option>
+            </select>
+
+            <button>Filtrar</button>
+        </section>
+
+        <!-- LISTA DE SOLICITAÇÕES -->
+        <section class="ongs-list">
+
+            <div class="ong-card">
+                <div class="ong-info">
+                    <h3>Mãos Solidárias</h3>
+                    <p><strong>Email:</strong> contato@maos.org</p>
+                    <p><strong>CNPJ:</strong> 00.000.000/0001-00</p>
+                    <p><strong>Descrição:</strong> Apoio a famílias em vulnerabilidade.</p>
+                </div>
+
+                <div class="ong-actions">
+                    <span class="badge pendente">PENDENTE</span>
+                    <button class="btn-aprovar">Aprovar</button>
+                    <button class="btn-rejeitar">Rejeitar</button>
+                </div>
+            </div>
+
+            <div class="ong-card">
+                <div class="ong-info">
+                    <h3>Esperança Viva</h3>
+                    <p><strong>Email:</strong> contato@esperanca.org</p>
+                    <p><strong>CNPJ:</strong> 11.111.111/0001-11</p>
+                    <p><strong>Descrição:</strong> Projetos educacionais.</p>
+                </div>
+
+                <div class="ong-actions">
+                    <span class="badge pendente">PENDENTE</span>
+                    <button class="btn-aprovar">Aprovar</button>
+                    <button class="btn-rejeitar">Rejeitar</button>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer>
+        <p>© 2026 Cruz Azul</p>
+    </footer>
+
+</body>
+</html>
