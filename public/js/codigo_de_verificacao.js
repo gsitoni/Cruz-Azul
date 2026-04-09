@@ -52,9 +52,4 @@ form.addEventListener("submit", function(event) {
     }
 
     console.log("Código digitado:", codigo);
-
-    event.preventDefault();
-    alert("Código válido!");
-
-    window.location.href = "redefinicao_de_senha.html";
 });

@@ -1,12 +1,13 @@
 <?php
  
-require 'test_email_bismark/database.php'; 
+ //Necessário incluir banco de dados 
+// require 'test_email_bismark/database.php'; 
  
 session_start();
  
 // Se já logado, redireciona
 if (isset($_SESSION['usuario'])) {
-    header('Location: index.php');
+    header('Location: home.php');
     exit;
 }
  
