@@ -1,9 +1,9 @@
 <?php
     // cadastro.php - Processa o formulário de cadastro
-    // Caminho ajustado: sobe dois níveis para sair de 'php' e 'public' para achar a pasta do banco
+    
     require '../../test_email_bismark/database.php';
     require '../../test_email_bismark/mailer.php';
-    require 'valida_senha.php'; // Permanece igual pois está na mesma pasta (public/php)
+    require 'valida_senha.php'; 
 
     // Responde requisições AJAX em JSON
     $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
@@ -20,11 +20,11 @@
 
         if (empty($nome) || empty($email) || empty($senha)) {
             $resposta = ['ok' => false, 'msg' => 'Preencha todos os campos.'];
-        } elseif ($lgpd !== 'true') { // Validação do aceite LGPD
+        } elseif ($lgpd !== 'true') { 
             $resposta = ['ok' => false, 'msg' => 'Você deve aceitar os termos da LGPD.'];
         } elseif (!preg_match('/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/', $email)) {
             $resposta = ['ok' => false, 'msg' => 'E-mail inválido.'];
-        } elseif ($resultadoSenha !== true) { // Substituição da validação antiga pela nova
+        } elseif ($resultadoSenha !== true) { 
             $resposta = ['ok' => false, 'msg' => $resultadoSenha];
         } else {
             $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
