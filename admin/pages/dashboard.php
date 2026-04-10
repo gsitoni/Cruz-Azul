@@ -17,7 +17,7 @@ session_start();
 // VERIFICA LOGIN E ROLE
 // ==========================
 if (!isset($_SESSION['usuario']) || $_SESSION['tipo'] !== 'admin') {
-    header("Location: ../pages/php/login.php");
+    header("Location: ../pages/public/php/login.php");
     exit();
 }
 

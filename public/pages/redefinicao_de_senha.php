@@ -72,7 +72,27 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             // ==========================
             // HASH SEGURO
             // ==========================
-            $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
+           // ==========================
+// GERAR SALT
+// ==========================
+$salt = bin2hex(random_bytes(16)); // 32 caracteres
+
+// ==========================
+// HASH SHA1 + SALT
+// ==========================
+$senha_hash = sha1($salt . $senha);
+
+// ==========================
+// ARMAZENAR (hash + salt)
+// ==========================
+// No banco você deve ter 2 campos:
+// senha_hash | salt
+
+/*
+$stmt = $conn->prepare("UPDATE usuarios SET senha = ?, salt = ? WHERE email = ?");
+$stmt->bind_param("sss", $senha_hash, $salt, $email);
+$stmt->execute();
+*/
 
             // ==========================
             // ATUALIZA NO BANCO

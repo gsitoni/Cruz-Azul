@@ -5,7 +5,7 @@ session_start();
 // PROTEÇÃO DE ACESSO
 // ==========================
 if (!isset($_SESSION['usuario']) || $_SESSION['tipo'] !== 'admin') {
-    header("Location: ../pages/login.php");
+    header("Location: ./usuarios.php");
     exit();
 }
 
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $_SESSION['msg'] = "Ação '$acao' aplicada ao usuário $usuario";
 
-    header("Location: usuarios.php");
+    header("Location: ./usuarios.php");
     exit();
 }
 
