@@ -36,6 +36,7 @@ if (empty($token)) {
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Confirmação de Cadastro</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 420px; margin: 80px auto; padding: 0 16px; text-align: center; }
@@ -43,6 +44,29 @@ if (empty($token)) {
         .erro    { color: #c0392b; background: #fdecea; padding: 18px; border-radius: 6px; }
         .info    { color: #0c5460; background: #d1ecf1; padding: 18px; border-radius: 6px; }
         a { display: inline-block; margin-top: 16px; color: #4CAF50; }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 480px) {
+            body {
+                max-width: 100%;
+                margin: 40px auto;
+                padding: 0 10px;
+            }
+
+            h2 {
+                font-size: 1.3em;
+            }
+
+            .sucesso, .erro, .info {
+                padding: 15px;
+                font-size: 14px;
+            }
+
+            a {
+                margin-top: 12px;
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>

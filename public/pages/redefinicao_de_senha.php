@@ -1,5 +1,6 @@
 <?php
 
+require '../../src/api/database.php';
 require_once '../includes/valida_senha.php';
 // ==========================
 // CONFIG COOKIE SEGURO
@@ -52,8 +53,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         die("Requisição inválida.");
     }
 
-    $senha = $_POST['nova_senha'] ?? "";
-    $confirmacao = $_POST['confirmacao_senha'] ?? "";
+    $senha = trim($_POST['nova_senha'] ?? "");
+    $confirmacao = trim($_POST['confirmacao_senha'] ?? "");
 
     // ==========================
     // VALIDAÇÕES
@@ -70,38 +71,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         } else {
 
             // ==========================
-            // HASH SEGURO
+            // HASH SEGURO COM password_hash()
             // ==========================
-           // ==========================
-// GERAR SALT
-// ==========================
-$salt = bin2hex(random_bytes(16)); // 32 caracteres
+            $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
 
-// ==========================
-// HASH SHA1 + SALT
-// ==========================
-$senha_hash = sha1($salt . $senha);
-
-// ==========================
-// ARMAZENAR (hash + salt)
-// ==========================
-// No banco você deve ter 2 campos:
-// senha_hash | salt
-
-/*
-$stmt = $conn->prepare("UPDATE usuarios SET senha = ?, salt = ? WHERE email = ?");
-$stmt->bind_param("sss", $senha_hash, $salt, $email);
-$stmt->execute();
-*/
-
-            // ==========================
-            // ATUALIZA NO BANCO
-            // ==========================
-            /*
-            $stmt = $conn->prepare("UPDATE usuarios SET senha = ? WHERE email = ?");
-            $stmt->bind_param("ss", $senha_hash, $email);
-            $stmt->execute();
-            */
+            // Atualiza a senha no banco usando prepared statement
+            $stmt = $pdo->prepare("UPDATE usuarios SET senha = ? WHERE email = ?");
+            $stmt->execute([$senha_hash, $email]);
 
             // limpar sessão
             unset($_SESSION['verificado']);

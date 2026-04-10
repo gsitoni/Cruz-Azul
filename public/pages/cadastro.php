@@ -1,7 +1,7 @@
 <?php
     // cadastro.php - Processa o formulário de cadastro
     
-    //require '../../database/database.php';
+    require '../../src/api/database.php';
     require '../../test_email_bismark/mailer.php';
     require 'valida_senha.php'; 
 
@@ -10,8 +10,8 @@
             strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $nome  = trim($_POST['nome']  ?? '');
-        $email = trim($_POST['email'] ?? '');
+        $nome  = trim(strip_tags($_POST['nome']  ?? ''));
+        $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
         $senha = trim($_POST['senha'] ?? '');
         $lgpd  = $_POST['lgpd'] ?? ''; // Captura o aceite da LGPD
 
@@ -62,6 +62,7 @@
     <html lang="pt-BR">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Cadastro de Usuário</title>
         <style>
             * { box-sizing: border-box; }
@@ -141,6 +142,28 @@
 
             .msg.erro    { background: #fdecea; color: #c0392b; display: block; }
             .msg.sucesso { background: #eafaf1; color: #1e7e34; display: block; }
+
+            /* RESPONSIVIDADE */
+            @media (max-width: 480px) {
+                .container {
+                    width: 90%;
+                    padding: 20px 15px;
+                }
+
+                h2 {
+                    font-size: 1.5em;
+                }
+
+                input {
+                    padding: 8px;
+                    font-size: 16px; /* Previne zoom no iOS */
+                }
+
+                button {
+                    padding: 10px;
+                    font-size: 14px;
+                }
+            }
         </style>
     </head>
     <body>

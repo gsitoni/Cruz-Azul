@@ -43,6 +43,73 @@
             border-radius: 5px;
             margin-top: 20px;
         }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 15px;
+            }
+
+            .content-wrapper {
+                padding: 25px 20px;
+                margin: 0;
+                border-radius: 5px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            h2 {
+                font-size: 1.1em;
+                margin-top: 20px;
+            }
+
+            p {
+                font-size: 14px;
+                text-align: left;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px 10px;
+            }
+
+            .content-wrapper {
+                padding: 20px 15px;
+            }
+
+            h1 {
+                font-size: 1.3em;
+                padding-bottom: 8px;
+            }
+
+            h2 {
+                font-size: 1em;
+                margin-top: 18px;
+            }
+
+            p {
+                font-size: 13px;
+                margin-bottom: 12px;
+            }
+
+            ul, li {
+                margin-bottom: 10px;
+            }
+
+            .footer-note {
+                font-size: 12px;
+                padding-top: 15px;
+                margin-top: 30px;
+            }
+
+            .btn-fechar {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>

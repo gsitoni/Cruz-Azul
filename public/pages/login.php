@@ -1,7 +1,7 @@
 <?php
  
  //Necessário incluir banco de dados 
-// require 'test_email_bismark/database.php'; 
+ require '../../src/api/database.php'; 
  
 session_start();
  
@@ -21,8 +21,8 @@ $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
  
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  
-    $email = trim($_POST['email'] ?? '');
-    $senha = $_POST['senha'] ?? '';
+    $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
+    $senha = trim($_POST['senha'] ?? '');
  
     // --- Validação com regex ---
     if (empty($email) || empty($senha)) {
@@ -187,6 +187,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #888;
             margin-top: 3px;
             font-family: monospace;
+        }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 480px) {
+            .container {
+                width: 90%;
+                padding: 20px 15px;
+            }
+
+            h2 {
+                font-size: 1.5em;
+            }
+
+            input {
+                padding: 8px;
+                font-size: 16px; /* Previne zoom no iOS */
+            }
+
+            button {
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            .btn-olho {
+                right: 8px;
+                font-size: 14px;
+            }
+
+            .senha-wrap input {
+                padding-right: 32px;
+            }
         }
     </style>
 </head>
