@@ -90,7 +90,7 @@ if (isset($_GET['status'])) {
             </div>
 
         </form>
-
+        
     </div>
 
     <script src="../js/recuperacao_de_senha.js"></script>

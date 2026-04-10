@@ -1,7 +1,7 @@
 <?php
     // cadastro.php - Processa o formulário de cadastro
     
-    require '../../test_email_bismark/database.php';
+    //require '../../database/database.php';
     require '../../test_email_bismark/mailer.php';
     require 'valida_senha.php'; 
 

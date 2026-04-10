@@ -7,7 +7,7 @@ session_start();
  
 // Se já logado, redireciona
 if (isset($_SESSION['usuario'])) {
-    header('Location: home.php');
+    header('Location: ./home.php');
     exit;
 }
  
@@ -219,7 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </form>
  
     <div class="link-cadastro">
-        Não tem conta? <a href="cadastro.php">Cadastre-se aqui</a>
+        Não tem conta? <a href="./cadastro.php">Cadastre-se aqui</a>
     </div>
 </div>
  

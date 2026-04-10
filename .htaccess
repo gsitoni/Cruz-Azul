@@ -1,0 +1,12 @@
+# Redirecionamentos para nova estrutura
+# Admin antigo -> Admin novo
+RedirectMatch 301 ^/Cruz-Azul/admin/(.*)$ /Cruz-Azul/src/admin/$1
+
+# API antigo -> API novo
+RedirectMatch 301 ^/Cruz-Azul/api/(.*)$ /Cruz-Azul/src/api/$1
+
+# Arquivo de teste removido
+Redirect 410 /Cruz-Azul/teste_regex
+
+# Pasta de teste removida
+Redirect 410 /Cruz-Azul/test_email_bismark
