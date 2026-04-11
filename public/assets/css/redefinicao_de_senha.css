@@ -1,0 +1,102 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: "Google Sans", sans-serif;
+    min-height: 100vh;
+}
+
+header {
+    background-color: blue;
+    border: 2px solid darkblue;
+    color: white;
+    text-align: center;
+    width: 90%;
+    max-width: 900px;
+    padding: 10px;
+}
+
+.container {
+    width: 100%;
+    max-width: 400px;
+    margin: 30px 15px;
+}
+
+.form {
+    width: 100%;
+}
+
+.condicoes {
+    margin: 20px 0;
+}
+
+.email_box {
+    width: 100%;
+    border: 2px solid darkblue;
+    margin-bottom: 15px;
+    padding: 0%;
+}
+
+.legend {
+    color: darkblue;
+    margin-left: 15px;
+}
+
+.inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 40px;
+}
+
+.input {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    outline: none;
+    font-size: 17px;
+}
+
+#erro {
+    color: red;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.botoes {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.botoes button {
+    background-color: blue;
+    color: white;
+    width: 120px;
+    height: 40px;
+    border: 2px solid darkblue;
+    cursor: pointer;
+}
+
+.botoes button:hover {
+    background-color: darkblue;
+}
+
+@media (max-width: 480px) {
+    .container {
+        max-width: 300px;
+    }
+
+    .botoes button {
+        width: 100px;
+        height: 35px;
+    }
+}

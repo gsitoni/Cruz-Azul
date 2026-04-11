@@ -1,0 +1,111 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: "Google Sans", sans-serif;
+    min-height: 100vh;
+}
+
+header {
+    background-color: blue;
+    border: 2px solid darkblue;
+    color: white;
+    text-align: center;
+    width: 90%;
+    max-width: 900px;
+    padding: 10px;
+}
+
+.container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-height: 50vh;
+    max-width: 400px;
+    margin: 30px 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.email_box {
+    width: 100%;
+    border: 2px solid darkblue;
+    margin-bottom: 20px;
+    padding: 0%;
+    margin-bottom: 50px;
+
+}
+
+.legend {
+    color: darkblue;
+    margin-left: 15px;
+}
+
+.input {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    outline: none;
+    font-size: 17px;
+}
+
+.descricao {
+    text-align: center;
+    margin: 45px 0;
+}
+
+.botoes {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 80px;
+}
+
+.botoes button {
+    background-color: blue;
+    color: white;
+    width: 120px;
+    height: 40px;
+    border: 2px solid darkblue;
+    cursor: pointer;
+}
+
+.botoes button:hover {
+    background-color: darkblue;
+}
+
+a {
+    margin-top: 10px;
+    text-align: center;
+}
+
+a:hover {
+    color: darkblue;
+}
+
+@media (max-width: 480px) {
+    .container {
+        max-width: 300px;
+    }
+
+    .botoes button {
+        width: 100px;
+        height: 35px;
+    }
+}

@@ -1,0 +1,105 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: "Google Sans", sans-serif;
+    min-height: 100vh;
+}
+
+header {
+    background-color: blue;
+    border: 2px solid darkblue;
+    color: white;
+    text-align: center;
+    width: 90%;
+    max-width: 900px;
+    padding: 10px;
+}
+
+.container {
+    width: 100%;
+    max-width: 400px;
+    margin: 30px 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.form {
+    width: 100%;
+    text-align: center;
+}
+
+.descricao {
+    text-align: center;
+    margin: 25px 0;
+}
+
+.inputs {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    margin: 35px 0;
+}
+
+.input {
+    width: 50px;
+    height: 50px;
+    text-align: center;
+    font-size: 30px;
+    border: 2px solid black;
+    border-radius: 5px;
+}
+
+.botoes {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 70px;
+}
+
+.botoes button {
+    background-color: blue;
+    color: white;
+    width: 120px;
+    height: 40px;
+    border: 2px solid darkblue;
+    cursor: pointer;
+}
+
+.botoes button:hover {
+    background-color: darkblue;
+}
+
+a {
+    text-align: center;
+}
+
+a:hover {
+    color: darkblue;
+}
+
+@media (max-width: 480px) {
+    .container {
+        max-width: 300px;
+    }
+
+    .input {
+        width: 35px;
+        height: 40px;
+        font-size: 18px;
+    }
+
+    .botoes button {
+        width: 100px;
+        height: 35px;
+    }
+}
