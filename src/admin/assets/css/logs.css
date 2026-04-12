@@ -1,0 +1,266 @@
+/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Google Sans', Arial, sans-serif;
+    background: linear-gradient(135deg, #eef3fb, #f7f9fc);
+    color: #1a1a1a;
+}
+
+/* HEADER */
+.header {
+    background: linear-gradient(90deg, #0d47a1, #1565c0);
+    color: white;
+    padding: 18px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header nav a {
+    color: white;
+    margin-left: 20px;
+    text-decoration: none;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.header nav a:hover {
+    opacity: 1;
+    border-bottom: 2px solid white;
+}
+
+/* CONTAINER */
+.container {
+    padding: 30px;
+}
+
+h2 {
+    margin-bottom: 20px;
+}
+
+/* FILTROS */
+.filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filters input,
+.filters select {
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.filters button {
+    padding: 8px 14px;
+    background: #1565c0;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.filters button:hover {
+    background: #0d47a1;
+}
+
+/* TABELA */
+.table-box {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th {
+    text-align: left;
+    padding: 10px;
+    color: #555;
+    border-bottom: 2px solid #eee;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* BADGES DE NÍVEL */
+.badge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.info {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.alerta {
+    background: #fff3e0;
+    color: #ef6c00;
+}
+
+.critico {
+    background: #ffebee;
+    color: #c62828;
+}
+
+/* FOOTER */
+footer {
+    text-align: center;
+    padding: 15px;
+    background: #0d47a1;
+    color: white;
+    margin-top: 30px;
+    font-size: 13px;
+}
+
+/* RESPONSIVIDADE */
+@media (max-width: 1024px) {
+    .header {
+        padding: 15px 20px;
+    }
+
+    .header nav a {
+        margin-left: 15px;
+        font-size: 13px;
+    }
+
+    .container {
+        padding: 20px;
+    }
+
+    .filters {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .filters input,
+    .filters select {
+        flex: 1;
+        min-width: 150px;
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        text-align: center;
+        padding: 12px 15px;
+    }
+
+    .header nav {
+        margin-top: 10px;
+    }
+
+    .header nav a {
+        margin: 0 10px;
+    }
+
+    .container {
+        padding: 15px;
+    }
+
+    h2 {
+        font-size: 1.5em;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    table {
+        min-width: 700px;
+    }
+
+    .filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filters input,
+    .filters select {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+    .log-entry {
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+
+    .log-entry .timestamp {
+        font-size: 12px;
+    }
+
+    .log-entry .message {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header h1 {
+        font-size: 1.3em;
+    }
+
+    .container {
+        padding: 10px;
+    }
+
+    h2 {
+        font-size: 1.3em;
+        margin-bottom: 15px;
+    }
+
+    .filters {
+        margin-bottom: 15px;
+    }
+
+    table th,
+    table td {
+        padding: 6px 3px;
+        font-size: 11px;
+    }
+
+    .log-entry {
+        padding: 10px;
+        margin-bottom: 6px;
+    }
+
+    .log-entry .timestamp {
+        font-size: 11px;
+    }
+
+    .log-entry .message {
+        font-size: 12px;
+    }
+
+    .log-entry .level {
+        padding: 2px 6px;
+        font-size: 10px;
+    }
+
+    button {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    footer {
+        padding: 10px;
+        font-size: 11px;
+    }
+}
