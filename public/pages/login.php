@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  
     } else {
         // Busca usuário no banco pelo e-mail (igual ao cadastro.php usa PDO)
-        $stmt = $pdo->prepare("SELECT id, nome, email, senha, email_confirmado FROM usuario WHERE email = ?");
+        $stmt = $pdo->prepare("SELECT id_usuario, email, senha_hash, status_cadastro FROM usuario WHERE email = ?");
         $stmt->execute([$email]);
         $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
  
@@ -50,19 +50,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Usuário não encontrado — mensagem genérica por segurança
             $resposta = ['ok' => false, 'msg' => 'E-mail ou senha incorretos.'];
  
-        } elseif (!password_verify($senha, $usuario['senha'])) {
+        } elseif (!password_verify($senha, $usuario['senha_hash'])) {
             // Senha errada — mesma mensagem genérica
             $resposta = ['ok' => false, 'msg' => 'E-mail ou senha incorretos.'];
  
-        } elseif (isset($usuario['confirmado']) && !$usuario['confirmado']) {
+        } elseif (isset($usuario['status_cadastro']) && !$usuario['status_cadastro']) {
             // Conta não confirmada (coluna criada pelo cadastro.php via token)
             $resposta = ['ok' => false, 'msg' => 'Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.'];
  
         } else {
             // Login OK — salva sessão
             $_SESSION['usuario'] = [
-                'id'    => $usuario['id'],
-                'nome'  => $usuario['nome'],
+                'id_usuario'    => $usuario['id_usuario'],
                 'email' => $usuario['email'],
             ];
             $resposta = [
