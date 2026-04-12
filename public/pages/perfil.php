@@ -1,6 +1,5 @@
 <?php
 session_start();
-
 require_once __DIR__ . '/../../src/api/database.php';
 
 if (!isset($_SESSION['usuario_id'])) {
@@ -8,108 +7,60 @@ if (!isset($_SESSION['usuario_id'])) {
     exit();
 }
 
-header("X-Frame-Options: DENY");
-header("Content-Security-Policy: frame-ancestors 'none'");
-
 $id_usuario = $_SESSION['usuario_id'];
 
 try {
-    $stmtUser = $pdo->prepare("SELECT email, data_criacao, status_cadastro FROM usuario WHERE id_usuario = ?");
+    $stmtUser = $pdo->prepare("SELECT email FROM usuario WHERE id_usuario = ?");
     $stmtUser->execute([$id_usuario]);
-    $dadosUsuario = $stmtUser->fetch();
+    $user = $stmtUser->fetch();
 
-    if (!$dadosUsuario) {
-        session_destroy();
-        header("Location: login.php");
-        exit();
-    }
-
+    // Busca na tabela doador
     $stmtDoador = $pdo->prepare("SELECT * FROM doador WHERE email = ?");
-    $stmtDoador->execute([$dadosUsuario['email']]);
-    $perfilDoador = $stmtDoador->fetch();
+    $stmtDoador->execute([$user['email']]);
+    $perfil = $stmtDoador->fetch();
+    $tipo = 'doador';
 
-    $perfilONG = null;
-    if (!$perfilDoador) {
+    // Se não for doador, busca beneficiário
+    if (!$perfil) {
         $stmtONG = $pdo->prepare("SELECT * FROM beneficiario WHERE id_beneficiario = (SELECT id_vinc_beneficiario FROM usuario WHERE id_usuario = ?)");
         $stmtONG->execute([$id_usuario]);
-        $perfilONG = $stmtONG->fetch();
+        $perfil = $stmtONG->fetch();
+        $tipo = 'beneficiario';
     }
-
 } catch (PDOException $e) {
-    die("Erro crítico de segurança ao carregar dados.");
+    die("Erro ao carregar perfil.");
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Perfil - Cruz Azul</title>
-    <link rel="stylesheet" href="../assets/css/perfil.css"> 
+    <link rel="stylesheet" href="../assets/css/perfil.css">
 </head>
 <body>
-    <div class="perfil-container">
-        <h1>Meu Perfil</h1>
-        
-        <section class="info-secao">
-            <h3>Informações da Conta</h3>
-            <p><strong>E-mail:</strong> <?= htmlspecialchars($dadosUsuario['email']) ?></p>
-            <p><strong>Membro desde:</strong> <?= date('d/m/Y', strtotime($dadosUsuario['data_criacao'])) ?></p>
-            <p><strong>Status da Conta:</strong> <?= htmlspecialchars(ucfirst($dadosUsuario['status_cadastro'])) ?></p>
-        </section>
-
-        <hr>
-
-        <?php if ($perfilDoador): ?>
-            <section class="info-secao">
-                <h3>Dados do Doador</h3>
-                <p><strong>Nome:</strong> <?= htmlspecialchars($perfilDoador['nome']) ?></p>
-                <p><strong>CPF/CNPJ:</strong> <?= htmlspecialchars($perfilDoador['cpf_cnpj']) ?></p>
-                <p><strong>Telefone:</strong> <?= htmlspecialchars($perfilDoador['telefone']) ?></p>
-            </section>
-        <?php elseif ($perfilONG): ?>
-            <section class="info-secao">
-                <h3>Dados da ONG (Beneficiário)</h3>
-                <p><strong>Nome da Instituição:</strong> <?= htmlspecialchars($perfilONG['nome_receptor']) ?></p>
-                <p><strong>CNPJ:</strong> <?= htmlspecialchars($perfilONG['cnpj']) ?></p>
-                <p><strong>Localização:</strong> <?= htmlspecialchars($perfilONG['localizacao']) ?></p>
-                <p><strong>Status de Elegibilidade:</strong> <?= htmlspecialchars(ucfirst($perfilONG['status_elegibilidade'])) ?></p>
-            </section>
-        <?php else: ?>
-            <p>Perfil detalhado não encontrado. Por favor, complete o seu cadastro.</p>
+    <div class="perfil-container" style="max-width: 600px; margin: 50px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        <?php if (isset($_GET['status']) && $_GET['status'] == 'atualizado'): ?>
+            <div style="background: #d4edda; color: #155724; padding: 10px; margin-bottom: 20px; border-radius: 5px;">
+                Dados atualizados com sucesso!
+            </div>
         <?php endif; ?>
 
-        <div class="acoes-perfil" style="margin-top: 30px;">
-            <a href="editar_perfil.php" class="btn-editar">Editar Dados</a>
-            
-            <button onclick="solicitarExclusao()" class="btn-excluir" style="background-color: #ff4d4d; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px;">
-                Excluir Minha Conta
-            </button>
+        <h1>Meu Perfil</h1>
+        <p><strong>E-mail:</strong> <?= htmlspecialchars($user['email']) ?></p>
+        
+        <?php if ($tipo === 'doador'): ?>
+            <p><strong>Nome:</strong> <?= htmlspecialchars($perfil['nome']) ?></p>
+            <p><strong>Telefone:</strong> <?= htmlspecialchars($perfil['telefone']) ?></p>
+        <?php else: ?>
+            <p><strong>Instituição:</strong> <?= htmlspecialchars($perfil['nome_receptor']) ?></p>
+            <p><strong>Localização:</strong> <?= htmlspecialchars($perfil['localizacao']) ?></p>
+        <?php endif; ?>
+
+        <div style="margin-top: 30px; display: flex; gap: 10px;">
+            <a href="editar_perfil.php" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Editar Informações</a>
+            <a href="logout.php" style="color: #666; padding: 10px;">Sair</a>
         </div>
     </div>
-
-    <script>
-    function solicitarExclusao() {
-        if (confirm("ATENÇÃO: Deseja apagar todos os seus dados permanentemente? Esta ação cumpre os requisitos da LGPD e não pode ser desfeita.")) {
-            
-            fetch('../../api/excluir_dados.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ 'acao': 'total' })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.ok) {
-                    alert(data.msg);
-                    window.location.href = 'login.php';
-                } else {
-                    alert("Erro: " + data.msg);
-                }
-            })
-            .catch(error => console.error('Erro na requisição:', error));
-        }
-    }
-    </script>
 </body>
 </html>
