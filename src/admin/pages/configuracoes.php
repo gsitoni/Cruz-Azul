@@ -1,6 +1,12 @@
 <?php
 session_start();
 
+// Headers de segurança
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('X-XSS-Protection: 1; mode=block');
+header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+
 // ==========================
 // PROTEÇÃO DE ACESSO
 // ==========================
@@ -24,11 +30,8 @@ if (empty($_SESSION['csrf_token'])) {
 }
 
 // ==========================
-// DADOS DE CONFIGURAÇÃO
+// CONFIGURAÇÕES (simuladas)
 // ==========================
-// TODO: Implementar queries no banco de dados
-// $config = obter_configuracoes_banco();
-
 $config = [
     'nome_sistema' => 'Cruz Azul',
     'email_admin' => 'admin@cruzazul.com',
@@ -40,44 +43,27 @@ $config = [
 ];
 
 // ==========================
-// AÇÕES
+// SALVAR CONFIGURAÇÕES
 // ==========================
 $msg = '';
 $erro = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
     if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        die("CSRF inválido");
-    }
-
-    $acao = $_POST['acao'] ?? "";
-
-    switch ($acao) {
-        case 'atualizar_config':
-            // TODO: Validar e atualizar configurações no banco de dados
-            $msg = "Configurações atualizadas com sucesso!";
-            break;
-
-        case 'resetar_cache':
-            // TODO: Implementar limpeza de cache
-            $msg = "Cache resetado com sucesso!";
-            break;
-
-        case 'backup_database':
-            // TODO: Implementar backup do banco de dados
-            $msg = "Backup iniciado!";
-            break;
-
-        default:
-            $erro = "Ação desconhecida";
+        $erro = 'CSRF token inválido';
+    } else {
+        // Simular salvamento
+        $config['nome_sistema'] = filter_input(INPUT_POST, 'nome_sistema', FILTER_SANITIZE_STRING) ?: $config['nome_sistema'];
+        $config['email_admin'] = filter_input(INPUT_POST, 'email_admin', FILTER_SANITIZE_EMAIL) ?: $config['email_admin'];
+        $config['email_noreply'] = filter_input(INPUT_POST, 'email_noreply', FILTER_SANITIZE_EMAIL) ?: $config['email_noreply'];
+        $config['tentativas_login'] = filter_input(INPUT_POST, 'tentativas_login', FILTER_SANITIZE_NUMBER_INT) ?: $config['tentativas_login'];
+        $config['timeout_sessao'] = filter_input(INPUT_POST, 'timeout_sessao', FILTER_SANITIZE_NUMBER_INT) ?: $config['timeout_sessao'];
+        $config['notificacoes_email'] = isset($_POST['notificacoes_email']);
+        $config['autenticacao_2fa'] = isset($_POST['autenticacao_2fa']);
+        
+        $msg = 'Configurações salvas com sucesso!';
     }
 }
-
-$msg = $_SESSION['msg'] ?? $msg;
-$erro = $_SESSION['erro'] ?? $erro;
-unset($_SESSION['msg'], $_SESSION['erro']);
-
 ?>
 
 <!DOCTYPE html>
@@ -125,13 +111,56 @@ unset($_SESSION['msg'], $_SESSION['erro']);
 
     <form method="POST" class="form-config">
         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-        <input type="hidden" name="acao" value="atualizar_config">
 
         <div class="form-group">
             <label for="nome_sistema">Nome do Sistema:</label>
             <input type="text" id="nome_sistema" name="nome_sistema" 
                    value="<?= htmlspecialchars($config['nome_sistema']) ?>" required>
         </div>
+
+        <div class="form-group">
+            <label for="email_admin">Email do Administrador:</label>
+            <input type="email" id="email_admin" name="email_admin" 
+                   value="<?= htmlspecialchars($config['email_admin']) ?>" required>
+        </div>
+
+        <div class="form-group">
+            <label for="email_noreply">Email No-Reply:</label>
+            <input type="email" id="email_noreply" name="email_noreply" 
+                   value="<?= htmlspecialchars($config['email_noreply']) ?>" required>
+        </div>
+
+        <div class="form-group">
+            <label for="tentativas_login">Tentativas de Login Máximas:</label>
+            <input type="number" id="tentativas_login" name="tentativas_login" 
+                   value="<?= htmlspecialchars($config['tentativas_login']) ?>" min="1" max="10" required>
+        </div>
+
+        <div class="form-group">
+            <label for="timeout_sessao">Timeout da Sessão (segundos):</label>
+            <input type="number" id="timeout_sessao" name="timeout_sessao" 
+                   value="<?= htmlspecialchars($config['timeout_sessao']) ?>" min="300" max="86400" required>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="notificacoes_email" 
+                       <?= $config['notificacoes_email'] ? 'checked' : '' ?>> 
+                Habilitar notificações por email
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="autenticacao_2fa" 
+                       <?= $config['autenticacao_2fa'] ? 'checked' : '' ?>> 
+                Exigir autenticação 2FA para admins
+            </label>
+        </div>
+
+        <button type="submit" class="btn-save">Salvar Configurações</button>
+    </form>
+</section>
 
         <div class="form-group">
             <label for="email_admin">Email Administrativo:</label>

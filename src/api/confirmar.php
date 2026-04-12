@@ -11,7 +11,7 @@ if (empty($token)) {
 } else {
     // Busca usuário pelo token
     $stmt = $pdo->prepare("
-        SELECT id, confirmado FROM usuarios WHERE token_confirmacao = ?
+        SELECT id, confirmado FROM usuario WHERE token_confirmacao = ?
     ");
     $stmt->execute([$token]);
     $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -24,7 +24,7 @@ if (empty($token)) {
     } else {
         // Ativa a conta e apaga o token
         $upd = $pdo->prepare("
-            UPDATE usuarios SET confirmado = 1, token_confirmacao = NULL WHERE id = ?
+            UPDATE usuario SET confirmado = 1, token_confirmacao = NULL WHERE id = ?
         ");
         $upd->execute([$usuario['id']]);
         $mensagem = 'E-mail confirmado com sucesso! Sua conta está ativa.';

@@ -1,9 +1,16 @@
 <?php
     // cadastro.php - Processa o formulário de cadastro
     
+    // Headers de segurança
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: DENY');
+    header('X-XSS-Protection: 1; mode=block');
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+
+    require '../../vendor/autoload.php';
     require '../../src/api/database.php';
-    require '../../test_email_bismark/mailer.php';
-    require 'valida_senha.php'; 
+    require '../../src/api/mailer.php';
+    require '../../src/api/valida_senha.php'; 
 
     // Responde requisições AJAX em JSON
     $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
@@ -27,7 +34,7 @@
         } elseif ($resultadoSenha !== true) { 
             $resposta = ['ok' => false, 'msg' => $resultadoSenha];
         } else {
-            $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
+            $stmt = $pdo->prepare("SELECT id FROM usuario WHERE email = ?");
             $stmt->execute([$email]);
 
             if ($stmt->fetch()) {
@@ -37,7 +44,7 @@
                 $hash  = password_hash($senha, PASSWORD_DEFAULT);
 
                 $stmt = $pdo->prepare("
-                    INSERT INTO usuarios (nome, email, senha, token_confirmacao)
+                    INSERT INTO usuario (nome, email, senha_hash, token_confirmacao)
                     VALUES (?, ?, ?, ?)
                 ");
                 $stmt->execute([$nome, $email, $hash, $token]);
@@ -239,8 +246,9 @@
                 const json = await res.json();
 
                 if (json.ok) {
-                    mostrarMsg(json.msg, 'sucesso');
-                    form.reset();
+                    // mostrarMsg(json.msg, 'sucesso');
+                    // form.reset();
+                    window.location.href = 'index.php'; // Redirecionar para a página home
                 } else {
                     mostrarMsg(json.msg, 'erro');
                 }

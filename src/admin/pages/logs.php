@@ -1,6 +1,12 @@
 <?php
 session_start();
 
+// Headers de segurança
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('X-XSS-Protection: 1; mode=block');
+header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+
 // ==========================
 // PROTEÇÃO DE ACESSO
 // ==========================
@@ -24,49 +30,37 @@ if (empty($_SESSION['csrf_token'])) {
 }
 
 // ==========================
-// DADOS DO BANCO
+// CONEXÃO BANCO
 // ==========================
-// TODO: Implementar queries no banco de dados
-// $logs = obter_logs_banco(limite: 1000);
+require '../../api/database.php';
 
-$logs = [];
+// ==========================
+// QUERY LOGS (simulado com usuários criados)
+// ==========================
+try {
+    $stmt = $pdo->prepare("SELECT id_usuario as id, email as usuario, 'cadastro' as acao, 'info' as nivel, data_criacao as data FROM usuario ORDER BY data_criacao DESC LIMIT 100");
+    $stmt->execute();
+    $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+} catch (PDOException $e) {
+    $logs = [];
+}
 
 // ==========================
 // FILTROS
 // ==========================
 $busca = $_GET['busca'] ?? "";
 $nivel = $_GET['nivel'] ?? "";
-$periodo = $_GET['periodo'] ?? "";
 
-// função filtro
-$logs_filtrados = array_filter($logs, function($log) use ($busca, $nivel, $periodo) {
-
+// Filtrar
+$logs_filtrados = array_filter($logs, function($log) use ($busca, $nivel) {
     $matchBusca = empty($busca) || 
         stripos($log['usuario'], $busca) !== false || 
         stripos($log['acao'], $busca) !== false;
-
+    
     $matchNivel = empty($nivel) || $log['nivel'] === strtolower($nivel);
-
-    $matchPeriodo = true;
-
-    if ($periodo) {
-        $dataLog = strtotime($log['data']);
-        $agora = time();
-
-        switch ($periodo) {
-            case "24h":
-                $matchPeriodo = ($agora - $dataLog) <= 86400;
-                break;
-            case "7d":
-                $matchPeriodo = ($agora - $dataLog) <= 604800;
-                break;
-            case "30d":
-                $matchPeriodo = ($agora - $dataLog) <= 2592000;
-                break;
-        }
-    }
-
-    return $matchBusca && $matchNivel && $matchPeriodo;
+    
+    return $matchBusca && $matchNivel;
 });
 
 // ==========================
@@ -80,18 +74,6 @@ function badgeClass($nivel) {
         default => "info"
     };
 }
-
-// ==========================
-// RESPOSTA JSON PARA AJAX
-// ==========================
-if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
-    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-
-    header('Content-Type: application/json');
-    echo json_encode(array_values($logs_filtrados));
-    exit();
-}
-
 ?>
 
 <!DOCTYPE html>
@@ -124,71 +106,51 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
 <!-- FILTROS -->
 <form method="GET" class="filters">
     <input type="text" name="busca" placeholder="Buscar..." value="<?= htmlspecialchars($busca) ?>">
-
     <select name="nivel">
         <option value="">Todos os níveis</option>
         <option value="info">Info</option>
         <option value="alerta">Alerta</option>
         <option value="critico">Crítico</option>
     </select>
-
-    <select name="periodo">
-        <option value="">Período</option>
-        <option value="24h">Últimas 24h</option>
-        <option value="7d">Últimos 7 dias</option>
-        <option value="30d">Último mês</option>
-    </select>
-
     <button type="submit">Filtrar</button>
 </form>
 
 <!-- TABELA -->
 <section class="table-box">
-
-<table>
-<thead>
-<tr>
-    <th>Data/Hora</th>
-    <th>Usuário</th>
-    <th>Ação</th>
-    <th>IP</th>
-    <th>Nível</th>
-</tr>
-</thead>
-
-<tbody>
-
-<?php if (empty($logs_filtrados)): ?>
-<tr>
-    <td colspan="5">Nenhum log encontrado</td>
-</tr>
-<?php endif; ?>
-
-<?php foreach ($logs_filtrados as $log): ?>
-<tr>
-    <td><?= htmlspecialchars($log['data']) ?></td>
-    <td><?= htmlspecialchars($log['usuario']) ?></td>
-    <td><?= htmlspecialchars($log['acao']) ?></td>
-    <td><?= htmlspecialchars($log['ip']) ?></td>
-    <td>
-        <span class="badge <?= badgeClass($log['nivel']) ?>">
-            <?= strtoupper($log['nivel']) ?>
-        </span>
-    </td>
-</tr>
-<?php endforeach; ?>
-
-</tbody>
-</table>
-
+    <table>
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Usuário</th>
+                <th>Ação</th>
+                <th>Nível</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if(empty($logs_filtrados)): ?>
+                <tr><td colspan="4">Nenhum log encontrado</td></tr>
+            <?php endif; ?>
+            <?php foreach($logs_filtrados as $log): ?>
+                <tr>
+                    <td><?= htmlspecialchars($log['data']) ?></td>
+                    <td><?= htmlspecialchars($log['usuario']) ?></td>
+                    <td><?= htmlspecialchars($log['acao']) ?></td>
+                    <td>
+                        <span class="badge <?= badgeClass($log['nivel']) ?>">
+                            <?= strtoupper($log['nivel']) ?>
+                        </span>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
 </section>
-
 </main>
 
 <footer>
 <p>© 2026 Cruz Azul</p>
 </footer>
-<script src="../js/logs.js"></script>
+<script src="../assets/js/logs.js"></script>
 
-</body>assets/
+</body>
 </html>

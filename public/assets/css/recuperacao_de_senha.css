@@ -12,11 +12,6 @@ body {
     min-height: 100vh;
 }
 
-header {
-    background-color: blue;
-    border: 2px solid darkblue;
-    color: white;
-    text-align: center;
     width: 90%;
     max-width: 900px;
     padding: 10px;
@@ -107,5 +102,26 @@ a:hover {
     .botoes button {
         width: 100px;
         height: 35px;
+    }
+}
+
+@media (max-width: 768px) {
+    header {
+        width: 95%;
+        padding: 8px;
+    }
+
+    .container {
+        max-width: 90%;
+        margin: 20px 10px;
+    }
+
+    .input {
+        font-size: 14px;
+    }
+
+    .botoes button {
+        width: 110px;
+        height: 38px;
     }
 }
