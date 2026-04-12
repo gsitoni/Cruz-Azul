@@ -2,7 +2,7 @@
     // cadastro.php - Processa o formulário de cadastro
     
     require '../../src/api/database.php';
-    require '../../test_email_bismark/mailer.php';
+    require '../../src/api/mailer.php';
     require 'valida_senha.php'; 
 
     // Responde requisições AJAX em JSON
@@ -64,107 +64,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Cadastro de Usuário</title>
-        <style>
-            * { box-sizing: border-box; }
-
-            body {
-                font-family: Arial, sans-serif;
-                background-color: #f4f6f8;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 100vh;
-                margin: 0;
-            }
-
-            .container {
-                background: #fff;
-                padding: 30px 25px;
-                border-radius: 10px;
-                width: 360px;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            }
-
-            h2 { text-align: center; margin-bottom: 20px; }
-
-            label {
-                display: block;
-                margin-top: 12px;
-                font-weight: bold;
-                font-size: 14px;
-            }
-
-            input {
-                width: 100%;
-                padding: 9px 10px;
-                margin-top: 5px;
-                border-radius: 5px;
-                border: 1px solid #ccc;
-                font-size: 14px;
-                transition: border-color .2s;
-            }
-
-            input:focus { outline: none; border-color: #007BFF; }
-
-            /* Estilo do HUD/Checkbox LGPD */
-            .lgpd-box {
-                margin-top: 15px;
-                display: flex;
-                align-items: flex-start;
-                gap: 8px;
-            }
-            .lgpd-box input { width: auto; margin-top: 3px; }
-            .lgpd-box label { margin-top: 0; font-weight: normal; font-size: 12px; }
-
-            button {
-                margin-top: 18px;
-                width: 100%;
-                padding: 11px;
-                background-color: #007BFF;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 15px;
-                transition: background .2s;
-            }
-
-            button:hover:not(:disabled) { background-color: #0056b3; }
-            button:disabled { opacity: .6; cursor: not-allowed; }
-
-            .msg {
-                margin-top: 14px;
-                padding: 10px 12px;
-                border-radius: 5px;
-                font-size: 13px;
-                display: none;
-            }
-
-            .msg.erro    { background: #fdecea; color: #c0392b; display: block; }
-            .msg.sucesso { background: #eafaf1; color: #1e7e34; display: block; }
-
-            /* RESPONSIVIDADE */
-            @media (max-width: 480px) {
-                .container {
-                    width: 90%;
-                    padding: 20px 15px;
-                }
-
-                h2 {
-                    font-size: 1.5em;
-                }
-
-                input {
-                    padding: 8px;
-                    font-size: 16px; /* Previne zoom no iOS */
-                }
-
-                button {
-                    padding: 10px;
-                    font-size: 14px;
-                }
-            }
-        </style>
+        <link rel="stylesheet" href="../assets/css/cadastro.css">
     </head>
     <body>
 

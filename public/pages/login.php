@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  
     } else {
         // Busca usuário no banco pelo e-mail (igual ao cadastro.php usa PDO)
-        $stmt = $pdo->prepare("SELECT id, nome, email, senha, email_confirmado FROM usuarios WHERE email = ?");
+        $stmt = $pdo->prepare("SELECT id, nome, email, senha, confirmado FROM usuarios WHERE email = ?");
         $stmt->execute([$email]);
         $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
  
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Senha errada — mesma mensagem genérica
             $resposta = ['ok' => false, 'msg' => 'E-mail ou senha incorretos.'];
  
-        } elseif (isset($usuario['email_confirmado']) && !$usuario['email_confirmado']) {
+        } elseif (isset($usuario['confirmado']) && !$usuario['confirmado']) {
             // Conta não confirmada (coluna criada pelo cadastro.php via token)
             $resposta = ['ok' => false, 'msg' => 'Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.'];
  
@@ -78,148 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login — Cruz Azul</title>
-    <style>
-        * { box-sizing: border-box; }
- 
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f6f8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-        }
- 
-        .container {
-            background: #fff;
-            padding: 30px 25px;
-            border-radius: 10px;
-            width: 360px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
- 
-        h2 { text-align: center; margin-bottom: 20px; }
- 
-        label {
-            display: block;
-            margin-top: 12px;
-            font-weight: bold;
-            font-size: 14px;
-        }
- 
-        input {
-            width: 100%;
-            padding: 9px 10px;
-            margin-top: 5px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-            transition: border-color .2s;
-        }
- 
-        input:focus { outline: none; border-color: #007BFF; }
- 
-        /* Borda vermelha quando regex falha */
-        input.invalido { border-color: #c0392b; }
- 
-        /* Texto de erro abaixo do campo */
-        .erro-campo {
-            font-size: 12px;
-            color: #c0392b;
-            margin-top: 4px;
-            display: none;
-        }
-        .erro-campo.visivel { display: block; }
- 
-        button {
-            margin-top: 18px;
-            width: 100%;
-            padding: 11px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 15px;
-            transition: background .2s;
-        }
- 
-        button:hover:not(:disabled) { background-color: #0056b3; }
-        button:disabled { opacity: .6; cursor: not-allowed; }
- 
-        /* Mostrar/ocultar senha */
-        .senha-wrap { position: relative; }
-        .btn-olho {
-            position: absolute;
-            right: 10px; top: 50%;
-            transform: translateY(-50%);
-            background: none; border: none;
-            cursor: pointer; font-size: 16px;
-            margin-top: 0; width: auto; padding: 0;
-        }
-        .senha-wrap input { padding-right: 36px; }
- 
-        /* Mensagem geral */
-        .msg {
-            margin-top: 14px;
-            padding: 10px 12px;
-            border-radius: 5px;
-            font-size: 13px;
-            display: none;
-        }
-        .msg.erro    { background: #fdecea; color: #c0392b; display: block; }
-        .msg.sucesso { background: #eafaf1; color: #1e7e34; display: block; }
- 
-        /* Link cadastro */
-        .link-cadastro {
-            text-align: center;
-            margin-top: 16px;
-            font-size: 13px;
-            color: #555;
-        }
-        .link-cadastro a { color: #007BFF; text-decoration: none; }
-        .link-cadastro a:hover { text-decoration: underline; }
- 
-        /* Dica regex */
-        .dica {
-            font-size: 11px;
-            color: #888;
-            margin-top: 3px;
-            font-family: monospace;
-        }
-
-        /* RESPONSIVIDADE */
-        @media (max-width: 480px) {
-            .container {
-                width: 90%;
-                padding: 20px 15px;
-            }
-
-            h2 {
-                font-size: 1.5em;
-            }
-
-            input {
-                padding: 8px;
-                font-size: 16px; /* Previne zoom no iOS */
-            }
-
-            button {
-                padding: 10px;
-                font-size: 14px;
-            }
-
-            .btn-olho {
-                right: 8px;
-                font-size: 14px;
-            }
-
-            .senha-wrap input {
-                padding-right: 32px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/login.css">
 </head>
 <body>
  
@@ -238,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <label for="senha">Senha</label>
         <div class="senha-wrap">
             <input type="password" id="senha" name="senha" placeholder="Mínimo 6 caracteres" required>
-            <button type="button" class="btn-olho" id="btnOlho">👁️</button>
+            <button type="button" class="btn-olho" id="btnOlho">Mostrar</button>
         </div>
         <div class="erro-campo" id="erroSenha">A senha deve ter pelo menos 6 caracteres.</div>
         <!-- <div class="dica">regex: /^.{6,}$/</div> -->
@@ -295,7 +154,7 @@ function limpar(input, erroDiv) {
 btnOlho.addEventListener('click', () => {
     const tipo = campoSenha.type === 'password' ? 'text' : 'password';
     campoSenha.type = tipo;
-    btnOlho.textContent = tipo === 'password' ? '👁️' : '🙈';
+    btnOlho.textContent = tipo === 'password' ? 'Mostrar' : 'Ocultar';
 });
  
 
