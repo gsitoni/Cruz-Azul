@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  
     } else {
         // Busca usuário no banco pelo e-mail (igual ao cadastro.php usa PDO)
-        $stmt = $pdo->prepare("SELECT id_usuario, email, senha_hash, status_cadastro FROM usuario WHERE email = ?");
+        $stmt = $pdo->prepare("SELECT id, nome, email, senha, email_confirmado FROM usuario WHERE email = ?");
         $stmt->execute([$email]);
         $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
  
