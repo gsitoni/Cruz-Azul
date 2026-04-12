@@ -1,4 +1,5 @@
 <?php
+    ob_start();
     // cadastro.php - Processa o formulário de cadastro
     
     // Headers de segurança

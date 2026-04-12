@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Senha errada — mesma mensagem genérica
             $resposta = ['ok' => false, 'msg' => 'E-mail ou senha incorretos.'];
  
-        } elseif ($usuario['status_cadastro'] !== 'confirmado') {
+        } elseif (isset($usuario['status_cadastro']) && !$usuario['status_cadastro']) {
             // Conta não confirmada (coluna criada pelo cadastro.php via token)
             $resposta = ['ok' => false, 'msg' => 'Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.'];
  

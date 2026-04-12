@@ -1,6 +1,8 @@
 <?php
 
-// require "../vendor/autoload.php";
+require __DIR__ . '/../../vendor/phpmailer/PHPMailer-master/src/PHPMailer.php';
+require __DIR__ . '/../../vendor/phpmailer/PHPMailer-master/src/Exception.php';
+require __DIR__ . '/../../vendor/phpmailer/PHPMailer-master/src/SMTP.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -24,7 +26,7 @@ function enviarEmailConfirmacao(string $emailDestino, string $nomeDestino, strin
     
     $mail = criarMailer();
 
-    $link = "http://localhost/site-experiencia-criativa/Cruz-Azul/test_email_bismark/confirmar.php?token=" . urlencode($token);
+    $link = "http://localhost/Cruz-Azul/src/api/confirmar.php" . urlencode($token);
 
     $mail ->addAddress($emailDestino, $nomeDestino);
     $mail->Subject = "Confirmacao";
