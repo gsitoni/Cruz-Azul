@@ -72,7 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Código de verificação</title>
-    <link rel="stylesheet" href="../css/codigo_de_verificacao.css">
+    <link rel="stylesheet" href="../assets/css/codigo_de_verificacao.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700&display=swap');
     </style>

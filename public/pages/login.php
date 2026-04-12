@@ -3,6 +3,12 @@
  //Necessário incluir banco de dados 
  require '../../src/api/database.php'; 
  
+// Headers de segurança
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('X-XSS-Protection: 1; mode=block');
+header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+
 session_start();
  
 // Se já logado, redireciona
@@ -36,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  
     } else {
         // Busca usuário no banco pelo e-mail (igual ao cadastro.php usa PDO)
-        $stmt = $pdo->prepare("SELECT id, nome, email, senha, confirmado FROM usuarios WHERE email = ?");
+        $stmt = $pdo->prepare("SELECT id, nome, email, senha, email_confirmado FROM usuario WHERE email = ?");
         $stmt->execute([$email]);
         $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
  
@@ -62,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $resposta = [
                 'ok'       => true,
                 'msg'      => 'Login realizado! Redirecionando...',
-                'redirect' => 'index.php',
+                'redirect' => './home.php',
             ];
         }
     }

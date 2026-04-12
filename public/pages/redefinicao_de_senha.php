@@ -1,7 +1,7 @@
 <?php
 
 require '../../src/api/database.php';
-require_once '../includes/valida_senha.php';
+require_once '../../src/api/valida_senha.php';
 // ==========================
 // CONFIG COOKIE SEGURO
 // ==========================
@@ -76,7 +76,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
 
             // Atualiza a senha no banco usando prepared statement
-            $stmt = $pdo->prepare("UPDATE usuarios SET senha = ? WHERE email = ?");
+            $stmt = $pdo->prepare("UPDATE usuario SET senha = ? WHERE email = ?");
             $stmt->execute([$senha_hash, $email]);
 
             // limpar sessão
@@ -96,7 +96,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redefinição de senha</title>
-    <link rel="stylesheet" href="../css/redefinicao_de_senha.css">
+    <link rel="stylesheet" href="../assets/css/redefinicao_de_senha.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700&display=swap');

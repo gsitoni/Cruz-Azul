@@ -100,3 +100,24 @@ header {
         height: 35px;
     }
 }
+
+@media (max-width: 768px) {
+    header {
+        width: 95%;
+        padding: 8px;
+    }
+
+    .container {
+        max-width: 90%;
+        margin: 20px 10px;
+    }
+
+    .input {
+        font-size: 14px;
+    }
+
+    .botoes button {
+        width: 110px;
+        height: 38px;
+    }
+}

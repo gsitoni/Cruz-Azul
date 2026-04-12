@@ -1,6 +1,12 @@
 <?php
 session_start();
 
+// Headers de segurança
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('X-XSS-Protection: 1; mode=block');
+header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+
 // ==========================
 // PROTEÇÃO DE ACESSO
 // ==========================
@@ -24,12 +30,40 @@ if (empty($_SESSION['csrf_token'])) {
 }
 
 // ==========================
-// DADOS DO BANCO
+// CONEXÃO BANCO
 // ==========================
-// TODO: Implementar queries no banco de dados
-// $ongs = obter_ongs_pendentes_banco();
+require '../../api/database.php';
 
-$ongs = [];
+// ==========================
+// AÇÕES POST
+// ==========================
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die('CSRF token inválido');
+    }
+    
+    $acao = $_POST['acao'] ?? '';
+    $id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
+    
+    try {
+        if ($acao === 'aprovar' && $id) {
+            $stmt = $pdo->prepare("UPDATE beneficiario SET status_elegibilidade = 'ativo' WHERE id_beneficiario = ?");
+            $stmt->execute([$id]);
+            $_SESSION['msg'] = 'ONG aprovada com sucesso.';
+        } elseif ($acao === 'rejeitar' && $id) {
+            $stmt = $pdo->prepare("UPDATE beneficiario SET status_elegibilidade = 'rejeitado' WHERE id_beneficiario = ?");
+            $stmt->execute([$id]);
+            $_SESSION['msg'] = 'ONG rejeitada com sucesso.';
+        } else {
+            $_SESSION['msg'] = 'Ação inválida ou ONG não encontrada.';
+        }
+    } catch (PDOException $e) {
+        $_SESSION['msg'] = 'Erro ao processar a solicitação.';
+    }
+    
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit();
+}
 
 // ==========================
 // FILTROS
@@ -37,37 +71,35 @@ $ongs = [];
 $busca = $_GET['busca'] ?? "";
 $status = $_GET['status'] ?? "";
 
-// filtrar
-$ongs_filtradas = array_filter($ongs, function($ong) use ($busca, $status) {
-    return
-        (empty($busca) || stripos($ong['nome'], $busca) !== false) &&
-        (empty($status) || $ong['status'] === strtolower($status));
-});
+$msg = $_SESSION['msg'] ?? "";
+unset($_SESSION['msg']);
 
 // ==========================
-// AÇÃO (aprovar/rejeitar)
+// QUERY ONGS
 // ==========================
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        die("CSRF inválido");
+try {
+    $sql = "SELECT id_beneficiario, nome, email, telefone, endereco, status_elegibilidade FROM beneficiario WHERE 1=1";
+    $params = [];
+    
+    if (!empty($busca)) {
+        $sql .= " AND nome LIKE ?";
+        $params[] = "%$busca%";
     }
-
-    $acao = $_POST['acao'] ?? "";
-    $nome = $_POST['nome'] ?? "";
-
-    // TODO: Implementar no banco de dados
-    // UPDATE ongs SET status='aprovado' WHERE nome=?
-    // UPDATE ongs SET status='rejeitado' WHERE nome=?
-
-    $_SESSION['mensagem'] = "Ação '$acao' realizada para $nome";
-
-    header("Location: ongs.php");
-    exit();
+    
+    if (!empty($status)) {
+        $sql .= " AND status_elegibilidade = ?";
+        $params[] = $status;
+    }
+    
+    $sql .= " ORDER BY nome ASC";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $ongs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+} catch (PDOException $e) {
+    $ongs = [];
 }
-
-$mensagem = $_SESSION['mensagem'] ?? "";
-unset($_SESSION['mensagem']);
 ?>
 
 <!DOCTYPE html>
@@ -95,56 +127,66 @@ unset($_SESSION['mensagem']);
 
 <main class="container">
 
-<h2>Solicitações de ONGs</h2>
+<h2>Gerenciamento de ONGs</h2>
 
-<?php if($mensagem): ?>
-<p style="color:green;"><?= htmlspecialchars($mensagem) ?></p>
+<?php if(!empty($msg)): ?>
+    <p style="color:green;"><?= htmlspecialchars($msg) ?></p>
 <?php endif; ?>
 
 <!-- FILTROS -->
 <form method="GET" class="filters">
     <input type="text" name="busca" placeholder="Buscar ONG..." value="<?= htmlspecialchars($busca) ?>">
-
     <select name="status">
         <option value="">Status</option>
         <option value="pendente">Pendente</option>
-        <option value="aprovado">Aprovado</option>
+        <option value="ativo">Ativo</option>
         <option value="rejeitado">Rejeitado</option>
     </select>
-
     <button type="submit">Filtrar</button>
 </form>
 
-<!-- LISTA -->
-<section class="ongs-list">
-
-<?php foreach($ongs_filtradas as $ong): ?>
-
-<div class="ong-card">
-
-<div class="ong-info">
-    <h3><?= htmlspecialchars($ong['nome']) ?></h3>
-    <p><strong>Email:</strong> <?= htmlspecialchars($ong['email']) ?></p>
-    <p><strong>CNPJ:</strong> <?= htmlspecialchars($ong['cnpj']) ?></p>
-    <p><?= htmlspecialchars($ong['descricao']) ?></p>
-</div>
-
-<div class="ong-actions">
-    <span class="badge"><?= strtoupper($ong['status']) ?></span>
-
-    <form method="POST">
-        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-        <input type="hidden" name="nome" value="<?= htmlspecialchars($ong['nome']) ?>">
-
-        <button name="acao" value="aprovar">Aprovar</button>
-        <button name="acao" value="rejeitar">Rejeitar</button>
-    </form>
-</div>
-
-</div>
-
-<?php endforeach; ?>
-
+<!-- TABELA -->
+<section class="table-box">
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Telefone</th>
+                <th>Endereço</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if(empty($ongs)): ?>
+                <tr><td colspan="6">Nenhuma ONG encontrada</td></tr>
+            <?php endif; ?>
+            <?php foreach($ongs as $ong): ?>
+                <tr>
+                    <td><?= htmlspecialchars($ong['nome']) ?></td>
+                    <td><?= htmlspecialchars($ong['email']) ?></td>
+                    <td><?= htmlspecialchars($ong['telefone']) ?></td>
+                    <td><?= htmlspecialchars($ong['endereco']) ?></td>
+                    <td>
+                        <span class="badge <?= $ong['status_elegibilidade'] === 'ativo' ? 'aprovado' : ($ong['status_elegibilidade'] === 'pendente' ? 'pendente' : 'rejeitado') ?>">
+                            <?= strtoupper($ong['status_elegibilidade']) ?>
+                        </span>
+                    </td>
+                    <td>
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                            <input type="hidden" name="id" value="<?= $ong['id_beneficiario'] ?>">
+                            <?php if($ong['status_elegibilidade'] === 'pendente'): ?>
+                                <button class="btn-aprovar" name="acao" value="aprovar">Aprovar</button>
+                                <button class="btn-rejeitar" name="acao" value="rejeitar">Rejeitar</button>
+                            <?php endif; ?>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
 </section>
 
 </main>
