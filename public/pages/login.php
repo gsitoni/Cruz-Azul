@@ -13,7 +13,7 @@ session_start();
  
 // Se já logado, redireciona
 if (isset($_SESSION['usuario'])) {
-    header('Location: ./home.php');
+    header('Location: ./home_usuario.php');
     exit;
 }
  
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $resposta = [
                 'ok'       => true,
                 'msg'      => 'Login realizado! Redirecionando...',
-                'redirect' => './home.php',
+                'redirect' => './home_usuario.php',
             ];
         }
     }
