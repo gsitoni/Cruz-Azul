@@ -26,7 +26,7 @@ function enviarEmailConfirmacao(string $emailDestino, string $nomeDestino, strin
     
     $mail = criarMailer();
 
-    $link = "http://localhost/Cruz-Azul/src/api/confirmar.php" . urlencode($token);
+    $link = "http://localhost/Cruz-Azul/src/api/confirmar.php?token=" . urlencode($token);
 
     $mail ->addAddress($emailDestino, $nomeDestino);
     $mail->Subject = "Confirmacao";
