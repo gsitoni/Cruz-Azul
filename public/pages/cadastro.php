@@ -34,7 +34,7 @@
         } elseif ($resultadoSenha !== true) { 
             $resposta = ['ok' => false, 'msg' => $resultadoSenha];
         } else {
-            $stmt = $pdo->prepare("SELECT id FROM usuario WHERE email = ?");
+            $stmt = $pdo->prepare("SELECT id_usuario FROM usuario WHERE email = ?");
             $stmt->execute([$email]);
 
             if ($stmt->fetch()) {
