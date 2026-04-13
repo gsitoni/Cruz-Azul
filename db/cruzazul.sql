@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.0
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Tempo de geração: 11/04/2026 às 16:08
--- Versão do servidor: 10.4.32-MariaDB
--- Versão do PHP: 8.2.12
+-- Host: 127.0.0.1:3307
+-- Tempo de geração: 14-Abr-2026 às 00:22
+-- Versão do servidor: 10.4.24-MariaDB
+-- versão do PHP: 8.1.6
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -45,16 +45,16 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
--- Estrutura para tabela `beneficiario`
+-- Estrutura da tabela `beneficiario`
 --
 
 CREATE TABLE `beneficiario` (
   `id_beneficiario` int(10) UNSIGNED NOT NULL,
-  `nome_receptor` varchar(300) NOT NULL,
-  `cnpj` char(18) NOT NULL,
-  `localizacao` varchar(50) NOT NULL,
-  `classificacao_risco` enum('emergencia','continuo','pontual','baixa_prioridade') NOT NULL,
-  `status_elegibilidade` enum('ativo','suspenso','inativo') NOT NULL DEFAULT 'ativo',
+  `nome_receptor` varchar(300) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cnpj` char(18) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `localizacao` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `classificacao_risco` enum('emergencia','continuo','pontual','baixa_prioridade') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status_elegibilidade` enum('ativo','suspenso','inativo') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ativo',
   `data_atualizacao` datetime NOT NULL DEFAULT current_timestamp(),
   `criado_em` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -62,7 +62,7 @@ CREATE TABLE `beneficiario` (
 -- --------------------------------------------------------
 
 --
--- Estrutura para tabela `distribuicao`
+-- Estrutura da tabela `distribuicao`
 --
 
 CREATE TABLE `distribuicao` (
@@ -74,7 +74,7 @@ CREATE TABLE `distribuicao` (
   `data_hora` datetime NOT NULL DEFAULT current_timestamp(),
   `comprovante_url` text NOT NULL,
   `criado_em` datetime NOT NULL DEFAULT current_timestamp()
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Acionadores `distribuicao`
@@ -130,7 +130,7 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
--- Estrutura para tabela `doacao`
+-- Estrutura da tabela `doacao`
 --
 
 CREATE TABLE `doacao` (
@@ -143,8 +143,9 @@ CREATE TABLE `doacao` (
   `data_validade` date DEFAULT NULL,
   `estado_conservacao` enum('novo','usado','desgastado') DEFAULT NULL,
   `data_doacao` date NOT NULL,
-  `criado_em` datetime NOT NULL DEFAULT current_timestamp()
-) ;
+  `criado_em` datetime NOT NULL DEFAULT current_timestamp(),
+  `STATUS` varchar(20) DEFAULT 'pendente'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Acionadores `doacao`
@@ -210,23 +211,23 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
--- Estrutura para tabela `doador`
+-- Estrutura da tabela `doador`
 --
 
 CREATE TABLE `doador` (
   `id_doador` int(10) UNSIGNED NOT NULL,
-  `cpf_cnpj` varchar(18) NOT NULL,
-  `nome` varchar(200) NOT NULL,
+  `cpf_cnpj` varchar(18) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `nome` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
   `data_nascimento` date DEFAULT NULL,
-  `telefone` varchar(20) NOT NULL,
-  `email` varchar(254) NOT NULL,
+  `telefone` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(254) COLLATE utf8mb4_unicode_ci NOT NULL,
   `criado_em` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
 --
--- Estrutura para tabela `estoque`
+-- Estrutura da tabela `estoque`
 --
 
 CREATE TABLE `estoque` (
@@ -240,42 +241,42 @@ CREATE TABLE `estoque` (
   `status_operacional` enum('disponivel','quarentena','avariado','vencido','esgotado') NOT NULL DEFAULT 'disponivel',
   `criado_em` datetime NOT NULL DEFAULT current_timestamp(),
   `atualizado_em` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
 --
--- Estrutura para tabela `usuario`
+-- Estrutura da tabela `usuario`
 --
 
 CREATE TABLE `usuario` (
   `id_usuario` int(10) UNSIGNED NOT NULL,
-  `email` varchar(254) NOT NULL,
-  `senha_hash` text NOT NULL,
-  `status_cadastro` enum('pendente','confirmado','bloqueado') NOT NULL DEFAULT 'pendente',
-  `token_confirmacao` varchar(255) DEFAULT NULL,
-  `token_recuperacao` varchar(255) DEFAULT NULL,
+  `email` varchar(254) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `senha_hash` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status_cadastro` enum('pendente','confirmado','bloqueado') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pendente',
+  `token_confirmacao` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `token_recuperacao` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `token_expira_em` datetime DEFAULT NULL,
-  `chave_2fa` varchar(64) DEFAULT NULL,
+  `chave_2fa` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `data_criacao` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
 --
--- Estrutura para tabela `voluntario`
+-- Estrutura da tabela `voluntario`
 --
 
 CREATE TABLE `voluntario` (
   `id_voluntario` int(10) UNSIGNED NOT NULL,
-  `nome` varchar(200) NOT NULL,
-  `cpf` char(14) NOT NULL,
-  `telefone` varchar(20) NOT NULL,
-  `email` varchar(254) NOT NULL,
-  `funcao` enum('recepcionista','motorista','almoxarife','assistente_social','coordenador') NOT NULL,
-  `disponibilidade` enum('dias_uteis','fins_de_semana','ambos') NOT NULL,
+  `nome` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cpf` char(14) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `telefone` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(254) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `funcao` enum('recepcionista','motorista','almoxarife','assistente_social','coordenador') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `disponibilidade` enum('dias_uteis','fins_de_semana','ambos') COLLATE utf8mb4_unicode_ci NOT NULL,
   `data_entrada` date NOT NULL,
-  `status_operacional` enum('ativo','inativo','suspenso') NOT NULL DEFAULT 'ativo',
+  `status_operacional` enum('ativo','inativo','suspenso') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ativo',
   `criado_em` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -304,7 +305,7 @@ DELIMITER ;
 --
 
 --
--- Índices de tabela `beneficiario`
+-- Índices para tabela `beneficiario`
 --
 ALTER TABLE `beneficiario`
   ADD PRIMARY KEY (`id_beneficiario`),
@@ -312,7 +313,7 @@ ALTER TABLE `beneficiario`
   ADD KEY `idx_beneficiario_status` (`status_elegibilidade`);
 
 --
--- Índices de tabela `distribuicao`
+-- Índices para tabela `distribuicao`
 --
 ALTER TABLE `distribuicao`
   ADD PRIMARY KEY (`id_operacao`),
@@ -321,14 +322,14 @@ ALTER TABLE `distribuicao`
   ADD KEY `idx_distribuicao_vol` (`id_voluntario`);
 
 --
--- Índices de tabela `doacao`
+-- Índices para tabela `doacao`
 --
 ALTER TABLE `doacao`
   ADD PRIMARY KEY (`id_doacao`),
   ADD KEY `idx_doacao_doador` (`id_doador`);
 
 --
--- Índices de tabela `doador`
+-- Índices para tabela `doador`
 --
 ALTER TABLE `doador`
   ADD PRIMARY KEY (`id_doador`),
@@ -337,7 +338,7 @@ ALTER TABLE `doador`
   ADD UNIQUE KEY `uq_doador_email` (`email`);
 
 --
--- Índices de tabela `estoque`
+-- Índices para tabela `estoque`
 --
 ALTER TABLE `estoque`
   ADD PRIMARY KEY (`id_lote`),
@@ -347,14 +348,14 @@ ALTER TABLE `estoque`
   ADD KEY `idx_estoque_validade` (`data_validade`);
 
 --
--- Índices de tabela `usuario`
+-- Índices para tabela `usuario`
 --
 ALTER TABLE `usuario`
   ADD PRIMARY KEY (`id_usuario`),
   ADD UNIQUE KEY `uq_usuario_email` (`email`);
 
 --
--- Índices de tabela `voluntario`
+-- Índices para tabela `voluntario`
 --
 ALTER TABLE `voluntario`
   ADD PRIMARY KEY (`id_voluntario`),
@@ -364,7 +365,7 @@ ALTER TABLE `voluntario`
   ADD KEY `idx_voluntario_status` (`status_operacional`);
 
 --
--- AUTO_INCREMENT para tabelas despejadas
+-- AUTO_INCREMENT de tabelas despejadas
 --
 
 --
@@ -410,11 +411,11 @@ ALTER TABLE `voluntario`
   MODIFY `id_voluntario` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- Restrições para tabelas despejadas
+-- Restrições para despejos de tabelas
 --
 
 --
--- Restrições para tabelas `distribuicao`
+-- Limitadores para a tabela `distribuicao`
 --
 ALTER TABLE `distribuicao`
   ADD CONSTRAINT `fk_dist_beneficiario` FOREIGN KEY (`id_beneficiario`) REFERENCES `beneficiario` (`id_beneficiario`),
@@ -422,13 +423,13 @@ ALTER TABLE `distribuicao`
   ADD CONSTRAINT `fk_dist_voluntario` FOREIGN KEY (`id_voluntario`) REFERENCES `voluntario` (`id_voluntario`);
 
 --
--- Restrições para tabelas `doacao`
+-- Limitadores para a tabela `doacao`
 --
 ALTER TABLE `doacao`
   ADD CONSTRAINT `fk_doacao_doador` FOREIGN KEY (`id_doador`) REFERENCES `doador` (`id_doador`);
 
 --
--- Restrições para tabelas `estoque`
+-- Limitadores para a tabela `estoque`
 --
 ALTER TABLE `estoque`
   ADD CONSTRAINT `fk_estoque_doacao` FOREIGN KEY (`id_doacao`) REFERENCES `doacao` (`id_doacao`);
