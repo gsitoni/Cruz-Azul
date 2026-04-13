@@ -7,7 +7,7 @@ require '../../src/api/database.php';
 $REGEX_EMAIL = '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/';
 $REGEX_SENHA = '/^.{6,}$/';
 $REGEX_CNPJ  = '/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/';
-$REGEX_TEL   = '/^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/';
+//$REGEX_TEL   = '/^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/';
 $REGEX_CEP   = '/^\d{5}-?\d{3}$/';
 
 // processa o formulário quando enviado
@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome      = trim($_POST['nome']      ?? '');
     $cnpj      = trim($_POST['cnpj']      ?? '');
     $email     = trim($_POST['email']     ?? '');
-    $telefone  = trim($_POST['telefone']  ?? '');
+   // $telefone  = trim($_POST['telefone']  ?? '');
     $cep       = trim($_POST['cep']       ?? '');
     $endereco  = trim($_POST['endereco']  ?? '');
     $cidade    = trim($_POST['cidade']    ?? '');
@@ -36,10 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!preg_match($REGEX_EMAIL, $email)) {
         $r = ['ok' => false, 'campo' => 'email', 'msg' => 'E-mail inválido.'];
 
-    } elseif (!preg_match($REGEX_TEL, $telefone)) {
-        $r = ['ok' => false, 'campo' => 'telefone', 'msg' => 'Telefone inválido. Ex: (41) 99999-1234'];
-
-    } elseif (!preg_match($REGEX_CEP, $cep)) {
+    }
+    //elseif (!preg_match($REGEX_TEL, $telefone)) {
+    //    $r = ['ok' => false, 'campo' => 'telefone', 'msg' => 'Telefone inválido. Ex: (41) 99999-1234'];
+    //} 
+    elseif (!preg_match($REGEX_CEP, $cep)) {
         $r = ['ok' => false, 'campo' => 'cep', 'msg' => 'CEP inválido. Ex: 80000-000'];
 
     } elseif (empty($endereco)) {
@@ -63,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // verifica se o e-mail ou CNPJ já existe no banco
         $cnpj_limpo = preg_replace('/\D/', '', $cnpj);
-        $stmt = $pdo->prepare("SELECT id FROM ongs WHERE email = ? OR cnpj = ?");
+        $stmt = $pdo->prepare("SELECT id_beneficiario FROM beneficiario WHERE email = ? OR cnpj = ?");
         $stmt->execute([$email, $cnpj_limpo]);
 
         if ($stmt->fetch()) {
@@ -75,21 +76,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $token = bin2hex(random_bytes(16));
             $cep_limpo = preg_replace('/\D/', '', $cep);
 
-            $stmt = $pdo->prepare("
-                INSERT INTO ongs
-                    (nome, cnpj, email, telefone, cep, endereco, cidade,
-                     estado, area_atuacao, descricao, senha, token_confirmacao, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')
-            ");
-            $stmt->execute([
-                $nome, $cnpj_limpo, $email, $telefone, $cep_limpo,
-                $endereco, $cidade, $estado, $area, $descricao, $hash, $token
-            ]);
+            try {
+                $stmt = $pdo->prepare("
+                    INSERT INTO beneficiario
+                        (nome_receptor, cnpj, email, localizacao, endereco, cidade,
+                         sigla_estado, area_atuacao, descricao, senha_hash, token_confirmacao, status_elegibilidade)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')
+                ");
+                
+                $stmt->execute([
+                    $nome, $cnpj_limpo, $email, $cep_limpo,
+                    $endereco, $cidade, $estado, $area, $descricao, $hash, $token
+                ]);
 
-            $r = [
-                'ok'  => true,
-                'msg' => "ONG <strong>$nome</strong> cadastrada! Aguarde a validação do administrador."
-            ];
+                $r = [
+                    'ok'  => true,
+                    'msg' => "ONG <strong>$nome</strong> cadastrada com sucesso!"
+                ];
+            } catch (PDOException $e) {
+                // Intercepta e expõe o erro exato do banco de dados
+                $r = [
+                    'ok'  => false,
+                    'msg' => "FALHA SQL: " . $e->getMessage()
+                ];
+            }
         }
     }
 
@@ -249,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     var REGEX_EMAIL = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
     var REGEX_SENHA = /^.{6,}$/;
     var REGEX_CNPJ  = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/;
-    var REGEX_TEL   = /^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/;
+//  var REGEX_TEL   = /^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/;
     var REGEX_CEP   = /^\d{5}-?\d{3}$/;
 
     // ── máscara automática do CNPJ ──
@@ -297,7 +307,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // limpa erros enquanto o usuário digita
-    var campos = ['nome','cnpj','email','telefone','cep','endereco','cidade','senha','senha2'];
+//  var campos = ['nome','cnpj','email','telefone','cep','endereco','cidade','senha','senha2'];
+    var campos = ['nome','cnpj','email','cep','endereco','cidade','senha','senha2'];
     campos.forEach(function(id) {
         var el = document.getElementById(id);
         if (el) {
@@ -330,10 +341,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             tudo_ok = false;
         }
 
-        if (!REGEX_TEL.test(document.getElementById('telefone').value.trim())) {
-            mostrarErro('telefone', 'erroTelefone', 'Telefone inválido. Ex: (41) 99999-1234');
-            tudo_ok = false;
-        }
+        //if (!REGEX_TEL.test(document.getElementById('telefone').value.trim())) {
+        //  mostrarErro('telefone', 'erroTelefone', 'Telefone inválido. Ex: (41) 99999-1234');
+        //  tudo_ok = false;
+        //}
 
         if (!REGEX_CEP.test(document.getElementById('cep').value.trim())) {
             mostrarErro('cep', 'erroCep', 'CEP inválido. Ex: 80000-000');
