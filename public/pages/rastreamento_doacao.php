@@ -19,21 +19,29 @@ require '../../src/api/database.php';
 
 try {
     // Buscar doação do usuário
-    $stmt = $pdo->prepare("SELECT d.id_doacao, d.tipo_doacao, d.valor_estimado, d.status_doacao, d.data_criacao, b.nome as destino 
+    $stmt = $pdo->prepare("SELECT d.id_doacao, d.categoria, d.item, d.quantidade, d.unidade_medida, d.data_doacao, 
+                          CASE WHEN dist.id_operacao IS NOT NULL THEN 'entregue'
+                               WHEN e.id_lote IS NOT NULL THEN 'andamento'
+                               ELSE 'pendente' END AS status_doacao,
+                          b.nome_receptor as destino
                           FROM doacao d 
-                          LEFT JOIN beneficiario b ON d.id_beneficiario = b.id_beneficiario 
-                          WHERE d.id_doacao = ? AND d.id_usuario = ?");
-    $stmt->execute([$doacaoId, $usuario['id']]);
+                          INNER JOIN doador dr ON dr.id_doador = d.id_doador
+                          LEFT JOIN estoque e ON e.id_doacao = d.id_doacao
+                          LEFT JOIN distribuicao dist ON dist.id_lote = e.id_lote
+                          LEFT JOIN beneficiario b ON b.id_beneficiario = dist.id_beneficiario
+                          WHERE d.id_doacao = ? AND dr.email = ?");
+    $stmt->execute([$doacaoId, $usuario['email']]);
     $doacao_db = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($doacao_db) {
         $doacao = [
             'id' => $doacao_db['id_doacao'],
-            'tipo' => $doacao_db['tipo_doacao'] ?: 'Alimentos e Remédios',
-            'valor' => 'R$ ' . number_format($doacao_db['valor_estimado'] ?: 250, 2, ',', '.'),
-            'destino' => $doacao_db['destino'] ?: 'Casa de Apoio Cruz Azul',
+            'tipo' => $doacao_db['categoria'] ?: 'Alimentos',
+            'item' => $doacao_db['item'],
+            'quantidade' => number_format($doacao_db['quantidade'], 2, ',', '.') . ' ' . $doacao_db['unidade_medida'],
+            'destino' => $doacao_db['destino'] ?: 'Aguardando distribuição',
             'previsao' => '48 horas',
-            'status' => $doacao_db['status_doacao'] ?: 'Em transporte',
+            'status' => $doacao_db['status_doacao'] ?: 'pendente',
         ];
     } else {
         $doacao = [

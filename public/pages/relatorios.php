@@ -106,7 +106,7 @@ $relatorio = [
 <body>
 
 <nav>
-    <span class="logo">🤝 Cruz Azul</span>
+    <a href="home_ong.php" class="logo" style="text-decoration:none;color:#fff;">🤝 Cruz Azul</a>
     <div>
         <a href="home_ong.php">Início</a>
         <a href="doacoes_recebidas.php">Doações</a>
@@ -114,6 +114,14 @@ $relatorio = [
         <a href="perfil_ong.php">Perfil</a>
         <a href="logout.php">Sair</a>
     </div>
+</nav>
+
+<nav aria-label="breadcrumb" style="background:#e9ecef;border-bottom:1px solid #dee2e6;padding:8px 20px;font-size:13px;">
+    <ol style="list-style:none;margin:0 auto;padding:0;display:flex;flex-wrap:wrap;align-items:center;max-width:900px;">
+        <li><a href="home_ong.php" style="color:#007BFF;text-decoration:none;">Início</a></li>
+        <li><span style="margin:0 6px;color:#aaa;">›</span></li>
+        <li style="color:#555;">Relatórios</li>
+    </ol>
 </nav>
 
 <div class="conteudo">

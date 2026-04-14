@@ -5,12 +5,41 @@ if (!isset($_SESSION['usuario'])) {
     exit;
 }
 
-$nome    = $_SESSION['usuario']['nome'] ?? $_SESSION['usuario']['email'] ?? 'Usuário';// Extrair primeiro nome
+require '../../src/api/database.php';
+
+$nome = $_SESSION['usuario']['nome'] ?? $_SESSION['usuario']['email'] ?? 'Usuário';
 if (strpos($nome, '@') !== false) {
     $primeiroNome = explode('@', $nome)[0];
 } else {
     $primeiroNome = explode(' ', $nome)[0];
-}$inicial = strtoupper(mb_substr($nome, 0, 1));
+}
+$inicial = strtoupper(mb_substr($nome, 0, 1));
+
+$stmtEmerg = $pdo->query(
+    "SELECT id_beneficiario, nome_receptor, localizacao
+     FROM beneficiario
+     WHERE classificacao_risco = 'emergencia' AND status_elegibilidade = 'ativo'
+     ORDER BY nome_receptor ASC"
+);
+$ongsEmergencia = $stmtEmerg->fetchAll(PDO::FETCH_ASSOC);
+
+$userEmail = $_SESSION['usuario']['email'];
+$stmtDoacoes = $pdo->prepare(
+    "SELECT d.item, d.data_doacao, b.nome_receptor,
+            CASE WHEN dist.id_operacao IS NOT NULL THEN 'entregue'
+                 WHEN e.id_lote IS NOT NULL THEN 'andamento'
+                 ELSE 'pendente' END AS status_doacao
+     FROM doacao d
+     INNER JOIN doador dr ON dr.id_doador = d.id_doador
+     LEFT JOIN estoque e ON e.id_doacao = d.id_doacao
+     LEFT JOIN distribuicao dist ON dist.id_lote = e.id_lote
+     LEFT JOIN beneficiario b ON b.id_beneficiario = dist.id_beneficiario
+     WHERE dr.email = ?
+     ORDER BY d.data_doacao DESC, d.criado_em DESC
+     LIMIT 5"
+);
+$stmtDoacoes->execute([$userEmail]);
+$ultimasDoacoes = $stmtDoacoes->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -23,7 +52,7 @@ if (strpos($nome, '@') !== false) {
 <body>
 
 <nav>
-    <span class="logo">🤝 Cruz Azul</span>
+    <a href="home_usuario.php" class="logo" style="text-decoration:none;color:#fff;">🤝 Cruz Azul</a>
     <div>
         <a href="home_usuario.php">Início</a>
         <a href="doar.php">Fazer doação</a>
@@ -51,7 +80,7 @@ if (strpos($nome, '@') !== false) {
         <a href="servicos_publicos.php" class="card-acao">
             <div class="icone">🏥</div>
             <h3>Serviços Públicos</h3>
-            <p>Encontre hospitais, postos de saúde e alimentação próxima.</p>
+            <p>Encontre hospitais e serviços de emergência próximos.</p>
         </a>
         <a href="ongs.php" class="card-acao">
             <div class="icone">🏢</div>
@@ -77,26 +106,6 @@ if (strpos($nome, '@') !== false) {
             <h3>Hospitais Próximos</h3>
             <p>Encontre unidades de saúde de emergência e atendimento.</p>
         </a>
-        <a href="servicos_publicos.php?categoria=postos_saude" class="card-acao">
-            <div class="icone">⚕️</div>
-            <h3>Postos de Saúde</h3>
-            <p>Unidades básicas de saúde e centros de atendimento.</p>
-        </a>
-        <a href="servicos_publicos.php?categoria=alimentacao" class="card-acao">
-            <div class="icone">🍽️</div>
-            <h3>Alimentação</h3>
-            <p>Bancos de alimentos, cozinhas comunitárias e refeições.</p>
-        </a>
-        <a href="servicos_publicos.php?categoria=abrigos" class="card-acao">
-            <div class="icone">🏠</div>
-            <h3>Abrigos</h3>
-            <p>Locais de acolhimento para pessoas em situação de rua.</p>
-        </a>
-        <a href="servicos_publicos.php?categoria=assistencia_social" class="card-acao">
-            <div class="icone">🤝</div>
-            <h3>Assistência Social</h3>
-            <p>Centros de referência e programas sociais.</p>
-        </a>
         <a href="servicos_publicos.php?categoria=emergencia" class="card-acao">
             <div class="icone">🚨</div>
             <h3>Emergências</h3>
@@ -104,62 +113,54 @@ if (strpos($nome, '@') !== false) {
         </a>
     </div>
 
-    <div class="titulo-secao">ONGs que precisam de ajuda agora</div>
-    <div class="grid-ongs">
-        <div class="card-ong">
-            <h3>Banco de Alimentos PR</h3>
-            <span class="area">Alimentação</span>
-            <p>Distribui alimentos a famílias em insegurança alimentar no Paraná.</p>
-            <div class="cidade">📍 Curitiba, PR</div>
-            <a href="doar.php?ong=1" class="btn-doar">Doar agora</a>
+    <div class="titulo-secao">🚨 ONGs que precisam de ajuda agora</div>
+    <?php if (empty($ongsEmergencia)): ?>
+        <p style="color:#555;font-size:14px;margin-bottom:24px;">Nenhuma ONG em situação de emergência no momento.</p>
+    <?php else: ?>
+        <div class="grid-ongs">
+            <?php foreach ($ongsEmergencia as $ong): ?>
+                <div class="card-ong">
+                    <h3><?= htmlspecialchars($ong['nome_receptor']) ?></h3>
+                    <span class="area" style="display:inline-block;margin-bottom:8px;font-size:12px;background:#fdecea;color:#b71c1c;padding:3px 10px;border-radius:999px;">Emergência</span>
+                    <div class="cidade">📍 <?= htmlspecialchars($ong['localizacao']) ?></div>
+                    <a href="fazer_doacao.php?ong=<?= (int)$ong['id_beneficiario'] ?>" class="btn-doar" style="display:inline-block;margin-top:14px;">Doar agora</a>
+                </div>
+            <?php endforeach; ?>
         </div>
-        <div class="card-ong">
-            <h3>Abrigo Recomeço</h3>
-            <span class="area">Moradia</span>
-            <p>Acolhe vítimas de desastres com abrigo e apoio psicológico.</p>
-            <div class="cidade">📍 São José dos Pinhais, PR</div>
-            <a href="doar.php?ong=2" class="btn-doar">Doar agora</a>
-        </div>
-        <div class="card-ong">
-            <h3>Saúde Solidária</h3>
-            <span class="area">Saúde</span>
-            <p>Leva medicamentos a comunidades sem acesso à saúde pública.</p>
-            <div class="cidade">📍 Curitiba, PR</div>
-            <a href="doar.php?ong=3" class="btn-doar">Doar agora</a>
-        </div>
-    </div>
+    <?php endif; ?>
 
     <div class="titulo-secao">Suas últimas doações</div>
-    <table>
-        <thead>
-            <tr>
-                <th>Item</th>
-                <th>ONG</th>
-                <th>Data</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Alimentos não perecíveis (5kg)</td>
-                <td>Banco de Alimentos PR</td>
-                <td>28/03/2026</td>
-                <td><span class="badge badge-entregue">Entregue</span></td>
-            </tr>
-            <tr>
-                <td>Kit de higiene pessoal</td>
-                <td>Abrigo Recomeço</td>
-                <td>15/03/2026</td>
-                <td><span class="badge badge-andamento">Em andamento</span></td>
-            </tr>
-            <tr>
-                <td>Roupas de inverno (7 peças)</td>
-                <td>Abrigo Recomeço</td>
-                <td>01/03/2026</td>
-                <td><span class="badge badge-entregue">Entregue</span></td>
-            </tr>
-        </tbody>
-    </table>
+    <?php if (empty($ultimasDoacoes)): ?>
+        <p style="color:#555;font-size:14px;margin-bottom:24px;">Nenhuma doação registrada ainda. <a href="ongs.php">Faça sua primeira doação!</a></p>
+    <?php else: ?>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>ONG</th>
+                    <th>Data</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($ultimasDoacoes as $d):
+                    $badgeClass = $d['status_doacao'] === 'entregue' ? 'badge-entregue' : 'badge-andamento';
+                    $badgeLabel = match($d['status_doacao']) {
+                        'entregue'  => 'Entregue',
+                        'andamento' => 'Em andamento',
+                        default     => 'Pendente',
+                    };
+                ?>
+                    <tr>
+                        <td><?= htmlspecialchars($d['item']) ?></td>
+                        <td><?= $d['nome_receptor'] ? htmlspecialchars($d['nome_receptor']) : '<span style="color:#aaa;">—</span>' ?></td>
+                        <td><?= htmlspecialchars(date('d/m/Y', strtotime($d['data_doacao']))) ?></td>
+                        <td><span class="badge <?= $badgeClass ?>"><?= $badgeLabel ?></span></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
 
 </div>
 

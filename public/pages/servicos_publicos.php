@@ -15,150 +15,51 @@ $servicos = [
     'hospitais' => [
         [
             'nome' => 'Hospital do Trabalhador',
-            'endereco' => 'Rua dos Pioneiros, 1234 - Centro',
+            'endereco' => 'Rua Getúlio Vargas, 1.300 - Centro',
             'cidade' => 'Curitiba',
             'estado' => 'PR',
             'telefone' => '(41) 3361-3000',
-            'tipo' => 'Emergência 24h',
-            'distancia' => '2.3 km'
+            'tipo' => 'Emergência 24h - SUS',
+            'distancia' => '1.8 km'
         ],
         [
-            'nome' => 'Hospital das Clínicas (FMUSP)',
-            'endereco' => 'Av. Dr. Enéas Carvalho de Aguiar, 255 - Cerqueira César',
-            'cidade' => 'São Paulo',
-            'estado' => 'SP',
-            'telefone' => '(11) 3069-6000',
-            'tipo' => 'Referência em Saúde',
-            'distancia' => '6.7 km'
-        ],
-        [
-            'nome' => 'Hospital da Mulher Professor Moraes Rego',
-            'endereco' => 'Av. Vasco da Gama, 1.000 - Barra',
-            'cidade' => 'Salvador',
-            'estado' => 'BA',
-            'telefone' => '(71) 3116-8100',
-            'tipo' => 'Especializado em Saúde da Mulher',
-            'distancia' => '4.1 km'
-        ]
-    ],
-    'postos_saude' => [
-        [
-            'nome' => 'UBS Centro',
-            'endereco' => 'Praça Tiradentes, 45 - Centro',
+            'nome' => 'Hospital de Clínicas da UFPR',
+            'endereco' => 'Rua General Carneiro, 181 - Alto da Glória',
             'cidade' => 'Curitiba',
             'estado' => 'PR',
-            'telefone' => '(41) 3321-2346',
-            'tipo' => 'Unidade Básica',
-            'horario' => 'Seg-Sex: 7h-17h',
-            'distancia' => '0.8 km'
+            'telefone' => '(41) 3360-1800',
+            'tipo' => 'Hospital Universitário - 24h',
+            'distancia' => '2.5 km'
         ],
         [
-            'nome' => 'UBS Jardim das Flores',
-            'endereco' => 'Rua das Rosas, 234 - Jardim das Flores',
-            'cidade' => 'Belo Horizonte',
-            'estado' => 'MG',
-            'telefone' => '(31) 3277-1700',
-            'tipo' => 'Unidade Básica',
-            'horario' => 'Seg-Sex: 7h-17h',
-            'distancia' => '2.2 km'
+            'nome' => 'Hospital Nossa Senhora das Graças',
+            'endereco' => 'Rua Alcides Munhoz, 433 - Mercês',
+            'cidade' => 'Curitiba',
+            'estado' => 'PR',
+            'telefone' => '(41) 3212-6000',
+            'tipo' => 'Atendimento Emergencial 24h',
+            'distancia' => '3.2 km'
         ],
         [
-            'nome' => 'CAPS AD III Fortaleza',
-            'endereco' => 'Av. República, 678 - Centro',
-            'cidade' => 'Fortaleza',
-            'estado' => 'CE',
-            'telefone' => '(85) 3451-5100',
-            'tipo' => 'Saúde Mental',
-            'horario' => 'Seg-Sex: 8h-18h',
+            'nome' => 'Hospital Cônego Mariano Roma',
+            'endereco' => 'Rua Uruguai, 155 - Centro',
+            'cidade' => 'Curitiba',
+            'estado' => 'PR',
+            'telefone' => '(41) 3361-2800',
+            'tipo' => 'Emergência e Maternidade',
             'distancia' => '1.5 km'
-        ]
-    ],
-    'alimentacao' => [
+        ],
         [
-            'nome' => 'Banco de Alimentos do Paraná',
-            'endereco' => 'Rua da Cidadania, 1000 - Cidade Industrial',
+            'nome' => 'Hospital Erasto Gaertner',
+            'endereco' => 'Rua Dr. Ovande do Amaral, 201 - Jardim das Américas',
             'cidade' => 'Curitiba',
             'estado' => 'PR',
-            'telefone' => '(41) 3350-8200',
-            'tipo' => 'Distribuição Gratuita',
-            'horario' => 'Seg-Sex: 8h-16h',
-            'distancia' => '5.2 km'
-        ],
-        [
-            'nome' => 'Cozinha Comunitária São Francisco',
-            'endereco' => 'Rua São Francisco, 456 - São Francisco',
-            'cidade' => 'Belo Horizonte',
-            'estado' => 'MG',
-            'telefone' => '(31) 3409-2100',
-            'tipo' => 'Refeições Quentes',
-            'horario' => 'Seg-Sex: 11h-14h',
-            'distancia' => '2.8 km'
-        ],
-        [
-            'nome' => 'Restaurante Popular Manaus',
-            'endereco' => 'Avenida Brasil, 1500 - Centro',
-            'cidade' => 'Manaus',
-            'estado' => 'AM',
-            'telefone' => '(92) 3234-5000',
-            'tipo' => 'Refeições a R$ 1,00',
-            'horario' => 'Seg-Sex: 11h-15h',
-            'distancia' => '1.2 km'
+            'telefone' => '(41) 3361-5000',
+            'tipo' => 'Oncologia e Referência',
+            'distancia' => '4.8 km'
         ]
     ],
-    'abrigos' => [
-        [
-            'nome' => 'Casa de Passagem Vida Nova',
-            'endereco' => 'Rua Itupava, 2100 - Alto da Rua XV',
-            'cidade' => 'Curitiba',
-            'estado' => 'PR',
-            'telefone' => '(41) 3250-8080',
-            'tipo' => 'Acolhimento Social',
-            'capacidade' => '40 pessoas',
-            'distancia' => '4.2 km'
-        ],
-        [
-            'nome' => 'Centro POP Curitiba',
-            'endereco' => 'Rua Visconde do Rio Branco, 1125 - Centro',
-            'cidade' => 'Curitiba',
-            'estado' => 'PR',
-            'telefone' => '(41) 3250-1090',
-            'tipo' => 'Acolhimento Social',
-            'capacidade' => '30 pessoas',
-            'distancia' => '2.1 km'
-        ],
-        [
-            'nome' => 'Casa de Passagem São José',
-            'endereco' => 'Av. Marechal Floriano, 321 - Centro',
-            'cidade' => 'Porto Alegre',
-            'estado' => 'RS',
-            'telefone' => '(51) 3028-2800',
-            'tipo' => 'Acolhimento',
-            'capacidade' => '30 pessoas',
-            'distancia' => '2.1 km'
-        ]
-    ],
-    'assistencia_social' => [
-        [
-            'nome' => 'CRAS Centro Recife',
-            'endereco' => 'Rua Visconde do Rio Branco, 543 - Centro',
-            'cidade' => 'Recife',
-            'estado' => 'PE',
-            'telefone' => '(81) 3237-9230',
-            'tipo' => 'Centro de Referência',
-            'servicos' => 'Cadastro Único, Bolsa Família',
-            'distancia' => '1.0 km'
-        ],
-        [
-            'nome' => 'CREAS Leste Fortaleza',
-            'endereco' => 'Av. Paraná, 876 - Centro',
-            'cidade' => 'Fortaleza',
-            'estado' => 'CE',
-            'telefone' => '(85) 3454-6250',
-            'tipo' => 'Centro Especializado',
-            'servicos' => 'Proteção Social Especial',
-            'distancia' => '2.4 km'
-        ]
-    ],
+    
     'emergencia' => [
         [
             'nome' => 'SAMU',
@@ -190,10 +91,6 @@ $servicos = [
 // Títulos das categorias
 $titulos = [
     'hospitais' => '🏥 Hospitais Próximos',
-    'postos_saude' => '⚕️ Postos de Saúde',
-    'alimentacao' => '🍽️ Serviços de Alimentação',
-    'abrigos' => '🏠 Abrigos e Acolhimento',
-    'assistencia_social' => '🤝 Assistência Social',
     'emergencia' => '🚨 Serviços de Emergência',
     'todos' => '🏥 Todos os Serviços Públicos'
 ];
@@ -209,7 +106,7 @@ $titulos = [
 <body>
 
 <nav>
-    <span class="logo">🤝 Cruz Azul</span>
+    <a href="home_usuario.php" class="logo" style="text-decoration:none;color:#fff;">🤝 Cruz Azul</a>
     <div>
         <a href="home_usuario.php">Início</a>
         <a href="doar.php">Fazer doação</a>
@@ -217,6 +114,14 @@ $titulos = [
         <a href="ongs.php">ONGs</a>
         <a href="logout.php">Sair</a>
     </div>
+</nav>
+
+<nav aria-label="breadcrumb" style="background:#e9ecef;border-bottom:1px solid #dee2e6;padding:8px 20px;font-size:13px;">
+    <ol style="list-style:none;margin:0 auto;padding:0;display:flex;flex-wrap:wrap;align-items:center;max-width:900px;">
+        <li><a href="home_usuario.php" style="color:#007BFF;text-decoration:none;">Início</a></li>
+        <li><span style="margin:0 6px;color:#aaa;">›</span></li>
+        <li style="color:#555;">Serviços Públicos</li>
+    </ol>
 </nav>
 
 <div class="conteudo">
@@ -230,10 +135,6 @@ $titulos = [
         <div class="categorias">
             <button class="categoria-btn <?php echo $categoria === 'todos' ? 'active' : ''; ?>" onclick="filtrarCategoria('todos')">Todos</button>
             <button class="categoria-btn <?php echo $categoria === 'hospitais' ? 'active' : ''; ?>" onclick="filtrarCategoria('hospitais')">🏥 Hospitais</button>
-            <button class="categoria-btn <?php echo $categoria === 'postos_saude' ? 'active' : ''; ?>" onclick="filtrarCategoria('postos_saude')">⚕️ Saúde</button>
-            <button class="categoria-btn <?php echo $categoria === 'alimentacao' ? 'active' : ''; ?>" onclick="filtrarCategoria('alimentacao')">🍽️ Alimentação</button>
-            <button class="categoria-btn <?php echo $categoria === 'abrigos' ? 'active' : ''; ?>" onclick="filtrarCategoria('abrigos')">🏠 Abrigos</button>
-            <button class="categoria-btn <?php echo $categoria === 'assistencia_social' ? 'active' : ''; ?>" onclick="filtrarCategoria('assistencia_social')">🤝 Assistência Social</button>
             <button class="categoria-btn <?php echo $categoria === 'emergencia' ? 'active' : ''; ?>" onclick="filtrarCategoria('emergencia')">🚨 Emergências</button>
         </div>
     </div>

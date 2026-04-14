@@ -5,17 +5,23 @@ if (!isset($_SESSION['usuario'])) {
     exit;
 }
 
-$nome = $_SESSION['usuario']['nome'] ?? $_SESSION['usuario']['email'] ?? 'Usuário';
-// Extrair primeiro nome
-if (strpos($nome, '@') !== false) {
-    $primeiroNome = explode('@', $nome)[0];
-} else {
-    $primeiroNome = explode(' ', $nome)[0];
-}
-$ongs = [
-    1 => ['nome' => 'Banco de Alimentos PR', 'area' => 'Alimentação', 'cidade' => 'Curitiba, PR', 'descricao' => 'Distribui alimentos a famílias em insegurança alimentar no Paraná.'],
-    2 => ['nome' => 'Abrigo Recomeço', 'area' => 'Moradia', 'cidade' => 'São José dos Pinhais, PR', 'descricao' => 'Acolhe vítimas de desastres com abrigo e apoio psicológico.'],
-    3 => ['nome' => 'Saúde Solidária', 'area' => 'Saúde', 'cidade' => 'Curitiba, PR', 'descricao' => 'Leva medicamentos a comunidades sem acesso à saúde pública.'],
+require '../../src/api/database.php';
+
+$primeiroNome = explode('@', $_SESSION['usuario']['email'])[0];
+
+$stmt = $pdo->query(
+    "SELECT id_beneficiario, nome_receptor, localizacao, classificacao_risco
+     FROM beneficiario
+     WHERE status_elegibilidade = 'ativo'
+     ORDER BY nome_receptor ASC"
+);
+$beneficiarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$labels_risco = [
+    'emergencia'       => 'Emergência',
+    'continuo'         => 'Contínuo',
+    'pontual'          => 'Pontual',
+    'baixa_prioridade' => 'Baixa Prioridade',
 ];
 ?>
 <!DOCTYPE html>
@@ -29,7 +35,7 @@ $ongs = [
 <body>
 
 <nav>
-    <span class="logo">🤝 Cruz Azul</span>
+    <a href="home_usuario.php" class="logo" style="text-decoration:none;color:#fff;">🤝 Cruz Azul</a>
     <div>
         <a href="home_usuario.php">Início</a>
         <a href="doar.php">Fazer doação</a>
@@ -40,21 +46,38 @@ $ongs = [
     </div>
 </nav>
 
+<nav aria-label="breadcrumb" style="background:#e9ecef;border-bottom:1px solid #dee2e6;padding:8px 20px;font-size:13px;">
+    <ol style="list-style:none;margin:0 auto;padding:0;display:flex;flex-wrap:wrap;align-items:center;max-width:900px;">
+        <li><a href="home_usuario.php" style="color:#007BFF;text-decoration:none;">Início</a></li>
+        <li><span style="margin:0 6px;color:#aaa;">›</span></li>
+        <li style="color:#555;">ONGs</li>
+    </ol>
+</nav>
+
 <div class="conteudo">
     <div class="titulo-secao">ONGs Cadastradas</div>
     <p>Olá, <?= htmlspecialchars($primeiroNome) ?>! 👋 Conheça as ONGs que você pode ajudar.</p>
-    
-    <div class="grid-ongs">
-        <?php foreach ($ongs as $id => $ong): ?>
-            <div class="card-ong">
-                <h3><?= htmlspecialchars($ong['nome']) ?></h3>
-                <span class="area"><?= htmlspecialchars($ong['area']) ?></span>
-                <p><?= htmlspecialchars($ong['descricao']) ?></p>
-                <div class="cidade">📍 <?= htmlspecialchars($ong['cidade']) ?></div>
-                <a href="doar.php?ong=<?= $id ?>" class="btn-doar">Doar agora</a>
-            </div>
-        <?php endforeach; ?>
-    </div>
+
+    <?php if (empty($beneficiarios)): ?>
+        <div class="card-ong" style="text-align:center;color:#555;">
+            Nenhuma ONG cadastrada ainda.
+        </div>
+    <?php else: ?>
+        <div class="grid-ongs">
+            <?php foreach ($beneficiarios as $b): ?>
+                <div class="card-ong">
+                    <h3><?= htmlspecialchars($b['nome_receptor']) ?></h3>
+                    <p style="font-weight:500;color:#333;margin-bottom:8px;">
+                        <?= htmlspecialchars($labels_risco[$b['classificacao_risco']] ?? $b['classificacao_risco']) ?>
+                    </p>
+                    <div class="cidade">📍 <?= htmlspecialchars($b['localizacao']) ?></div>
+                    <a href="fazer_doacao.php?ong=<?= (int)$b['id_beneficiario'] ?>" class="btn-doar" style="display:inline-block;margin-top:14px;">
+                        Doar agora
+                    </a>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
 </div>
 
 <footer>
