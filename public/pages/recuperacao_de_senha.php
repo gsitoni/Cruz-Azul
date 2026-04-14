@@ -1,96 +1,99 @@
 <?php
-// ============================================================
-//  recuperacao_de_senha.php  –  public/pages/
-//  Segurança: CSRF, XSS, session segura
-// ============================================================
+// ==========================
+// CONFIGURAÇÕES DE SEGURANÇA
+// ==========================
+
+// Cookie seguro (se estiver em HTTPS)
 $secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
 
 session_set_cookie_params([
     'lifetime' => 0,
-    'path'     => '/',
-    'domain'   => '',
-    'secure'   => $secure,
+    'path' => '/',
+    'domain' => '',
+    'secure' => $secure,
     'httponly' => true,
     'samesite' => 'Strict'
 ]);
 
 session_start();
 
-// Headers de segurança
-header('X-Frame-Options: DENY');
-header('X-Content-Type-Options: nosniff');
-header('Referrer-Policy: strict-origin-when-cross-origin');
-
-// Gera CSRF
+// ==========================
+// GERAR TOKEN CSRF
+// ==========================
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-$mensagem = '';
-$tipo_msg = '';
+// ==========================
+// MENSAGEM (feedback simples)
+// ==========================
+$mensagem = "";
 
 if (isset($_GET['status'])) {
     if ($_GET['status'] === 'sucesso') {
-        $mensagem = 'Se o e-mail existir em nossa base, um código foi enviado.';
-        $tipo_msg = 'sucesso';
+        $mensagem = "Se o email existir, um código foi enviado.";
     } elseif ($_GET['status'] === 'erro') {
-        $mensagem = 'Erro ao processar solicitação. Tente novamente.';
-        $tipo_msg = 'erro';
+        $mensagem = "Erro ao processar solicitação.";
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recuperação de senha – Cruz Azul</title>
+    <title>Recuperação de senha</title>
     <link rel="stylesheet" href="../assets/css/recuperacao_de_senha.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap');
+    </style>
 </head>
 <body>
 
-<header>
-    <h1>CRUZ-AZUL ✙</h1>
-</header>
+    <header>
+        <h1>CRUZ-AZUL ✙</h1>
+    </header>
 
-<div class="container">
+    <div class="container">
 
-    <h2 class="subtitulo">Recuperação de senha</h2>
+        <h2 class="subtitulo"> Recuperação de senha </h2>
 
-    <p class="descricao">
-        Informe seu e-mail abaixo e aguarde o código de verificação.
-    </p>
-
-    <?php if (!empty($mensagem)): ?>
-        <p style="color:<?= $tipo_msg === 'erro' ? 'red' : 'darkblue' ?>;text-align:center;margin-bottom:10px;">
-            <?= htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8') ?>
+        <p class="descricao">
+            Informe seu email no campo abaixo e aguarde o código de verificação
         </p>
-    <?php endif; ?>
 
-    <form action="../../src/api/processa_recuperacao.php" method="POST" class="form">
+        <!-- MENSAGEM -->
+        <?php if (!empty($mensagem)): ?>
+            <p style="color: darkblue; text-align:center; margin-bottom:10px;">
+                <?php echo htmlspecialchars($mensagem); ?>
+            </p>
+        <?php endif; ?>
 
-        <input type="hidden" name="csrf_token"
-               value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+        <form action="../../src/api/processa_recuperacao.php" method="POST" id="form_recuperacao" class="form">
 
-        <fieldset class="email_box">
-            <legend class="legend">E-mail</legend>
-            <input class="input" id="email_recuperacao" name="email_recuperacao"
-                   type="email" required maxlength="254">
-        </fieldset>
+            <!-- TOKEN CSRF -->
+            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
 
-        <a href="codigo_de_verificacao.php" id="link_codigo">
-            Já possuo o código de verificação
-        </a>
+            <fieldset class="email_box">
+                <legend class="legend"> E-mail </legend>
+                <input class="input" id="email_recuperacao" name="email_recuperacao" type="email" required>
+            </fieldset>
 
-        <div class="botoes">
-            <button class="botao" type="button" onclick="history.back()">Voltar</button>
-            <button class="botao" type="submit">Avançar</button>
-        </div>
+            <a href="codigo_de_verificacao.php" id="link_codigo">
+                Já possuo o código de verificação
+            </a>
 
-    </form>
+            <div class="botoes">
+                <button class="botao" type="button" onclick="voltar()">Voltar</button>
+                <button class="botao" type="submit">Avançar</button>
+            </div>
 
-</div>
+        </form>
+        
+    </div>
 
-<script src="../js/recuperacao_de_senha.js"></script>
+    <script src="../js/recuperacao_de_senha.js"></script>
+
 </body>
 </html>

@@ -35,32 +35,38 @@
         } elseif ($resultadoSenha !== true) { 
             $resposta = ['ok' => false, 'msg' => $resultadoSenha];
         } else {
-            $stmt = $pdo->prepare("SELECT id_usuario FROM usuario WHERE email = ?");
+            $stmt = $pdo->prepare("SELECT id_usuario, permissao FROM usuario WHERE email = ?");
             $stmt->execute([$email]);
+            $usuario_existente = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($stmt->fetch()) {
-                $resposta = ['ok' => false, 'msg' => 'Este e-mail já está cadastrado.'];
+            $token = bin2hex(random_bytes(32));
+            $hash  = password_hash($senha, PASSWORD_DEFAULT);
+
+            if ($usuario_existente) {
+                // Usuário existe, atualizar permissao para incluir Doador
+                $nova_permissao = $usuario_existente['permissao'];
+                if ($nova_permissao === 'Admin') {
+                    $nova_permissao = 'Doador e Admin';
+                } elseif ($nova_permissao === 'Doador') {
+                    // Já é Doador, nada a fazer
+                } elseif ($nova_permissao === 'Doador e Admin') {
+                    // Já tem ambas
+                }
+                if ($nova_permissao !== $usuario_existente['permissao']) {
+                    $stmt = $pdo->prepare("UPDATE usuario SET permissao = ? WHERE id_usuario = ?");
+                    $stmt->execute([$nova_permissao, $usuario_existente['id_usuario']]);
+                }
+                $resposta = [
+                    'ok'  => true,
+                    'msg' => "Permissões atualizadas! Você agora tem acesso como doador."
+                ];
             } else {
-                $token = bin2hex(random_bytes(32));
-                $hash  = password_hash($senha, PASSWORD_DEFAULT);
-
-                // Transação: garante que usuario E doador são criados juntos
-                $pdo->beginTransaction();
-
-                $stmtUsuario = $pdo->prepare("
-                    INSERT INTO usuario (nome, email, senha_hash, token_confirmacao, status_cadastro)
-                    VALUES (?, ?, ?, ?, 'pendente')
+                // Novo usuário
+                $stmt = $pdo->prepare("
+                    INSERT INTO usuario (nome, email, senha_hash, token_confirmacao)
+                    VALUES (?, ?, ?, ?)
                 ");
-                $stmtUsuario->execute([$nome, $email, $hash, $token]);
-
-                // Cria registro em doador vinculado ao mesmo email
-                $stmtDoador = $pdo->prepare("
-                    INSERT INTO doador (cpf_cnpj, nome, telefone, email)
-                    VALUES ('', ?, '', ?)
-                ");
-                $stmtDoador->execute([$nome, $email]);
-
-                $pdo->commit();
+                $stmt->execute([$nome, $email, $hash, $token]);
 
                 if (enviarEmailConfirmacao($email, $nome, $token)) {
                     $resposta = [
@@ -113,6 +119,10 @@
 
             <button type="submit" id="btnCadastrar">Cadastrar</button>
         </form>
+
+        <p style="text-align: center; margin-top: 20px;">
+            Já tem uma conta? <a href="login.php">Faça login</a>
+        </p>
     </div>
 
     <script>
@@ -159,9 +169,9 @@
                 const json = await res.json();
 
                 if (json.ok) {
-                    // mostrarMsg(json.msg, 'sucesso');
-                    // form.reset();
-                    window.location.href = 'index.php'; // Redirecionar para a página home
+                    mostrarMsg(json.msg, 'sucesso');
+                    form.reset();
+                    // window.location.href = 'index.php'; // Redirecionar para a página home
                 } else {
                     mostrarMsg(json.msg, 'erro');
                 }

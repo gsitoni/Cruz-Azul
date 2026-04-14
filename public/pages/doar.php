@@ -24,7 +24,7 @@ $labels_risco = [
 $stmt = $pdo->query(
     "SELECT id_beneficiario, nome_receptor, classificacao_risco
      FROM beneficiario
-     WHERE status_elegibilidade = 'aprovada'
+     WHERE status_elegibilidade = 'ativo'
      ORDER BY nome_receptor ASC"
 );
 $ongs = $stmt->fetchAll(PDO::FETCH_ASSOC);

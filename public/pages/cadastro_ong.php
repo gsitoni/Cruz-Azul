@@ -1,9 +1,5 @@
 <?php
 session_start();
-ob_start();
-
-header('X-Frame-Options: DENY');
-header('X-Content-Type-Options: nosniff');
 
 require '../../src/api/database.php';
 
@@ -96,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $id_ong = $pdo->lastInsertId();
 
                 // Fazer login automático
+                session_start();
                 $_SESSION['ong'] = [
                     'id'           => $id_ong,
                     'nome'         => $nome,
@@ -109,11 +106,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'msg' => "ONG <strong>$nome</strong> cadastrada com sucesso! Redirecionando..."
                 ];
             } catch (PDOException $e) {
-                $pdo->rollBack();
-                error_log("cadastro_ong.php PDOException: " . $e->getMessage());
+                // Intercepta e expõe o erro exato do banco de dados
                 $r = [
                     'ok'  => false,
-                    'msg' => 'Erro interno ao cadastrar. Tente novamente.'
+                    'msg' => "FALHA SQL: " . $e->getMessage()
                 ];
             }
         }
