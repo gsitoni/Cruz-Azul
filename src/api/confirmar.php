@@ -1,0 +1,104 @@
+<?php
+// ============================================================
+//  confirmar.php  –  src/api/confirmar.php
+//  Segurança: session_start primeiro, headers, XSS, token seguro
+// ============================================================
+session_start();
+
+header('X-Frame-Options: DENY');
+header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+
+require __DIR__ . '/database.php';
+
+$token    = trim($_GET['token'] ?? '');
+$mensagem = '';
+$tipo     = 'erro';
+$redirect = null;
+
+if (empty($token) || strlen($token) > 255) {
+    $mensagem = 'Token inválido ou ausente.';
+} else {
+    try {
+        $stmt = $pdo->prepare(
+            "SELECT id_usuario, status_cadastro, permissao
+               FROM usuario
+              WHERE token_confirmacao = ?
+              LIMIT 1"
+        );
+        $stmt->execute([$token]);
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$usuario) {
+            $mensagem = 'Link de confirmação inválido ou expirado.';
+
+        } elseif ($usuario['status_cadastro'] === 'confirmado') {
+            $mensagem = 'Sua conta já foi confirmada. Faça login.';
+            $tipo     = 'info';
+
+        } else {
+            // Ativa conta e apaga token
+            $upd = $pdo->prepare(
+                "UPDATE usuario
+                    SET status_cadastro    = 'confirmado',
+                        token_confirmacao  = NULL
+                  WHERE id_usuario = ?"
+            );
+            $upd->execute([$usuario['id_usuario']]);
+
+            // Login automático após confirmação
+            // Busca email atualizado
+            $stmtUser = $pdo->prepare(
+                "SELECT id_usuario, email FROM usuario WHERE id_usuario = ? LIMIT 1"
+            );
+            $stmtUser->execute([$usuario['id_usuario']]);
+            $userData = $stmtUser->fetch(PDO::FETCH_ASSOC);
+
+            $_SESSION['usuario'] = [
+                'id_usuario' => $userData['id_usuario'],
+                'email'      => $userData['email'],
+            ];
+
+            $mensagem = 'E-mail confirmado com sucesso! Redirecionando...';
+            $tipo     = 'sucesso';
+
+            $redirect = (strpos($usuario['permissao'] ?? '', 'Admin') !== false)
+                ? '../../src/admin/pages/dashboard.php'
+                : '../pages/home_usuario.php';
+        }
+
+    } catch (PDOException $e) {
+        error_log("confirmar.php PDOException: " . $e->getMessage());
+        $mensagem = 'Erro interno. Tente novamente.';
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmação de Cadastro – Cruz Azul</title>
+    <?php if ($redirect): ?>
+        <meta http-equiv="refresh" content="3;url=<?= htmlspecialchars($redirect, ENT_QUOTES, 'UTF-8') ?>">
+    <?php endif; ?>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 420px; margin: 80px auto; padding: 0 16px; text-align: center; }
+        .sucesso { color: #1e7e34; background: #eafaf1; padding: 18px; border-radius: 6px; }
+        .erro    { color: #c0392b; background: #fdecea; padding: 18px; border-radius: 6px; }
+        .info    { color: #0c5460; background: #d1ecf1; padding: 18px; border-radius: 6px; }
+        a { display: inline-block; margin-top: 16px; color: #4CAF50; }
+        @media (max-width: 480px) {
+            body { max-width: 100%; margin: 40px auto; padding: 0 10px; }
+            .sucesso, .erro, .info { padding: 15px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <h2>Confirmação de E-mail</h2>
+    <div class="<?= htmlspecialchars($tipo, ENT_QUOTES, 'UTF-8') ?>">
+        <?= htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8') ?>
+    </div>
+    <a href="../pages/login.php">← Ir para o login</a>
+</body>
+</html>
