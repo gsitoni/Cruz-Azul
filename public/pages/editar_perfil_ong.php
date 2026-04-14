@@ -7,7 +7,6 @@ if (!isset($_SESSION['ong'])) {
 }
 
 require '../../src/api/database.php';
-require '../../src/api/valida_senha.php';
 
 $ongId = (int) ($_SESSION['ong']['id'] ?? 0);
 $erro = '';
@@ -21,38 +20,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $estado = strtoupper(trim($_POST['sigla_estado'] ?? ''));
     $endereco = trim($_POST['endereco'] ?? '');
     $descricao = trim($_POST['descricao'] ?? '');
-    $novaSenha = $_POST['nova_senha'] ?? '';
-    $confirmarSenha = $_POST['confirmar_senha'] ?? '';
 
     if ($nome === '' || $email === '') {
         $erro = 'Preencha pelo menos nome da ONG e e-mail.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $erro = 'Informe um e-mail válido.';
-    } elseif ($novaSenha !== '' && $confirmarSenha === '') {
-        $erro = 'Confirme a nova senha.';
-    } elseif ($novaSenha !== '' && $novaSenha !== $confirmarSenha) {
-        $erro = 'As senhas não coincidem.';
-    } elseif ($novaSenha !== '') {
-        $validacaoSenha = validarSenhaForte($novaSenha);
-
-        if ($validacaoSenha !== true) {
-            $erro = $validacaoSenha;
-        }
     }
 
     if ($erro === '') {
         $sql = '
             UPDATE beneficiario
-            SET nome_receptor = ?, email = ?, area_atuacao = ?, localizacao = ?, cidade = ?, sigla_estado = ?, endereco = ?, descricao = ?, data_atualizacao = NOW()';
-        $parametros = [$nome, $email, $area, $localizacao, $cidade, $estado, $endereco, $descricao];
-
-        if ($novaSenha !== '') {
-            $sql .= ', senha_hash = ?';
-            $parametros[] = password_hash($novaSenha, PASSWORD_DEFAULT);
-        }
-
-        $sql .= ' WHERE id_beneficiario = ?';
-        $parametros[] = $ongId;
+            SET nome_receptor = ?, email = ?, area_atuacao = ?, localizacao = ?, cidade = ?, sigla_estado = ?, endereco = ?, descricao = ?, data_atualizacao = NOW()
+            WHERE id_beneficiario = ?';
+        $parametros = [$nome, $email, $area, $localizacao, $cidade, $estado, $endereco, $descricao, $ongId];
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute($parametros);
@@ -149,16 +129,6 @@ if (!$ong) {
         <div style="margin-bottom: 15px;">
             <label for="descricao" style="display:block; font-size: 14px; font-weight: bold; margin-bottom: 6px; color: #444;">Descrição</label>
             <textarea id="descricao" name="descricao" style="width: 100%; padding: 9px 10px; min-height: 88px; border: 1px solid #cfd6df; border-radius: 7px; font-size: 13px;"><?= htmlspecialchars($ong['descricao']) ?></textarea>
-        </div>
-
-        <div style="margin-bottom: 15px;">
-            <label for="nova_senha" style="display:block; font-size: 14px; font-weight: bold; margin-bottom: 6px; color: #444;">Nova senha</label>
-            <input type="password" id="nova_senha" name="nova_senha" placeholder="Deixe em branco para manter a atual" style="width: 100%; padding: 9px 10px; border: 1px solid #cfd6df; border-radius: 7px; font-size: 13px;">
-        </div>
-
-        <div style="margin-bottom: 15px;">
-            <label for="confirmar_senha" style="display:block; font-size: 14px; font-weight: bold; margin-bottom: 6px; color: #444;">Confirmar nova senha</label>
-            <input type="password" id="confirmar_senha" name="confirmar_senha" placeholder="Repita a nova senha" style="width: 100%; padding: 9px 10px; border: 1px solid #cfd6df; border-radius: 7px; font-size: 13px;">
         </div>
 
         <button type="submit" style="background: #0d6efd; color: white; padding: 9px 16px; border: none; border-radius: 7px; cursor: pointer; font-size: 14px;">Salvar Alterações</button>
