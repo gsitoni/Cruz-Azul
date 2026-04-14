@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-if (isset($_SESSION['ong'])) {
+if (isset($_SESSION['beneficiario'])) {
     header('Location: home_ong.php');
     exit;
 }
@@ -34,26 +34,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     } else {
         // busca a ONG no banco pelo e-mail
-        $stmt = $pdo->prepare("SELECT * FROM ongs WHERE email = ?");
+        $stmt = $pdo->prepare("SELECT * FROM beneficiario WHERE email = ?");
         $stmt->execute([$email]);
         $ong = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$ong || !password_verify($senha, $ong['senha'])) {
+        if (!$ong || !password_verify($senha, $ong['senha_hash'])) {
             $resposta = ['ok' => false, 'msg' => 'E-mail ou senha incorretos.'];
 
-        } elseif ($ong['status'] === 'bloqueado') {
+        } elseif ($ong['status_elegibilidade'] === 'bloqueado') {
             $resposta = ['ok' => false, 'msg' => 'Sua ONG foi bloqueada. Entre em contato com o administrador.'];
 
         } else {
             // login OK — salva os dados na sessão
             $_SESSION['ong'] = [
-                'id'           => $ong['id'],
-                'nome'         => $ong['nome'],
+                'id'           => $ong['id_beneficiario'],
+                'nome'         => $ong['nome_receptor'],
                 'email'        => $ong['email'],
                 'area_atuacao' => $ong['area_atuacao'],
-                'status'       => $ong['status'],
+                'status'       => $ong['status_elegibilidade'],
                 'cidade'       => $ong['cidade'],
-                'estado'       => $ong['estado'],
+                'estado'       => $ong['sigla_estado'],
             ];
 
             $resposta = [
