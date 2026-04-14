@@ -45,32 +45,15 @@ setcookie("codigo_recuperacao", $codigo, [
     'samesite' => 'Strict'
 ]);
 
+require '../../vendor/autoload.php';
+require './mailer.php';
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require '../vendor/autoload.php';
-
-$mail = new PHPMailer(true);
+$mail = criarMailer();
 
 try {
-    // ==========================
-    // CONFIG SMTP (GMAIL)
-    // ==========================
-    $mail->isSMTP();
-    $mail->Host = 'smtp.gmail.com';
-    $mail->SMTPAuth = true;
-
-    $mail->Username = 'SEU_EMAIL@gmail.com'; // seu email
-    $mail->Password = 'SUA_SENHA_DE_APP';    // senha de app
-
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-    $mail->Port = 587;
-
-    // ==========================
-    // REMETENTE
-    // ==========================
-    $mail->setFrom('SEU_EMAIL@gmail.com', 'Cruz Azul');
-
     // ==========================
     // DESTINATÁRIO
     // ==========================
@@ -98,5 +81,5 @@ try {
     error_log("Erro ao enviar email: " . $mail->ErrorInfo);
 }
 
-header("Location: ../pages/codigo_de_verificacao.php");
+header("Location: ../../public/pages/codigo_de_verificacao.php");
 exit();

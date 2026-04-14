@@ -89,9 +89,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $endereco, $cidade, $estado, $area, $descricao, $hash, $token
                 ]);
 
+                $id_ong = $pdo->lastInsertId();
+
+                // Fazer login automático
+                session_start();
+                $_SESSION['ong'] = [
+                    'id'           => $id_ong,
+                    'nome'         => $nome,
+                    'email'        => $email,
+                    'cnpj'         => $cnpj_limpo,
+                    'status'       => 'pendente' // ou aprovado se admin aprovar
+                ];
+
                 $r = [
                     'ok'  => true,
-                    'msg' => "ONG <strong>$nome</strong> cadastrada com sucesso!"
+                    'msg' => "ONG <strong>$nome</strong> cadastrada com sucesso! Redirecionando..."
                 ];
             } catch (PDOException $e) {
                 // Intercepta e expõe o erro exato do banco de dados
@@ -411,6 +423,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (json.ok) {
                 this.reset();
+                setTimeout(() => {
+                    window.location.href = 'home_ong.php';
+                }, 2000); // Redirecionar após 2 segundos para mostrar a mensagem
             }
 
         } catch (erro) {

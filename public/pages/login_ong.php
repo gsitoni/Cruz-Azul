@@ -126,6 +126,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         É um doador? <a href="login.php">Entrar aqui</a>
     </div>
 
+    <div class="links" style="margin-top: 8px;">
+        <a href="recuperacao_de_senha.php">Esqueci minha senha</a>
+    </div>
+
 </div>
 
 <script>

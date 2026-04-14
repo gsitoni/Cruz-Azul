@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<img src="geraqr.php?secret=<?php echo $secret; ?>">
+<img src="./geraqr.php?secret=<?php echo $secret; ?>">
 
 <form method="POST">
     <input type="text" name="codigo" placeholder="Digite o código">

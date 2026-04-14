@@ -16,10 +16,10 @@ function criarMailer(): PHPMailer{
     $mail->SMTPAuth = true;
     $mail->SMTPSecure = 'ssl';
     $mail->Host = 'smtp.gmail.com';
-    $mail-> Port = 465;
+    $mail->Port = 465;
     $mail->Username = "cruz.azulttggb@gmail.com";
     $mail->Password = "qfen qtww axcx teqm";
-    $mail->SetFrom('cruz.azulttggb@gmail.com', "Ablublublé");
+    $mail->SetFrom('cruz.azulttggb@gmail.com', "Cruz Azul");
     return $mail;
 }
 function enviarEmailConfirmacao(string $emailDestino, string $nomeDestino, string $token) : bool{ 
