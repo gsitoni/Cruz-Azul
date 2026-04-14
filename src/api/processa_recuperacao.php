@@ -46,14 +46,31 @@ setcookie("codigo_recuperacao", $codigo, [
 ]);
 
 require '../../vendor/autoload.php';
-require './mailer.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-$mail = criarMailer();
+$mail = new PHPMailer(true);
 
 try {
+    // ==========================
+    // CONFIG SMTP (GMAIL)
+    // ==========================
+    $mail->isSMTP();
+    $mail->Host = 'smtp.gmail.com';
+    $mail->SMTPAuth = true;
+
+    $mail->Username = 'seuemail@gmail.com';
+    $mail->Password = 'senha_de_app_aqui';
+
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+    $mail->Port = 587;
+
+    // ==========================
+    // REMETENTE
+    // ==========================
+    $mail->setFrom('SEU_EMAIL@gmail.com', 'Cruz Azul');
+
     // ==========================
     // DESTINATÁRIO
     // ==========================
