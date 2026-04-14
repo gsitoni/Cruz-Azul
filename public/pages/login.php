@@ -13,13 +13,17 @@ session_start();
  
 // Se já logado, redireciona
 if (isset($_SESSION['usuario'])) {
-    header('Location: ./home_usuario.php');
+    if (($_SESSION['tipo'] ?? '') === 'admin') {
+        header('Location: ../../src/admin/pages/dashboard.php');
+    } else {
+        header('Location: ./home_usuario.php');
+    }
     exit;
 }
  
 
 define('REGEX_EMAIL', '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/');
-define('REGEX_SENHA', '/^.{6,}$/');
+define('REGEX_SENHA', '/^(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>|]).{8,}$/');
  
 
 $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
@@ -38,11 +42,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resposta = ['ok' => false, 'msg' => 'Formato de e-mail inválido.'];
  
     } elseif (!preg_match(REGEX_SENHA, $senha)) {
-        $resposta = ['ok' => false, 'msg' => 'Senha deve ter pelo menos 6 caracteres.'];
+        $resposta = ['ok' => false, 'msg' => 'A senha deve ter pelo menos 8 caracteres, incluindo número e caractere especial.'];
  
     } else {
         // Busca usuário no banco pelo e-mail (igual ao cadastro.php usa PDO)
-        $stmt = $pdo->prepare("SELECT id_usuario, email, senha_hash, status_cadastro FROM usuario WHERE email = ?");
+        $stmt = $pdo->prepare("SELECT id_usuario, email, senha_hash, status_cadastro, permissao FROM usuario WHERE email = ?");
         $stmt->execute([$email]);
         $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
  
@@ -59,15 +63,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $resposta = ['ok' => false, 'msg' => 'Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.'];
  
         } else {
+            $ehAdmin = ($usuario['permissao'] ?? 'Doador') === 'Admin';
+
             // Login OK — salva sessão
             $_SESSION['usuario'] = [
                 'id_usuario'    => $usuario['id_usuario'],
                 'email' => $usuario['email'],
             ];
+            $_SESSION['tipo'] = $ehAdmin ? 'admin' : 'doador';
+
             $resposta = [
                 'ok'       => true,
                 'msg'      => 'Login realizado! Redirecionando...',
-                'redirect' => './home_usuario.php',
+                'redirect' => $ehAdmin ? '../../src/admin/pages/dashboard.php' : './home_usuario.php',
             ];
         }
     }
@@ -101,10 +109,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Senha -->
         <label for="senha">Senha</label>
         <div class="senha-wrap">
-            <input type="password" id="senha" name="senha" placeholder="Mínimo 6 caracteres" required>
+            <input type="password" id="senha" name="senha" placeholder="Mínimo 8 caracteres" required>
             <button type="button" class="btn-olho" id="btnOlho">Mostrar</button>
         </div>
-        <div class="erro-campo" id="erroSenha">A senha deve ter pelo menos 6 caracteres.</div>
+        <div class="erro-campo" id="erroSenha">A senha deve ter pelo menos 8 caracteres.</div>
         <!-- <div class="dica">regex: /^.{6,}$/</div> -->
  
         <!-- Mensagem geral -->
@@ -122,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 //  validação em tempo real
 const REGEX_EMAIL = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-const REGEX_SENHA = /^.{6,}$/;
+const REGEX_SENHA = /^(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>|]).{8,}$/;
  
 const campoEmail = document.getElementById('email');
 const campoSenha = document.getElementById('senha');

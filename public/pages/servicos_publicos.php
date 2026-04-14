@@ -128,7 +128,7 @@ $titulos = [
     <a href="home_usuario.php" class="btn-voltar">← Voltar ao início</a>
 
     <h1 class="titulo"><?php echo $titulos[$categoria] ?? $titulos['todos']; ?></h1>
-    <p class="subtitulo">Serviços públicos essenciais em várias cidades e estados do Brasil para ajudar quem precisa.</p>
+    <p class="subtitulo">Encontre hospitais e contatos de emergência com informações objetivas para atendimento rápido quando mais precisar.</p>
 
     <div class="filtros">
         <h3>📋 Filtrar por categoria</h3>

@@ -109,14 +109,57 @@
             margin-bottom: 24px;
         }
 
+        .grid-resumo {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
         .card-acao,
         .card-nec,
+        .card-resumo,
+        .card-descricao,
         .lista-doacoes,
         .card {
             background: #fff;
             border: 1px solid #ddd;
             border-radius: 8px;
             padding: 16px;
+        }
+
+        .card-resumo {
+            min-height: 140px;
+        }
+
+        .card-resumo.destaque {
+            border-color: #b9d1f5;
+            background: linear-gradient(180deg, #ffffff 0%, #f3f8ff 100%);
+        }
+
+        .resumo-label {
+            display: inline-block;
+            font-size: 12px;
+            color: #5a6f90;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .card-resumo strong,
+        .card-nec h4 {
+            display: block;
+            font-size: 18px;
+            color: #1a2f4d;
+            margin-bottom: 8px;
+        }
+
+        .card-resumo p,
+        .card-nec p,
+        .card-descricao p {
+            font-size: 13px;
+            color: #555;
+            margin: 0;
         }
 
         .card-acao h3,
@@ -171,6 +214,24 @@
 
         .barra-fill.urgente { background: #c0392b; }
         .barra-fill.ok { background: #007BFF; }
+
+        .bloco-descricao {
+            margin-bottom: 24px;
+        }
+
+        .meta-info {
+            font-size: 12px;
+            color: #4f6381;
+            margin-top: 10px;
+        }
+
+        .card-nec.categoria-real {
+            min-height: 168px;
+        }
+
+        .card-nec.vazio {
+            grid-column: 1 / -1;
+        }
 
         footer {
             background: #0f2f63;

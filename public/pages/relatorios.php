@@ -5,23 +5,85 @@ if (!isset($_SESSION['ong'])) {
     exit;
 }
 
+require '../../src/api/database.php';
+
+function formatarNumeroRelatorio($valor)
+{
+    $numero = (float) $valor;
+
+    if ((float) ((int) $numero) === $numero) {
+        return number_format($numero, 0, ',', '.');
+    }
+
+    return number_format($numero, 1, ',', '.');
+}
+
+$ongId = (int) ($_SESSION['ong']['id'] ?? 0);
 $nome = $_SESSION['ong']['nome'] ?? $_SESSION['ong']['email'] ?? 'ONG';
 
-// Dados fictícios de relatório
 $relatorio = [
-    'total_doacoes' => 18,
-    'confirmadas' => 15,
-    'pendentes' => 3,
-    'total_peso' => '87kg',
-    'periodo' => 'Março a Abril de 2026',
-    'doacoes' => [
-        ['item' => 'Arroz', 'quantidade' => '50kg', 'doador' => 'João Silva', 'data' => '05/04/2026', 'status' => 'Confirmado'],
-        ['item' => 'Feijão', 'quantidade' => '30kg', 'doador' => 'Instituto Beneficente', 'data' => '04/04/2026', 'status' => 'Confirmado'],
-        ['item' => 'Kit higiene', 'quantidade' => '20 kits', 'doador' => 'Maria Oliveira', 'data' => '04/04/2026', 'status' => 'Awaiting'],
-        ['item' => 'Roupas', 'quantidade' => '50 peças', 'doador' => 'Pedro Costa', 'data' => '03/04/2026', 'status' => 'Confirmado'],
-        ['item' => 'Medicamentos', 'quantidade' => '30 caixas', 'doador' => 'Farmácia Central', 'data' => '02/04/2026', 'status' => 'Confirmado'],
-    ]
+    'total_doacoes' => 0,
+    'confirmadas' => 0,
+    'pendentes' => 0,
+    'total_peso' => '0',
+    'periodo' => 'Sem movimentação registrada',
+    'doacoes' => [],
 ];
+
+if ($ongId > 0) {
+    $stmt = $pdo->prepare('SELECT nome_receptor, email FROM beneficiario WHERE id_beneficiario = ?');
+    $stmt->execute([$ongId]);
+    $ong = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($ong) {
+        $nome = $ong['nome_receptor'] ?: ($ong['email'] ?: $nome);
+        $_SESSION['ong']['nome'] = $nome;
+        $_SESSION['ong']['email'] = $ong['email'] ?? ($_SESSION['ong']['email'] ?? null);
+    }
+
+    $stmt = $pdo->prepare('
+        SELECT
+            COUNT(*) AS total_doacoes,
+            SUM(CASE WHEN e.status_operacional = "disponivel" THEN 1 ELSE 0 END) AS confirmadas,
+            SUM(CASE WHEN e.status_operacional <> "disponivel" THEN 1 ELSE 0 END) AS pendentes,
+            COALESCE(SUM(di.quantidade_retirada), 0) AS total_quantidade,
+            MIN(di.data_hora) AS primeira_data,
+            MAX(di.data_hora) AS ultima_data
+        FROM distribuicao di
+        INNER JOIN estoque e ON e.id_lote = di.id_lote
+        WHERE di.id_beneficiario = ?
+    ');
+    $stmt->execute([$ongId]);
+    $resumo = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+    $relatorio['total_doacoes'] = (int) ($resumo['total_doacoes'] ?? 0);
+    $relatorio['confirmadas'] = (int) ($resumo['confirmadas'] ?? 0);
+    $relatorio['pendentes'] = (int) ($resumo['pendentes'] ?? 0);
+    $relatorio['total_peso'] = formatarNumeroRelatorio($resumo['total_quantidade'] ?? 0);
+
+    if (!empty($resumo['primeira_data']) && !empty($resumo['ultima_data'])) {
+        $relatorio['periodo'] = date('d/m/Y', strtotime($resumo['primeira_data'])) . ' a ' . date('d/m/Y', strtotime($resumo['ultima_data']));
+    }
+
+    $stmt = $pdo->prepare('
+        SELECT
+            d.item,
+            di.quantidade_retirada,
+            d.unidade_medida,
+            doador.nome AS doador,
+            di.data_hora,
+            e.status_operacional
+        FROM distribuicao di
+        INNER JOIN estoque e ON e.id_lote = di.id_lote
+        INNER JOIN doacao d ON d.id_doacao = e.id_doacao
+        LEFT JOIN doador ON doador.id_doador = d.id_doador
+        WHERE di.id_beneficiario = ?
+        ORDER BY di.data_hora DESC
+        LIMIT 10
+    ');
+    $stmt->execute([$ongId]);
+    $relatorio['doacoes'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -30,78 +92,7 @@ $relatorio = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatório de Doações — Cruz Azul</title>
     <link rel="stylesheet" href="../assets/css/home_ong.css">
-    <style>
-        .relatorio-header {
-            background: #007BFF;
-            color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .relatorio-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        .stat-card {
-            background: #fff;
-            border-left: 4px solid #007BFF;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-        .stat-card h4 {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-        .stat-card .numero {
-            font-size: 28px;
-            color: #007BFF;
-            font-weight: bold;
-        }
-        .tabela-doacoes {
-            background: #fff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-        .tabela-doacoes table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .tabela-doacoes th {
-            background: #007BFF;
-            color: #fff;
-            padding: 14px 16px;
-            text-align: left;
-            font-weight: bold;
-        }
-        .tabela-doacoes td {
-            padding: 14px 16px;
-            border-bottom: 1px solid #eee;
-        }
-        .tabela-doacoes tr:last-child td {
-            border-bottom: none;
-        }
-        .status-confirmado {
-            background: #e7f3ff;
-            color: #007BFF;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .status-pendente {
-            background: #fff3e0;
-            color: #e07820;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-    </style>
+    
 </head>
 <body>
 
@@ -163,14 +154,19 @@ $relatorio = [
                 </tr>
             </thead>
             <tbody>
+                <?php if (empty($relatorio['doacoes'])): ?>
+                <tr>
+                    <td colspan="5">Nenhuma distribuição foi registrada para esta ONG até o momento.</td>
+                </tr>
+                <?php else: ?>
                 <?php foreach ($relatorio['doacoes'] as $doacao): ?>
                 <tr>
                     <td><?= htmlspecialchars($doacao['item']) ?></td>
-                    <td><?= htmlspecialchars($doacao['quantidade']) ?></td>
-                    <td><?= htmlspecialchars($doacao['doador']) ?></td>
-                    <td><?= htmlspecialchars($doacao['data']) ?></td>
+                    <td><?= htmlspecialchars(formatarNumeroRelatorio($doacao['quantidade_retirada'])) . ' ' . htmlspecialchars($doacao['unidade_medida']) ?></td>
+                    <td><?= htmlspecialchars($doacao['doador'] ?: 'Doador não identificado') ?></td>
+                    <td><?= htmlspecialchars(date('d/m/Y H:i', strtotime($doacao['data_hora']))) ?></td>
                     <td>
-                        <?php if ($doacao['status'] === 'Confirmado'): ?>
+                        <?php if ($doacao['status_operacional'] === 'disponivel'): ?>
                             <span class="status-confirmado">✓ Confirmado</span>
                         <?php else: ?>
                             <span class="status-pendente">⏳ Pendente</span>
@@ -178,6 +174,7 @@ $relatorio = [
                     </td>
                 </tr>
                 <?php endforeach; ?>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>

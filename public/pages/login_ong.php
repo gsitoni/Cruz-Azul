@@ -10,7 +10,7 @@ require '../../src/api/database.php';
 
 // regex de validação
 $REGEX_EMAIL = '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/';
-$REGEX_SENHA = '/^.{6,}$/';
+$REGEX_SENHA = '/^(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>|]).{8,}$/';
 
 // processa o formulário quando enviado
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resposta = ['ok' => false, 'campo' => 'senha', 'msg' => 'Informe a senha.'];
 
     } elseif (!preg_match($REGEX_SENHA, $senha)) {
-        $resposta = ['ok' => false, 'campo' => 'senha', 'msg' => 'A senha deve ter pelo menos 6 caracteres.'];
+        $resposta = ['ok' => false, 'campo' => 'senha', 'msg' => 'A senha deve ter pelo menos 8 caracteres, incluindo número e caractere especial.'];
 
     } else {
         // busca a ONG no banco pelo e-mail
@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 type="password"
                 id="senha"
                 name="senha"
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Senha forte com 8+ caracteres"
             >
             <button type="button" class="btn-olho" id="btnOlho">Mostrar</button>
         </div>
@@ -131,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script>
     // ── mesmos regex do PHP ──
     var REGEX_EMAIL = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-    var REGEX_SENHA = /^.{6,}$/;
+    var REGEX_SENHA = /^(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>|]).{8,}$/;
 
     var campoEmail = document.getElementById('email');
     var campoSenha = document.getElementById('senha');
@@ -181,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     campoSenha.addEventListener('blur', function() {
         if (!REGEX_SENHA.test(campoSenha.value)) {
-            mostrarErroCampo('senha', 'erroSenha', 'Mínimo 6 caracteres.');
+            mostrarErroCampo('senha', 'erroSenha', 'Use 8+ caracteres com número e caractere especial.');
         }
     });
 
@@ -199,7 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!REGEX_SENHA.test(campoSenha.value)) {
-            mostrarErroCampo('senha', 'erroSenha', 'Mínimo 6 caracteres.');
+            mostrarErroCampo('senha', 'erroSenha', 'Use 8+ caracteres com número e caractere especial.');
             senhaOk = false;
         }
 

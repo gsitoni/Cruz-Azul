@@ -5,7 +5,7 @@ require '../../src/api/database.php';
 
 // regex de validação
 $REGEX_EMAIL = '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/';
-$REGEX_SENHA = '/^.{6,}$/';
+$REGEX_SENHA = '/^(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>|]).{8,}$/';
 $REGEX_CNPJ  = '/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/';
 //$REGEX_TEL   = '/^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/';
 $REGEX_CEP   = '/^\d{5}-?\d{3}$/';
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $r = ['ok' => false, 'campo' => 'area', 'msg' => 'Selecione a área de atuação.'];
 
     } elseif (!preg_match($REGEX_SENHA, $senha)) {
-        $r = ['ok' => false, 'campo' => 'senha', 'msg' => 'Senha deve ter pelo menos 6 caracteres.'];
+        $r = ['ok' => false, 'campo' => 'senha', 'msg' => 'A senha deve ter pelo menos 8 caracteres, incluindo número e caractere especial.'];
 
     } elseif ($senha !== $senha2) {
         $r = ['ok' => false, 'campo' => 'senha2', 'msg' => 'As senhas não coincidem.'];
@@ -229,7 +229,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="grupo">
                 <label for="senha">Senha *</label>
                 <div class="campo-senha">
-                    <input type="password" id="senha" name="senha" placeholder="Mínimo 6 caracteres">
+                    <input type="password" id="senha" name="senha" placeholder="Mínimo 8 caracteres">
                     <button type="button" class="btn-olho" id="olho1">Mostrar</button>
                 </div>
                 <div class="erro-campo" id="erroSenha"></div>
@@ -257,7 +257,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script>
     //  regex do ──
     var REGEX_EMAIL = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-    var REGEX_SENHA = /^.{6,}$/;
+    var REGEX_SENHA = /^(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>|]).{8,}$/;
     var REGEX_CNPJ  = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/;
 //  var REGEX_TEL   = /^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/;
     var REGEX_CEP   = /^\d{5}-?\d{3}$/;
@@ -372,7 +372,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!REGEX_SENHA.test(document.getElementById('senha').value)) {
-            mostrarErro('senha', 'erroSenha', 'Senha deve ter pelo menos 6 caracteres.');
+            mostrarErro('senha', 'erroSenha', 'Use 8+ caracteres com número e caractere especial.');
             tudo_ok = false;
         }
 
