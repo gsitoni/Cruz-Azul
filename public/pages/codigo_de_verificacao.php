@@ -111,7 +111,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <input class="input" type="text" maxlength="1">
         </div>
 
-        <a href="recuperacao.php" id="link_recuperacao_senha">
+        <a href="./recuperacao_de_senha.php" id="link_recuperacao_senha">
             Não recebi o código
         </a>
 
@@ -123,7 +123,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </form>
 </div>
 
-<script src="../js/codigo_de_verificacao.js"></script>
+<script src="../assets/js/codigo_de_verificacao.js"></script>
 
 <!-- SCRIPT EXTRA PARA ENVIAR O CÓDIGO -->
 <script>

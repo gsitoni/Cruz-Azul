@@ -304,7 +304,7 @@ CREATE TABLE `usuario` (
   `token_expira_em` datetime DEFAULT NULL,
   `chave_2fa` varchar(64) DEFAULT NULL,
   `data_criacao` datetime NOT NULL DEFAULT current_timestamp(),
-  `permissao` enum('Doador','Admin') DEFAULT 'Doador'
+  `permissao` enum('Doador','Admin','Doador e Admin') DEFAULT 'Doador'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --

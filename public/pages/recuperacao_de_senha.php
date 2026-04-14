@@ -70,7 +70,7 @@ if (isset($_GET['status'])) {
             </p>
         <?php endif; ?>
 
-        <form action="../php/processa_recuperacao.php" method="POST" id="form_recuperacao" class="form">
+        <form action="../../src/api/processa_recuperacao.php" method="POST" id="form_recuperacao" class="form">
 
             <!-- TOKEN CSRF -->
             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
@@ -80,7 +80,7 @@ if (isset($_GET['status'])) {
                 <input class="input" id="email_recuperacao" name="email_recuperacao" type="email" required>
             </fieldset>
 
-            <a href="codigo_de_verificacao.html" id="link_codigo">
+            <a href="codigo_de_verificacao.php" id="link_codigo">
                 Já possuo o código de verificação
             </a>
 

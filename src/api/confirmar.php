@@ -27,8 +27,25 @@ if (empty($token)) {
             UPDATE usuario SET status_cadastro = 'confirmado', token_confirmacao = NULL WHERE id_usuario = ?
         ");
         $upd->execute([$usuario['id_usuario']]);
-        $mensagem = 'E-mail confirmado com sucesso! Sua conta está ativa.';
+        
+        // Buscar permissao para redirecionamento
+        $stmt_perm = $pdo->prepare("SELECT permissao FROM usuario WHERE id_usuario = ?");
+        $stmt_perm->execute([$usuario['id_usuario']]);
+        $permissao = $stmt_perm->fetchColumn();
+        
+        // Fazer login automático
+        session_start();
+        $stmt_user = $pdo->prepare("SELECT id_usuario, email, permissao FROM usuario WHERE id_usuario = ?");
+        $stmt_user->execute([$usuario['id_usuario']]);
+        $user_data = $stmt_user->fetch(PDO::FETCH_ASSOC);
+        $_SESSION['usuario'] = $user_data;
+        
+        $mensagem = 'E-mail confirmado com sucesso! Redirecionando...';
         $tipo     = 'sucesso';
+        
+        // Redirecionamento baseado na permissao
+        $redirect = (strpos($permissao, 'Admin') !== false) ? '../../src/admin/pages/dashboard.php' : '../pages/home_usuario.php';
+        header("Refresh: 3; url=$redirect"); // Redirecionar após 3 segundos
     }
 }
 ?>

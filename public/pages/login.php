@@ -13,7 +13,8 @@ session_start();
  
 // Se já logado, redireciona
 if (isset($_SESSION['usuario'])) {
-    header('Location: ./home_usuario.php');
+    $redirect = (strpos($_SESSION['usuario']['permissao'], 'Admin') !== false) ? '../../src/admin/pages/dashboard.php' : './home_usuario.php';
+    header('Location: ' . $redirect);
     exit;
 }
  
@@ -42,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  
     } else {
         // Busca usuário no banco pelo e-mail (igual ao cadastro.php usa PDO)
-        $stmt = $pdo->prepare("SELECT id_usuario, email, senha_hash, status_cadastro FROM usuario WHERE email = ?");
+        $stmt = $pdo->prepare("SELECT id_usuario, email, senha_hash, status_cadastro, permissao FROM usuario WHERE email = ?");
         $stmt->execute([$email]);
         $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
  
@@ -63,11 +64,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['usuario'] = [
                 'id_usuario'    => $usuario['id_usuario'],
                 'email' => $usuario['email'],
+                'permissao' => $usuario['permissao'],
             ];
+            $redirect = (strpos($usuario['permissao'], 'Admin') !== false) ? '../../src/admin/pages/dashboard.php' : './home_usuario.php';
             $resposta = [
                 'ok'       => true,
                 'msg'      => 'Login realizado! Redirecionando...',
-                'redirect' => './home_usuario.php',
+                'redirect' => $redirect,
             ];
         }
     }
@@ -115,6 +118,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  
     <div class="link-cadastro">
         Não tem conta? <a href="./cadastro.php">Cadastre-se aqui</a>
+    </div>
+
+    <div class="link-cadastro" style="margin-top: 15px;">
+        <a href="./recuperacao_de_senha.php">Esqueci minha senha</a>
     </div>
 </div>
  
