@@ -1,9 +1,17 @@
 <?php
+    ob_start();
     // cadastro.php - Processa o formulário de cadastro
     
+    // Headers de segurança
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: DENY');
+    header('X-XSS-Protection: 1; mode=block');
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+
+    require '../../vendor/autoload.php';
     require '../../src/api/database.php';
-    require '../../test_email_bismark/mailer.php';
-    require 'valida_senha.php'; 
+    require '../../src/api/mailer.php';
+    require '../../src/api/valida_senha.php'; 
 
     // Responde requisições AJAX em JSON
     $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
@@ -27,7 +35,7 @@
         } elseif ($resultadoSenha !== true) { 
             $resposta = ['ok' => false, 'msg' => $resultadoSenha];
         } else {
-            $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
+            $stmt = $pdo->prepare("SELECT id_usuario FROM usuario WHERE email = ?");
             $stmt->execute([$email]);
 
             if ($stmt->fetch()) {
@@ -37,7 +45,7 @@
                 $hash  = password_hash($senha, PASSWORD_DEFAULT);
 
                 $stmt = $pdo->prepare("
-                    INSERT INTO usuarios (nome, email, senha, token_confirmacao)
+                    INSERT INTO usuario (nome, email, senha_hash, token_confirmacao)
                     VALUES (?, ?, ?, ?)
                 ");
                 $stmt->execute([$nome, $email, $hash, $token]);
@@ -64,107 +72,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Cadastro de Usuário</title>
-        <style>
-            * { box-sizing: border-box; }
-
-            body {
-                font-family: Arial, sans-serif;
-                background-color: #f4f6f8;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 100vh;
-                margin: 0;
-            }
-
-            .container {
-                background: #fff;
-                padding: 30px 25px;
-                border-radius: 10px;
-                width: 360px;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            }
-
-            h2 { text-align: center; margin-bottom: 20px; }
-
-            label {
-                display: block;
-                margin-top: 12px;
-                font-weight: bold;
-                font-size: 14px;
-            }
-
-            input {
-                width: 100%;
-                padding: 9px 10px;
-                margin-top: 5px;
-                border-radius: 5px;
-                border: 1px solid #ccc;
-                font-size: 14px;
-                transition: border-color .2s;
-            }
-
-            input:focus { outline: none; border-color: #007BFF; }
-
-            /* Estilo do HUD/Checkbox LGPD */
-            .lgpd-box {
-                margin-top: 15px;
-                display: flex;
-                align-items: flex-start;
-                gap: 8px;
-            }
-            .lgpd-box input { width: auto; margin-top: 3px; }
-            .lgpd-box label { margin-top: 0; font-weight: normal; font-size: 12px; }
-
-            button {
-                margin-top: 18px;
-                width: 100%;
-                padding: 11px;
-                background-color: #007BFF;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 15px;
-                transition: background .2s;
-            }
-
-            button:hover:not(:disabled) { background-color: #0056b3; }
-            button:disabled { opacity: .6; cursor: not-allowed; }
-
-            .msg {
-                margin-top: 14px;
-                padding: 10px 12px;
-                border-radius: 5px;
-                font-size: 13px;
-                display: none;
-            }
-
-            .msg.erro    { background: #fdecea; color: #c0392b; display: block; }
-            .msg.sucesso { background: #eafaf1; color: #1e7e34; display: block; }
-
-            /* RESPONSIVIDADE */
-            @media (max-width: 480px) {
-                .container {
-                    width: 90%;
-                    padding: 20px 15px;
-                }
-
-                h2 {
-                    font-size: 1.5em;
-                }
-
-                input {
-                    padding: 8px;
-                    font-size: 16px; /* Previne zoom no iOS */
-                }
-
-                button {
-                    padding: 10px;
-                    font-size: 14px;
-                }
-            }
-        </style>
+        <link rel="stylesheet" href="../assets/css/cadastro.css">
     </head>
     <body>
 
@@ -239,8 +147,9 @@
                 const json = await res.json();
 
                 if (json.ok) {
-                    mostrarMsg(json.msg, 'sucesso');
-                    form.reset();
+                    // mostrarMsg(json.msg, 'sucesso');
+                    // form.reset();
+                    window.location.href = 'index.php'; // Redirecionar para a página home
                 } else {
                     mostrarMsg(json.msg, 'erro');
                 }

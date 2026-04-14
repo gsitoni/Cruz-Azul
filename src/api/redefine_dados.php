@@ -5,7 +5,7 @@ include('valida_senha.php');
 require '../../vendor/phpmailer/src/Exception.php';
 require '../../vendor/phpmailer/src/PHPMailer.php';
 require '../../vendor/phpmailer/src/SMTP.php';
-require '../../test_email_bismark/database.php'; 
+require './database.php'; 
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -31,7 +31,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Trocar usuário
     if (!empty($novo_usuario)) {
 
-        $sql = "SELECT id FROM usuarios WHERE usuario = ? AND id != ?";
+        $sql = "SELECT id FROM usuario WHERE usuario = ? AND id != ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("si", $novo_usuario, $id_usuario);
         $stmt->execute();
@@ -53,7 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!empty($nova_senha)) {
 
         // buscar senha atual
-        $sql = "SELECT senha FROM usuarios WHERE id = ?";
+        $sql = "SELECT senha FROM usuario WHERE id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $id_usuario);
         $stmt->execute();
@@ -108,7 +108,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         ];
 
         // buscar email
-        $sql = "SELECT email FROM usuarios WHERE id = ?";
+        $sql = "SELECT email FROM usuario WHERE id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $id_usuario);
         $stmt->execute();
@@ -149,7 +149,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit;
     }
 
-    $sql = "UPDATE usuarios SET " . implode(", ", $_SESSION['dados_pendentes']['campos']) . " WHERE id = ?";
+    $sql = "UPDATE usuario SET " . implode(", ", $_SESSION['dados_pendentes']['campos']) . " WHERE id = ?";
     $tipos = $_SESSION['dados_pendentes']['tipos'] . "i";
     $valores = $_SESSION['dados_pendentes']['valores'];
     $valores[] = $id_usuario;

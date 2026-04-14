@@ -82,6 +82,8 @@ body {
 }
 
 .card {
+    display: flex;
+    flex-direction: column;
     background: white;
     padding: 20px;
     border-radius: 10px;

@@ -44,7 +44,7 @@ if (isset($_GET['status'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recuperação de senha</title>
-    <link rel="stylesheet" href="../css/recuperacao_de_senha.css">
+    <link rel="stylesheet" href="../assets/css/recuperacao_de_senha.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap');
     </style>

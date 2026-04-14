@@ -13,7 +13,7 @@ function validarSenhaForte($senha) {
     $minuscula   = preg_match('/[a-z]/', $senha);
     $numero      = preg_match('/[0-9]/', $senha);
     
-    $especial    = preg_match('/[!@#$%^&*()\-_=+{};:,<.>|\[\]\\\/]/', $senha);
+    $especial    = preg_match('/[!@#$%^&*()\-_=+{};:,<.>|]/', $senha);
 
     // Validações 
     if (!$tamanho) {

@@ -1,6 +1,12 @@
 <?php
 session_start();
 
+// Headers de segurança
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('X-XSS-Protection: 1; mode=block');
+header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+
 // ==========================
 // PROTEÇÃO DE ACESSO
 // ==========================
@@ -24,66 +30,80 @@ if (empty($_SESSION['csrf_token'])) {
 }
 
 // ==========================
-// DADOS DO BANCO
+// CONEXÃO BANCO
 // ==========================
-// TODO: Implementar queries no banco de dados
-// $usuarios = obter_usuarios_banco();
+require '../../api/database.php';
 
-$usuarios = [];
+// ==========================
+// AÇÕES POST
+// ==========================
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die('CSRF token inválido');
+    }
+    
+    $acao = $_POST['acao'] ?? '';
+    $id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
+    
+    try {
+        if ($acao === 'bloquear' && $id) {
+            $stmt = $pdo->prepare("UPDATE usuario SET status_cadastro = 'bloqueado' WHERE id_usuario = ?");
+            $stmt->execute([$id]);
+            $_SESSION['msg'] = 'Usuário bloqueado com sucesso.';
+        } elseif ($acao === 'desbloquear' && $id) {
+            $stmt = $pdo->prepare("UPDATE usuario SET status_cadastro = 'confirmado' WHERE id_usuario = ?");
+            $stmt->execute([$id]);
+            $_SESSION['msg'] = 'Usuário desbloqueado com sucesso.';
+        } elseif ($acao === 'excluir' && $id) {
+            $stmt = $pdo->prepare("DELETE FROM usuario WHERE id_usuario = ?");
+            $stmt->execute([$id]);
+            $_SESSION['msg'] = 'Usuário excluído com sucesso.';
+        } else {
+            $_SESSION['msg'] = 'Ação inválida ou usuário não encontrado.';
+        }
+    } catch (PDOException $e) {
+        $_SESSION['msg'] = 'Erro ao processar a solicitação.';
+    }
+    
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit();
+}
 
 // ==========================
 // FILTROS
 // ==========================
 $busca = $_GET['busca'] ?? "";
-$tipo = $_GET['tipo'] ?? "";
 $status = $_GET['status'] ?? "";
 
-$usuarios_filtrados = array_filter($usuarios, function($u) use ($busca, $tipo, $status) {
-    return
-        (empty($busca) || stripos($u['nome'], $busca) !== false) &&
-        (empty($tipo) || $u['tipo'] === strtolower($tipo)) &&
-        (empty($status) || $u['status'] === strtolower($status));
-});
-
 // ==========================
-// AÇÕES
+// QUERY USUÁRIOS
 // ==========================
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        die("CSRF inválido");
+try {
+    $sql = "SELECT id_usuario, email, status_cadastro, data_criacao FROM usuario WHERE 1=1";
+    $params = [];
+    
+    if (!empty($busca)) {
+        $sql .= " AND email LIKE ?";
+        $params[] = "%$busca%";
     }
-
-    $acao = $_POST['acao'] ?? "";
-    $usuario = $_POST['usuario'] ?? "";
-
-    // TODO: Implementar no banco de dados
-    // UPDATE usuarios SET status='bloqueado' WHERE nome=?
-    // UPDATE usuarios SET tipo='admin' WHERE nome=?
-
-    $_SESSION['msg'] = "Ação '$acao' aplicada ao usuário $usuario";
-
-    header("Location: ./usuarios.php");
-    exit();
+    
+    if (!empty($status)) {
+        $sql .= " AND status_cadastro = ?";
+        $params[] = $status;
+    }
+    
+    $sql .= " ORDER BY data_criacao DESC";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+} catch (PDOException $e) {
+    $usuarios = [];
 }
 
 $msg = $_SESSION['msg'] ?? "";
 unset($_SESSION['msg']);
-
-// ==========================
-// HELPERS VISUAIS
-// ==========================
-function badgeTipo($tipo) {
-    return match($tipo) {
-        "admin" => "admin",
-        "ong" => "ong",
-        default => "comum"
-    };
-}
-
-function badgeStatus($status) {
-    return $status === "ativo" ? "ativo" : "bloqueado";
-}
 ?>
 
 <!DOCTYPE html>
@@ -119,93 +139,58 @@ function badgeStatus($status) {
 
 <!-- FILTROS -->
 <form method="GET" class="filters">
-
-<input type="text" name="busca" placeholder="Buscar usuário..." value="<?= htmlspecialchars($busca) ?>">
-
-<select name="tipo">
-    <option value="">Tipo</option>
-    <option value="admin">Administrador</option>
-    <option value="ong">ONG</option>
-    <option value="comum">Usuário comum</option>
-</select>
-
-<select name="status">
-    <option value="">Status</option>
-    <option value="ativo">Ativo</option>
-    <option value="bloqueado">Bloqueado</option>
-</select>
-
-<button type="submit">Filtrar</button>
-
+    <input type="text" name="busca" placeholder="Buscar por email..." value="<?= htmlspecialchars($busca) ?>">
+    <select name="status">
+        <option value="">Status</option>
+        <option value="pendente">Pendente</option>
+        <option value="confirmado">Confirmado</option>
+        <option value="bloqueado">Bloqueado</option>
+    </select>
+    <button type="submit">Filtrar</button>
 </form>
 
 <!-- TABELA -->
 <section class="table-box">
-
-<table>
-<thead>
-<tr>
-    <th>Usuário</th>
-    <th>Email</th>
-    <th>Tipo</th>
-    <th>Status</th>
-    <th>Último acesso</th>
-    <th>Ações</th>
-</tr>
-</thead>
-
-<tbody>
-
-<?php if(empty($usuarios_filtrados)): ?>
-<tr><td colspan="6">Nenhum usuário encontrado</td></tr>
-<?php endif; ?>
-
-<?php foreach($usuarios_filtrados as $u): ?>
-<tr>
-
-<td><?= htmlspecialchars($u['nome']) ?></td>
-<td><?= htmlspecialchars($u['email']) ?></td>
-
-<td>
-<span class="badge <?= badgeTipo($u['tipo']) ?>">
-<?= strtoupper($u['tipo']) ?>
-</span>
-</td>
-
-<td>
-<span class="badge <?= badgeStatus($u['status']) ?>">
-<?= strtoupper($u['status']) ?>
-</span>
-</td>
-
-<td><?= htmlspecialchars($u['ultimo']) ?></td>
-
-<td>
-
-<form method="POST" style="display:inline;">
-<input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-<input type="hidden" name="usuario" value="<?= htmlspecialchars($u['nome']) ?>">
-
-<?php if($u['status'] === "ativo"): ?>
-<button class="btn-bloquear" name="acao" value="bloquear">Bloquear</button>
-<?php else: ?>
-<button class="btn-ativar" name="acao" value="ativar">Ativar</button>
-<?php endif; ?>
-
-<?php if($u['tipo'] !== "admin"): ?>
-<button class="btn-promover" name="acao" value="promover">Promover</button>
-<?php endif; ?>
-
-</form>
-
-</td>
-
-</tr>
-<?php endforeach; ?>
-
-</tbody>
-</table>
-
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Data Criação</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if(empty($usuarios)): ?>
+                <tr><td colspan="5">Nenhum usuário encontrado</td></tr>
+            <?php endif; ?>
+            <?php foreach($usuarios as $u): ?>
+                <tr>
+                    <td><?= htmlspecialchars($u['id_usuario']) ?></td>
+                    <td><?= htmlspecialchars($u['email']) ?></td>
+                    <td>
+                        <span class="badge <?= $u['status_cadastro'] === 'confirmado' ? 'ativo' : 'bloqueado' ?>">
+                            <?= strtoupper($u['status_cadastro']) ?>
+                        </span>
+                    </td>
+                    <td><?= htmlspecialchars($u['data_criacao']) ?></td>
+                    <td>
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                            <input type="hidden" name="id" value="<?= $u['id_usuario'] ?>">
+                            <?php if($u['status_cadastro'] === 'confirmado'): ?>
+                                <button class="btn-bloquear" name="acao" value="bloquear">Bloquear</button>
+                            <?php elseif($u['status_cadastro'] === 'bloqueado'): ?>
+                                <button class="btn-ativar" name="acao" value="desbloquear">Desbloquear</button>
+                            <?php endif; ?>
+                            <button class="btn-excluir" name="acao" value="excluir" onclick="return confirm('Tem certeza?')">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
 </section>
 
 </main>

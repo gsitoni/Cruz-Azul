@@ -1,7 +1,7 @@
 <?php
 // db.php - Conexão com o banco de dados
 $host = 'localhost';
-$dbname = 'cadastro_db';
+$dbname = 'cruzazul';
 $user = 'root';
 $pass = '';
 

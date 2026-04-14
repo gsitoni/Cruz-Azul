@@ -11,22 +11,22 @@ if (empty($token)) {
 } else {
     // Busca usuário pelo token
     $stmt = $pdo->prepare("
-        SELECT id, confirmado FROM usuarios WHERE token_confirmacao = ?
+        SELECT id_usuario, status_cadastro FROM usuario WHERE token_confirmacao = ?
     ");
     $stmt->execute([$token]);
     $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$usuario) {
         $mensagem = 'Link de confirmação inválido ou expirado.';
-    } elseif ($usuario['confirmado']) {
+    } elseif ($usuario['status_cadastro'] === 'confirmado') {
         $mensagem = 'Sua conta já foi confirmada anteriormente. Faça login.';
         $tipo     = 'info';
     } else {
         // Ativa a conta e apaga o token
         $upd = $pdo->prepare("
-            UPDATE usuarios SET confirmado = 1, token_confirmacao = NULL WHERE id = ?
+            UPDATE usuario SET status_cadastro = 'confirmado', token_confirmacao = NULL WHERE id_usuario = ?
         ");
-        $upd->execute([$usuario['id']]);
+        $upd->execute([$usuario['id_usuario']]);
         $mensagem = 'E-mail confirmado com sucesso! Sua conta está ativa.';
         $tipo     = 'sucesso';
     }

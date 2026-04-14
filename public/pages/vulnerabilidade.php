@@ -1,3 +1,22 @@
+<?php
+// Headers de segurança
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('X-XSS-Protection: 1; mode=block');
+header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+
+// Conexão banco
+require '../../src/api/database.php';
+
+try {
+    // Buscar ONGs por região (simulando com beneficiario)
+    $stmt = $pdo->prepare("SELECT nome, endereco, telefone, email FROM beneficiario WHERE status_elegibilidade = 'ativo' ORDER BY nome LIMIT 10");
+    $stmt->execute();
+    $ongs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $ongs = [];
+}
+?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -88,6 +107,28 @@
                     <button type="button" data-region="centro-oeste">Centro-Oeste</button>
                     <button type="button" data-region="sudeste">Sudeste</button>
                     <button type="button" data-region="sul">Sul</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2>ONGs Parceiras Ativas</h2>
+                    <p>Instituições verificadas que atuam em regiões vulneráveis.</p>
+                </div>
+                <div class="ong-list">
+                    <?php if(empty($ongs)): ?>
+                        <p>Nenhuma ONG ativa no momento.</p>
+                    <?php else: ?>
+                        <?php foreach($ongs as $ong): ?>
+                            <li>
+                                <strong><?php echo htmlspecialchars($ong['nome']); ?></strong><br>
+                                <?php echo htmlspecialchars($ong['endereco']); ?><br>
+                                <?php echo htmlspecialchars($ong['telefone']); ?> | <?php echo htmlspecialchars($ong['email']); ?>
+                            </li>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </section>

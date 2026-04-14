@@ -6,12 +6,18 @@ $secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
 
 session_set_cookie_params([
     'lifetime' => 0,
-    'path' => '/',
+    'path' => '/Cruz-Azul',
     'secure' => $secure,
     'httponly' => true,
     'samesite' => 'Strict'
 ]);
 session_start();
+
+// Headers de segurança
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('X-XSS-Protection: 1; mode=block');
+header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 
 // ==========================
 // PROTEÇÃO DE ACESSO
@@ -38,16 +44,35 @@ if (isset($_GET['logout'])) {
 }
 
 // ==========================
+// CONEXÃO BANCO
+// ==========================
+require '../../api/database.php';
+
+// ==========================
 // DADOS DO BANCO
 // ==========================
-// TODO: Implementar queries no banco de dados
-// $logs = obter_logs_banco();
-// $ongs = obter_ongs_pendentes_banco();
-// $usuarios = obter_usuarios_banco();
-
-$logs = [];
-$ongs = [];
-$usuarios = [];
+try {
+    // Logs de segurança (simulando, pois não há tabela logs)
+    $logs = [];
+    
+    // ONGs pendentes (usando tabela beneficiario ou algo, mas ajustando)
+    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM beneficiario WHERE status_elegibilidade = 'pendente'");
+    $stmt->execute();
+    $ongs_pendentes = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    
+    // Usuários
+    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM usuario");
+    $stmt->execute();
+    $total_usuarios = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    
+    // Doações
+    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM doacao");
+    $stmt->execute();
+    $total_doacoes = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    
+} catch (PDOException $e) {
+    die("Erro no banco: " . $e->getMessage());
+}
 ?>
 
 <!DOCTYPE html>
@@ -81,68 +106,40 @@ $usuarios = [];
     <article>
         <h3>⚠️ Visão Geral</h3>
         <ul>
-            <li>Usuário logado: <strong><?= htmlspecialchars($_SESSION['usuario']) ?></strong></li>
+            <li>Usuário logado: <strong><?= htmlspecialchars($_SESSION['usuario']['nome'] ?? 'Admin') ?></strong></li>
             <li>Status: <strong>Seguro</strong></li>
-            <li>Tentativas falhas: <strong><?= count($logs) > 0 ? count(array_filter($logs, fn($l) => isset($l['status']) && $l['status'] === 'falha')) : 0 ?></strong></li>
+            <li>ONGs pendentes: <strong><?= $ongs_pendentes ?></strong></li>
+            <li>Total usuários: <strong><?= $total_usuarios ?></strong></li>
+            <li>Total doações: <strong><?= $total_doacoes ?></strong></li>
         </ul>
     </article>
 
     <article>
         <h3>🚨 Alertas</h3>
-        <?php if(count($logs) === 0): ?>
-        <p>Nenhum alerta no momento</p>
-        <?php else: ?>
-        <ul>
-            <?php foreach(array_slice($logs, 0, 5) as $log): ?>
-            <li>[<?= strtoupper($log['nivel'] ?? 'INFO') ?>] <?= htmlspecialchars($log['acao'] ?? '') ?></li>
-            <?php endforeach; ?>
-        </ul>
-        <?php endif; ?>
+        <p>Nenhum alerta crítico no momento</p>
+        <p>ONGs pendentes: <?= $ongs_pendentes ?></p>
     </article>
 
     <article>
-        <h3>📜 Últimos Logs</h3>
-        <?php if(count($logs) === 0): ?>
-        <p>Nenhum log registrado</p>
-        <?php else: ?>
-        <table>
-            <tr>
-                <th>Data</th><th>Usuário</th><th>Ação</th><th>Nível</th>
-            </tr>
-            <?php foreach(array_slice($logs, 0, 10) as $log): ?>
-            <tr>
-                <td><?= htmlspecialchars($log['data'] ?? '') ?></td>
-                <td><?= htmlspecialchars($log['usuario'] ?? '') ?></td>
-                <td><?= htmlspecialchars($log['acao'] ?? '') ?></td>
-                <td><?= htmlspecialchars($log['nivel'] ?? 'info') ?></td>
-            </tr>
-            <?php endforeach; ?>
-        </table>
-        <p><a href="./logs.php">Ver todos os logs →</a></p>
-        <?php endif; ?>
+        <h3>📜 Estatísticas</h3>
+        <ul>
+            <li>Usuários registrados: <?= $total_usuarios ?></li>
+            <li>Doações realizadas: <?= $total_doacoes ?></li>
+            <li>ONGs ativas: (não implementado)</li>
+        </ul>
     </article>
 </section>
 
 <section>
 <h2>Solicitações de ONGs Pendentes</h2>
-<?php if(count($ongs) === 0): ?>
-<p>Nenhuma solicitação pendente</p>
-<?php else: ?>
-<?php foreach(array_slice($ongs, 0, 5) as $ong): ?>
-<article>
-    <h3><?= htmlspecialchars($ong['nome'] ?? '') ?></h3>
-    <p><?= htmlspecialchars($ong['email'] ?? '') ?></p>
-    <p><?= htmlspecialchars($ong['descricao'] ?? '') ?></p>
-</article>
-<?php endforeach; ?>
-<p><a href="./ongs.php">Ver todas as solicitações →</a></p>
-<?php endif; ?>
+<p>Total de solicitações pendentes: <?= $ongs_pendentes ?></p>
+<p><a href="./ongs.php">Gerenciar ONGs →</a></p>
 </section>
 
 <section>
 <h2>Gerenciamento de Usuários</h2>
-<p>Total de usuários: <?= count($usuarios) ?></p>
-<p><a href="./usuarios.php">Ir para gerenciamento de usuários →</a></p>
+<p>Total de usuários: <?= $total_usuarios ?></p>
+<p><a href="./usuarios.php">Gerenciar usuários →</a></p>
 </section>
 
 <footer>
