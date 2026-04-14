@@ -33,7 +33,7 @@ if ($ongSelecionada) {
 </head>
 <body>
 <nav>
-    <span class="logo">🤝 Cruz Azul</span>
+    <a href="home_usuario.php" class="logo" style="text-decoration:none;color:#fff;">🤝 Cruz Azul</a>
     <div>
         <a href="home_usuario.php">Início</a>
         <a href="servicos_publicos.php">Serviços Públicos</a>

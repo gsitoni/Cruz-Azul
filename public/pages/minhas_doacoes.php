@@ -4,17 +4,26 @@ if (!isset($_SESSION['usuario'])) {
     header('Location: login.php');
     exit;
 }
-$nome = $_SESSION['usuario']['nome'] ?? $_SESSION['usuario']['email'] ?? 'Usuário';
-// Extrair primeiro nome
-if (strpos($nome, '@') !== false) {
-    $primeiroNome = explode('@', $nome)[0];
-} else {
-    $primeiroNome = explode(' ', $nome)[0];
-}
-$doacoes = [
-    ['data' => '2026-04-05', 'ong' => 'Abrigo Esperança', 'item' => 'Cestas básicas', 'status' => 'Entregue'],
-    ['data' => '2026-04-08', 'ong' => 'Casa do Bem', 'item' => 'Kits de higiene', 'status' => 'Em andamento'],
-];
+
+require '../../src/api/database.php';
+
+$userEmail    = $_SESSION['usuario']['email'];
+$primeiroNome = explode('@', $userEmail)[0];
+
+// Busca doações do usuário logado via e-mail do doador
+$stmt = $pdo->prepare(
+    "SELECT d.data_doacao, d.categoria, d.item, d.quantidade, d.unidade_medida,
+            b.nome_receptor
+     FROM doacao d
+     INNER JOIN doador dr ON dr.id_doador = d.id_doador
+     LEFT JOIN estoque e ON e.id_doacao = d.id_doacao
+     LEFT JOIN distribuicao dist ON dist.id_lote = e.id_lote
+     LEFT JOIN beneficiario b ON b.id_beneficiario = dist.id_beneficiario
+     WHERE dr.email = ?
+     ORDER BY d.data_doacao DESC, d.criado_em DESC"
+);
+$stmt->execute([$userEmail]);
+$doacoes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -26,7 +35,7 @@ $doacoes = [
 </head>
 <body>
 <nav>
-    <span class="logo">🤝 Cruz Azul</span>
+    <a href="home_usuario.php" class="logo" style="text-decoration:none;color:#fff;">🤝 Cruz Azul</a>
     <div>
         <a href="home_usuario.php">Início</a>
         <a href="doar.php">Fazer doação</a>
@@ -35,32 +44,41 @@ $doacoes = [
         <a href="logout.php">Sair</a>
     </div>
 </nav>
+
+<nav aria-label="breadcrumb" style="background:#e9ecef;border-bottom:1px solid #dee2e6;padding:8px 20px;font-size:13px;">
+    <ol style="list-style:none;margin:0 auto;padding:0;display:flex;flex-wrap:wrap;align-items:center;max-width:900px;">
+        <li><a href="home_usuario.php" style="color:#007BFF;text-decoration:none;">Início</a></li>
+        <li><span style="margin:0 6px;color:#aaa;">›</span></li>
+        <li style="color:#555;">Minhas Doações</li>
+    </ol>
+</nav>
+
 <div class="container">
     <div class="header">
         <h1>Minhas doações</h1>
         <p>Olá, <?php echo htmlspecialchars($primeiroNome); ?>! 👋 Veja o histórico das suas contribuições.</p>
     </div>
     <?php if (empty($doacoes)): ?>
-        <div class="box">Nenhuma doação registrada ainda.</div>
+        <div class="box">Nenhuma doação registrada ainda. <a href="doar.php">Faça sua primeira doação!</a></div>
     <?php else: ?>
         <table>
             <thead>
                 <tr>
                     <th>Data</th>
-                    <th>ONG</th>
+                    <th>Categoria</th>
                     <th>Item</th>
-                    <th>Status</th>
+                    <th>Quantidade</th>
+                    <th>ONG Beneficiária</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($doacoes as $doacao): ?>
                     <tr>
-                        <td><?php echo htmlspecialchars($doacao['data']); ?></td>
-                        <td><?php echo htmlspecialchars($doacao['ong']); ?></td>
+                        <td><?php echo htmlspecialchars(date('d/m/Y', strtotime($doacao['data_doacao']))); ?></td>
+                        <td><?php echo htmlspecialchars(ucfirst($doacao['categoria'])); ?></td>
                         <td><?php echo htmlspecialchars($doacao['item']); ?></td>
-                        <td class="status-<?php echo $doacao['status'] === 'Entregue' ? 'entregue' : 'andamento'; ?>">
-                            <?php echo htmlspecialchars($doacao['status']); ?>
-                        </td>
+                        <td><?php echo htmlspecialchars($doacao['quantidade'] + 0); ?> <?php echo htmlspecialchars($doacao['unidade_medida']); ?></td>
+                        <td><?php echo $doacao['nome_receptor'] ? htmlspecialchars($doacao['nome_receptor']) : '<span style="color:#aaa;">Aguardando distribuição</span>'; ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

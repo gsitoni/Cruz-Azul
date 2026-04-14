@@ -20,7 +20,7 @@ $status = $_SESSION['ong']['status'] ?? 'ativo';
 <body>
 
 <nav>
-    <span class="logo">🤝 Cruz Azul</span>
+    <a href="home_ong.php" class="logo" style="text-decoration:none;color:#fff;">🤝 Cruz Azul</a>
     <div>
         <a href="doacoes_recebidas.php">Doações</a>
         <a href="perfil_ong.php">Perfil</a>
