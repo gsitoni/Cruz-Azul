@@ -13,8 +13,8 @@
         }
 
         nav {
-            background-color: #1a4fa0;
-            padding: 12px 20px;
+            background-color: #2f67bd;
+            padding: 14px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -38,48 +38,51 @@
             color: #7a5c00;
             margin: 0 16px;
             border-left: 4px solid #f5c842;
+            border-radius: 6px;
         }
 
         .topo {
-            background-color: #1a4fa0;
+            background-color: #2f67bd;
             color: #fff;
-            padding: 24px 20px;
+            padding: 22px 20px;
         }
 
         .topo h1 {
-            font-size: 20px;
-            margin-bottom: 8px;
+            font-size: 19px;
+            margin-bottom: 6px;
         }
 
         .topo .area-tag {
             display: inline-block;
-            font-size: 13px;
-            background: rgba(255,255,255,0.15);
+            font-size: 12px;
+            background: rgba(255,255,255,0.16);
             color: #fff;
             padding: 4px 10px;
-            border-radius: 999px;
-            margin-bottom: 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
         }
 
         .topo p {
-            font-size: 14px;
+            font-size: 13px;
             opacity: 0.9;
         }
 
         .barra-stats {
-            background: #2d72d2;
-            padding: 16px 20px;
+            background: #2f67bd;
+            padding: 14px 20px;
             display: flex;
-            gap: 16px;
+            gap: 14px;
             flex-wrap: wrap;
+            border-top: 1px solid rgba(255,255,255,0.16);
         }
 
         .stat {
             color: #fff;
+            min-width: 160px;
         }
 
         .stat .numero {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: bold;
         }
 
@@ -90,23 +93,23 @@
 
         .conteudo {
             max-width: 900px;
-            margin: 24px auto;
+            margin: 20px auto;
             padding: 0 16px;
         }
 
         .titulo-secao {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             margin-bottom: 12px;
-            color: #1a4fa0;
+            color: #2f67bd;
         }
 
         .grid-acoes,
         .grid-nec {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 14px;
-            margin-bottom: 24px;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
         .card-acao,
@@ -115,14 +118,14 @@
         .card {
             background: #fff;
             border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 16px;
+            border-radius: 6px;
+            padding: 14px;
         }
 
         .card-acao h3,
         .card-nec h4 {
-            font-size: 15px;
-            margin-bottom: 8px;
+            font-size: 14px;
+            margin-bottom: 6px;
         }
 
         .card-acao p,
@@ -130,14 +133,14 @@
         .card-nec .qtd {
             font-size: 13px;
             color: #555;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .lista-doacoes .doacao-item {
             display: flex;
             justify-content: space-between;
             gap: 12px;
-            padding: 12px 0;
+            padding: 10px 0;
             border-bottom: 1px solid #eee;
         }
 
@@ -148,38 +151,41 @@
         .btn {
             padding: 8px 12px;
             border: none;
-            border-radius: 6px;
+            border-radius: 4px;
             font-size: 13px;
             cursor: pointer;
         }
 
-        .btn-aceitar { background: #e7f3ff; color: #007BFF; }
+        .btn-aceitar { background: #eef4ff; color: #2f67bd; }
         .btn-recusar { background: #fdecea; color: #c0392b; }
 
         .barra-fundo {
             background: #eee;
-            border-radius: 10px;
+            border-radius: 4px;
             height: 8px;
             overflow: hidden;
         }
 
         .barra-fill {
             height: 8px;
-            border-radius: 10px;
-            background: #2d72d2;
+            border-radius: 4px;
+            background: #4b82d6;
         }
 
         .barra-fill.urgente { background: #c0392b; }
-        .barra-fill.ok { background: #007BFF; }
+        .barra-fill.ok { background: #2f67bd; }
 
         footer {
-            background: #0f2f63;
+            background: #24539a;
             color: rgba(255,255,255,0.7);
             text-align: center;
             padding: 16px;
             font-size: 13px;
             margin-top: 20px;
         }
+
+       
+    
   
  
    
