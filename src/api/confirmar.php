@@ -64,7 +64,7 @@ if (empty($token) || strlen($token) > 255) {
 
             $redirect = (strpos($usuario['permissao'] ?? '', 'Admin') !== false)
                 ? '../../src/admin/pages/dashboard.php'
-                : '../pages/home_usuario.php';
+                : '../pages/confirmacao_cadastro.php';
         }
 
     } catch (PDOException $e) {

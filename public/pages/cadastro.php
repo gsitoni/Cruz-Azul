@@ -99,10 +99,10 @@
             <input type="email" id="email" name="email" required>
 
             <label>Senha</label>
-            <input type="password" id="senha" name="senha" required>
+            <input type="password" id="senha" name="senha" placeholder="Mínimo 12 caracteres" required>
 
             <label>Confirmar Senha</label>
-            <input type="password" id="confirmarSenha" required>
+            <input type="password" id="confirmarSenha" placeholder="Repita a senha" required>
 
             <div class="lgpd-box">
                 <input type="checkbox" id="lgpd" required>
@@ -161,7 +161,7 @@
                 if (json.ok) {
                     // mostrarMsg(json.msg, 'sucesso');
                     // form.reset();
-                    window.location.href = 'index.php'; // Redirecionar para a página home
+                    window.location.href = 'cadastro_concluido.php?email=' + encodeURIComponent(document.getElementById('email').value.trim()) + '&tipo=usuario';
                 } else {
                     mostrarMsg(json.msg, 'erro');
                 }

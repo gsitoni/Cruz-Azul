@@ -43,7 +43,7 @@ function enviarEmail(string $para, string $nomePara, string $assunto, string $co
 }
 
 function enviarEmailConfirmacao(string $para, string $nome, string $token): bool {
-    $link = 'http://localhost/Cruz-Azul/src/api/confirmar.php?token=' . urlencode($token);
+    $link = 'http://localhost/Cruz-Azul/public/pages/confirmacao_cadastro.php?token=' . urlencode($token);
     $nome_safe = htmlspecialchars($nome, ENT_QUOTES, 'UTF-8');
 
     $corpo = "

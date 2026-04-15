@@ -105,11 +105,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <label for="senha">Senha</label>
         <div class="senha-wrap">
             <!-- Alterado para 8 caracteres no texto de apoio do campo. -->
-            <input type="password" id="senha" name="senha" placeholder="Mínimo 8 caracteres" required>
+            <input type="password" id="senha" name="senha" placeholder="Mínimo 12 caracteres" required>
             <button type="button" class="btn-olho" id="btnOlho">Mostrar</button>
         </div>
         <!-- Alterado para 8 caracteres na mensagem de validacao exibida ao usuario. -->
-        <div class="erro-campo" id="erroSenha">A senha deve ter pelo menos 8 caracteres.</div>
+        <div class="erro-campo" id="erroSenha">A senha deve ter pelo menos 12 caracteres.</div>
         <!-- <div class="dica">regex: /^.{8,}$/</div> -->
  
         <!-- Mensagem geral -->

@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 type="password"
                 id="senha"
                 name="senha"
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 12 caracteres"
             >
             <button type="button" class="btn-olho" id="btnOlho">Mostrar</button>
         </div>
