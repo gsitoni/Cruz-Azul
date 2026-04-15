@@ -3,13 +3,14 @@
  //Necessário incluir banco de dados 
  require '../../src/api/database.php'; 
  
+ session_start();
+
 // Headers de segurança
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('X-XSS-Protection: 1; mode=block');
 header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 
-session_start();
  
 // Se já logado, redireciona
 if (isset($_SESSION['usuario'])) {
