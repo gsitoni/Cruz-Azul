@@ -195,11 +195,6 @@ $titulos = [
                         📞 <?php echo htmlspecialchars($servico['telefone']); ?>
                     </div>
 
-                    <?php if (isset($servico['distancia'])): ?>
-                        <div class="distancia">
-                            📏 <?php echo htmlspecialchars($servico['distancia']); ?>
-                        </div>
-                    <?php endif; ?>
                 </div>
                 <?php
             }

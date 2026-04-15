@@ -1,81 +1,74 @@
 <?php
-// ==========================
-// CONFIG SEGURA DE COOKIE
-// ==========================
+// ============================================================
+//  codigo_de_verificacao.php  –  public/pages/
+// ============================================================
 $secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
 
 session_set_cookie_params([
     'lifetime' => 0,
-    'path' => '/',
-    'domain' => '',
-    'secure' => $secure,
+    'path'     => '/',
+    'domain'   => '',
+    'secure'   => $secure,
     'httponly' => true,
     'samesite' => 'Strict'
 ]);
 
 session_start();
 
-// ==========================
-// GERAR CSRF
-// ==========================
+header('X-Frame-Options: DENY');
+header('X-Content-Type-Options: nosniff');
+
+// Gera CSRF
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// ==========================
-// MENSAGEM
-// ==========================
-$erro = "";
+$erro = '';
 
-// ==========================
-// PROCESSAR FORM
-// ==========================
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // CSRF
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    if (
+        empty($_SESSION['csrf_token']) ||
+        empty($_POST['csrf_token'])    ||
+        !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])
+    ) {
+        http_response_code(403);
         die("Requisição inválida.");
     }
 
-    // PEGAR CÓDIGO DIGITADO
-    $codigo_digitado = $_POST['codigo'] ?? "";
+    $codigo_digitado = trim($_POST['codigo'] ?? '');
+    $codigo_sessao   = (string) ($_SESSION['codigo_recuperacao'] ?? '');
+    $expira          = $_SESSION['expira_codigo'] ?? 0;
 
-    // PEGAR CÓDIGO REAL
-    $codigo_sessao = $_SESSION['codigo_recuperacao'] ?? "";
-    $codigo_cookie = $_COOKIE['codigo_recuperacao'] ?? "";
+    if (empty($codigo_digitado)) {
+        $erro = 'Digite o código recebido.';
 
-    // VALIDAÇÃO
-    if (
-        !empty($codigo_digitado) &&
-        ($codigo_digitado == $codigo_sessao || $codigo_digitado == $codigo_cookie)
-    ) {
+    } elseif (time() > $expira) {
+        // Limpa código expirado
+        unset($_SESSION['codigo_recuperacao'], $_SESSION['expira_codigo']);
+        $erro = 'Código expirado. Solicite um novo.';
 
-        // marca como verificado
-        $_SESSION['verificado'] = true;
-
-        // remove código (boa prática)
-        unset($_SESSION['codigo_recuperacao']);
-        setcookie("codigo_recuperacao", "", time() - 3600, "/");
-
-        header("Location: redefinicao_de_senha.php");
-        exit();
+    } elseif (!hash_equals($codigo_sessao, $codigo_digitado)) {
+        $erro = 'Código inválido.';
 
     } else {
-        $erro = "Código inválido ou expirado.";
+        // Código correto — marca sessão como verificada
+        $_SESSION['verificado'] = true;
+        unset($_SESSION['codigo_recuperacao'], $_SESSION['expira_codigo']);
+
+        header('Location: redefinicao_de_senha.php');
+        exit();
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Código de verificação</title>
+    <title>Código de verificação – Cruz Azul</title>
     <link rel="stylesheet" href="../assets/css/codigo_de_verificacao.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700&display=swap');
-    </style>
 </head>
 <body>
 
@@ -85,38 +78,39 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <div class="container">
 
-    <h2 class="subtitulo"> Recuperação de senha </h2>
+    <h2 class="subtitulo">Recuperação de senha</h2>
     <h3 class="descricao">Enviamos um código para o seu e-mail</h3>
     <p class="descricao">Digite o código de verificação recebido</p>
 
-    <!-- ERRO -->
     <?php if (!empty($erro)): ?>
-        <p style="color:red; text-align:center;"><?php echo htmlspecialchars($erro); ?></p>
+        <p style="color:red;text-align:center;">
+            <?= htmlspecialchars($erro, ENT_QUOTES, 'UTF-8') ?>
+        </p>
     <?php endif; ?>
 
     <form id="form_codigo" method="POST" class="form">
 
-        <!-- CSRF -->
-        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+        <input type="hidden" name="csrf_token"
+               value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
-        <!-- CÓDIGO FINAL -->
+        <!-- Campo hidden que recebe o código montado pelo JS -->
         <input type="hidden" name="codigo" id="codigo_final">
 
         <div class="inputs">
-            <input class="input" type="text" maxlength="1">
-            <input class="input" type="text" maxlength="1">
-            <input class="input" type="text" maxlength="1">
-            <input class="input" type="text" maxlength="1">
-            <input class="input" type="text" maxlength="1">
-            <input class="input" type="text" maxlength="1">
+            <input class="input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+            <input class="input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+            <input class="input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+            <input class="input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+            <input class="input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
+            <input class="input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]">
         </div>
 
-        <a href="./recuperacao_de_senha.php" id="link_recuperacao_senha">
+        <a href="recuperacao_de_senha.php" id="link_recuperacao_senha">
             Não recebi o código
         </a>
 
         <div class="botoes">
-            <button class="botao" type="button" onclick="voltar()">Voltar</button>
+            <button class="botao" type="button" onclick="history.back()">Voltar</button>
             <button class="botao" type="submit">Avançar</button>
         </div>
 
@@ -124,21 +118,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 </div>
 
 <script src="../assets/js/codigo_de_verificacao.js"></script>
-
-<!-- SCRIPT EXTRA PARA ENVIAR O CÓDIGO -->
 <script>
-const form = document.getElementById("form_codigo");
-const inputs = document.querySelectorAll(".inputs .input");
-const hiddenInput = document.getElementById("codigo_final");
+const form   = document.getElementById('form_codigo');
+const inputs = document.querySelectorAll('.inputs .input');
+const hidden = document.getElementById('codigo_final');
 
-form.addEventListener("submit", function(e) {
-    let codigo = "";
-
-    inputs.forEach(input => {
-        codigo += input.value;
+// Avança para o próximo campo automaticamente
+inputs.forEach((input, i) => {
+    input.addEventListener('input', () => {
+        input.value = input.value.replace(/\D/g, ''); // só números
+        if (input.value && i < inputs.length - 1) {
+            inputs[i + 1].focus();
+        }
     });
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && i > 0) {
+            inputs[i - 1].focus();
+        }
+    });
+});
 
-    hiddenInput.value = codigo;
+// Monta o código completo antes de enviar
+form.addEventListener('submit', function() {
+    hidden.value = Array.from(inputs).map(i => i.value).join('');
 });
 </script>
 

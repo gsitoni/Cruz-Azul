@@ -4,6 +4,29 @@ if (!isset($_SESSION['ong'])) {
     header('Location: login_ong.php');
     exit;
 }
+
+require '../../src/api/database.php';
+
+function formatarNumeroDoacao($valor)
+{
+    $numero = (float) $valor;
+
+    if ((float) ((int) $numero) === $numero) {
+        return number_format($numero, 0, ',', '.');
+    }
+
+    return number_format($numero, 1, ',', '.');
+}
+
+function formatarDataDoacao(?string $valor, string $formato = 'd/m/Y')
+{
+    if (empty($valor)) {
+        return 'Sem data';
+    }
+
+    return date($formato, strtotime($valor));
+}
+
 $nome = $_SESSION['ong']['nome'] ?? $_SESSION['ong']['email'] ?? 'ONG';
 // Extrair primeiro nome
 if (strpos($nome, '@') !== false) {
@@ -11,11 +34,30 @@ if (strpos($nome, '@') !== false) {
 } else {
     $primeiroNome = explode(' ', $nome)[0];
 }
-$doacoes = [
-    ['item' => 'Arroz e feijão', 'remetente' => 'João Silva', 'data' => '05/04/2026', 'status' => 'Aguardando'],
-    ['item' => 'Kit higiene', 'remetente' => 'Maria Oliveira', 'data' => '04/04/2026', 'status' => 'Aguardando'],
-    ['item' => 'Roupas de inverno', 'remetente' => 'Pedro Costa', 'data' => '03/04/2026', 'status' => 'Confirmado'],
-];
+
+$ongId = (int) ($_SESSION['ong']['id'] ?? 0);
+$doacoes = [];
+
+if ($ongId > 0) {
+    $stmt = $pdo->prepare(
+        'SELECT
+            d.item,
+            d.categoria,
+            di.quantidade_retirada,
+            d.unidade_medida,
+            doador.nome AS remetente,
+            di.data_hora,
+            e.codigo_lote
+         FROM distribuicao di
+         INNER JOIN estoque e ON e.id_lote = di.id_lote
+         INNER JOIN doacao d ON d.id_doacao = e.id_doacao
+         LEFT JOIN doador ON doador.id_doador = d.id_doador
+         WHERE di.id_beneficiario = ?
+         ORDER BY di.data_hora DESC'
+    );
+    $stmt->execute([$ongId]);
+    $doacoes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -47,18 +89,29 @@ $doacoes = [
     <h1>Doações recebidas</h1>
     <p>Olá, <?php echo htmlspecialchars($primeiroNome); ?>! 👋 Confira as doações encaminhadas para sua ONG.</p>
     <div class="card">
-        <?php foreach ($doacoes as $doacao): ?>
+        <?php if (empty($doacoes)): ?>
             <div class="item">
                 <div>
-                    <strong><?php echo htmlspecialchars($doacao['item']); ?></strong>
-                    <div>Remetente: <?php echo htmlspecialchars($doacao['remetente']); ?></div>
-                    <div>Data: <?php echo htmlspecialchars($doacao['data']); ?></div>
+                    <strong>Nenhuma doação recebida ainda.</strong>
+                    <div>As doações distribuídas para esta ONG aparecerão aqui.</div>
                 </div>
-                <div class="status <?php echo $doacao['status'] === 'Confirmado' ? 'status-confirmado' : 'status-aguardando'; ?>">
-                    <?php echo htmlspecialchars($doacao['status']); ?>
-                </div>
+                <div class="status status-aguardando">Sem registros</div>
             </div>
-        <?php endforeach; ?>
+        <?php else: ?>
+            <?php foreach ($doacoes as $doacao): ?>
+                <div class="item">
+                    <div>
+                        <strong><?php echo htmlspecialchars((string) $doacao['item']); ?></strong>
+                        <div>Categoria: <?php echo htmlspecialchars(ucfirst((string) $doacao['categoria'])); ?></div>
+                        <div>Quantidade: <?php echo htmlspecialchars(formatarNumeroDoacao($doacao['quantidade_retirada'])); ?> <?php echo htmlspecialchars((string) $doacao['unidade_medida']); ?></div>
+                        <div>Remetente: <?php echo htmlspecialchars((string) ($doacao['remetente'] ?: 'Doador não identificado')); ?></div>
+                        <div>Lote: <?php echo htmlspecialchars((string) $doacao['codigo_lote']); ?></div>
+                        <div>Recebido em: <?php echo htmlspecialchars(formatarDataDoacao($doacao['data_hora'], 'd/m/Y H:i')); ?></div>
+                    </div>
+                    <div class="status status-confirmado">Recebido</div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 </div>
 </body>

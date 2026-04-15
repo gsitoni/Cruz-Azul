@@ -1,11 +1,18 @@
 <?php
 session_start();
+ob_start();
+
+header('X-Frame-Options: DENY');
+header('X-Content-Type-Options: nosniff');
 
 require '../../src/api/database.php';
+require '../../src/api/valida_senha.php';
+require '../../src/api/mailer.php';
+require '../../src/api/valida_senha.php';
 
-// regex de validação
+// regex de validação//
 $REGEX_EMAIL = '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/';
-$REGEX_SENHA = '/^.{6,}$/';
+$REGEX_SENHA = '/^.{12,}$/';
 $REGEX_CNPJ  = '/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/';
 //$REGEX_TEL   = '/^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/';
 $REGEX_CEP   = '/^\d{5}-?\d{3}$/';
@@ -56,7 +63,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $r = ['ok' => false, 'campo' => 'area', 'msg' => 'Selecione a área de atuação.'];
 
     } elseif (!preg_match($REGEX_SENHA, $senha)) {
-        $r = ['ok' => false, 'campo' => 'senha', 'msg' => 'Senha deve ter pelo menos 6 caracteres.'];
+        $r = ['ok' => false, 'campo' => 'senha', 'msg' => 'Senha deve ter pelo menos 12 caracteres.'];
+
+    } elseif (validarSenhaForte($senha) !== true) {
+        $r = ['ok' => false, 'campo' => 'senha', 'msg' => validarSenhaForte($senha)];
 
     } elseif ($senha !== $senha2) {
         $r = ['ok' => false, 'campo' => 'senha2', 'msg' => 'As senhas não coincidem.'];
@@ -91,25 +101,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $id_ong = $pdo->lastInsertId();
 
-                // Fazer login automático
-                session_start();
-                $_SESSION['ong'] = [
-                    'id'           => $id_ong,
-                    'nome'         => $nome,
-                    'email'        => $email,
-                    'cnpj'         => $cnpj_limpo,
-                    'status'       => 'pendente' // ou aprovado se admin aprovar
-                ];
-
-                $r = [
-                    'ok'  => true,
-                    'msg' => "ONG <strong>$nome</strong> cadastrada com sucesso! Redirecionando..."
-                ];
+                if (enviarEmailConfirmacao($email, $nome, $token)) {
+                    $r = [
+                        'ok'  => true,
+                        'msg' => "ONG <strong>$nome</strong> cadastrada com sucesso! Verifique seu e-mail para confirmar a conta."
+                    ];
+                } else {
+                    $r = ['ok' => false, 'msg' => 'Cadastro salvo, mas falha ao enviar e-mail.'];
+                }
             } catch (PDOException $e) {
-                // Intercepta e expõe o erro exato do banco de dados
+                $pdo->rollBack();
+                error_log("cadastro_ong.php PDOException: " . $e->getMessage());
                 $r = [
                     'ok'  => false,
-                    'msg' => "FALHA SQL: " . $e->getMessage()
+                    'msg' => 'Erro interno ao cadastrar. Tente novamente.'
                 ];
             }
         }
@@ -241,7 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="grupo">
                 <label for="senha">Senha *</label>
                 <div class="campo-senha">
-                    <input type="password" id="senha" name="senha" placeholder="Mínimo 6 caracteres">
+                    <input type="password" id="senha" name="senha" placeholder="Mínimo 12 caracteres">
                     <button type="button" class="btn-olho" id="olho1">Mostrar</button>
                 </div>
                 <div class="erro-campo" id="erroSenha"></div>
@@ -260,8 +265,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     </form>
 
-    <div class="rodape">
-        Já tem cadastro? <a href="login_ong.php">Entrar aqui</a>
     </div>
 
 </div>
@@ -424,7 +427,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (json.ok) {
                 this.reset();
                 setTimeout(() => {
-                    window.location.href = 'home_ong.php';
+                    window.location.href = 'cadastro_concluido.php?email=' + encodeURIComponent(document.getElementById('email').value.trim()) + '&tipo=ong';
                 }, 2000); // Redirecionar após 2 segundos para mostrar a mensagem
             }
 

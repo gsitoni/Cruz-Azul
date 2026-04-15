@@ -1,9 +1,9 @@
 <?php
 // db.php - Conexão com o banco de dados
-$host = 'localhost';
+$host   = 'localhost';
 $dbname = 'cruzazul';
-$user = 'root';
-$pass = '';
+$user   = 'root';
+$pass   = '';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
@@ -11,4 +11,3 @@ try {
 } catch (PDOException $e) {
     die("Erro na conexão: " . $e->getMessage());
 }
-?>

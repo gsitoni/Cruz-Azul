@@ -14,7 +14,7 @@
 
         nav {
             background-color: #007BFF;
-            padding: 12px 20px;
+            padding: 14px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -35,27 +35,27 @@
         .topo {
             background-color: #007BFF;
             color: #fff;
-            padding: 20px;
+            padding: 18px 20px;
         }
 
         .topo h1 {
-            font-size: 20px;
-            margin-bottom: 8px;
+            font-size: 19px;
+            margin-bottom: 6px;
         }
 
         .topo p {
-            font-size: 14px;
+            font-size: 13px;
             opacity: 0.9;
         }
 
         .conteudo {
             max-width: 900px;
-            margin: 24px auto;
+            margin: 20px auto;
             padding: 0 16px;
         }
 
         .titulo-secao {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             margin-bottom: 12px;
             color: #007BFF;
@@ -65,24 +65,24 @@
         .grid-ongs {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 14px;
-            margin-bottom: 24px;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
         .card-acao,
         .card-ong {
             background: #fff;
             border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 16px;
+            border-radius: 6px;
+            padding: 14px;
             text-decoration: none;
             color: #333;
         }
 
         .card-acao h3,
         .card-ong h3 {
-            font-size: 15px;
-            margin-bottom: 8px;
+            font-size: 14px;
+            margin-bottom: 6px;
         }
 
         .card-acao p,
@@ -90,6 +90,11 @@
         .card-ong .cidade {
             font-size: 13px;
             color: #555;
+            margin-bottom: 6px;
+        }
+
+        .icone {
+            font-size: 18px;
             margin-bottom: 8px;
         }
 
@@ -98,7 +103,7 @@
             background-color: #007BFF;
             color: #fff;
             padding: 8px 12px;
-            border-radius: 6px;
+            border-radius: 4px;
             text-decoration: none;
             font-size: 13px;
         }
@@ -108,6 +113,7 @@
             border-collapse: collapse;
             background: #fff;
             margin-bottom: 24px;
+            border: 1px solid #ddd;
         }
 
         th,
@@ -127,7 +133,7 @@
             display: inline-block;
             font-size: 12px;
             padding: 4px 10px;
-            border-radius: 999px;
+            border-radius: 4px;
         }
 
         .badge-entregue { background: #e7f3ff; color: #007BFF; }
@@ -140,4 +146,16 @@
             padding: 16px;
             font-size: 13px;
             margin-top: 20px;
+        }
+
+        @media (max-width: 640px) {
+            nav {
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+
+            nav a {
+                margin-left: 0;
+                margin-right: 12px;
+            }
         }

@@ -3,28 +3,54 @@ const confirmar = document.getElementById("confirmacao_senha");
 const erro = document.getElementById("erro");
 
 const condTamanho = document.getElementById("condicao_tamanho");
-const condEspecial = document.getElementById("condicao_especial");
+const condMaiuscula = document.getElementById("condicao_maiuscula");
+const condMinuscula = document.getElementById("condicao_minuscula");
 const condNumero = document.getElementById("condicao_numero");
+const condEspecial = document.getElementById("condicao_especial");
 const condSequencia = document.getElementById("condicao_sequencia");
 
-const form = document.querySelector(".form");
+function temSequenciaFn(senha) {
+    const lower = senha.toLowerCase();
+    const len = lower.length;
+    for (let i = 0; i <= len - 4; i++) {
+        const seq = lower.substr(i, 4);
+        let crescente = true;
+        let decrescente = true;
+        for (let j = 0; j < 3; j++) {
+            if (seq.charCodeAt(j) + 1 !== seq.charCodeAt(j + 1)) {
+                crescente = false;
+            }
+            if (seq.charCodeAt(j) - 1 !== seq.charCodeAt(j + 1)) {
+                decrescente = false;
+            }
+        }
+        if (crescente || decrescente) {
+            return true;
+        }
+    }
+    return false;
+}
 
 
 erro.style.display = "none";
 
 function validarSenha() {
     const valor = senha.value;
-    const temTamanho = valor.length >= 10;
-    const temEspecial = /[@#$%]/.test(valor);
+    const temTamanho = valor.length >= 12;
+    const temMaiuscula = /[A-Z]/.test(valor);
+    const temMinuscula = /[a-z]/.test(valor);
     const temNumero = /\d/.test(valor);
-    const temSequencia = /(abcd|1234)/i.test(valor);
+    const temEspecial = /[!@#$%^&*()\-_=+{};:,<.>|]/.test(valor);
+    const temSequencia = temSequenciaFn(valor);
 
     atualizar(condTamanho, temTamanho);
-    atualizar(condEspecial, temEspecial);
+    atualizar(condMaiuscula, temMaiuscula);
+    atualizar(condMinuscula, temMinuscula);
     atualizar(condNumero, temNumero);
+    atualizar(condEspecial, temEspecial);
     atualizar(condSequencia, !temSequencia);
 
-    return temTamanho && temEspecial && temNumero && !temSequencia;
+    return temTamanho && temMaiuscula && temMinuscula && temNumero && temEspecial && !temSequencia;
 }
 
 function atualizar(elemento, valido) {
