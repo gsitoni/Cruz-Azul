@@ -3,7 +3,7 @@ session_start();
 
 require '../../src/api/database.php';
 
-// regex de validação
+// regex de validação//
 $REGEX_EMAIL = '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/';
 $REGEX_SENHA = '/^(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>|]).{8,}$/';
 $REGEX_CNPJ  = '/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/';

@@ -8,7 +8,7 @@ if (isset($_SESSION['beneficiario'])) {
 
 require '../../src/api/database.php';
 
-// regex de validação
+// regex de validação //
 $REGEX_EMAIL = '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/';
 $REGEX_SENHA = '/^(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>|]).{8,}$/';
 

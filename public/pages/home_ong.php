@@ -113,7 +113,7 @@ if ($ongId > 0) {
         ];
     }
 }
-
+// Variáveis para exibição
 $nome = $ong['nome_receptor'] ?? ($_SESSION['ong']['nome'] ?? $_SESSION['ong']['email'] ?? 'ONG');
 $area = $ong['area_atuacao'] ?? ($_SESSION['ong']['area_atuacao'] ?? 'Assistência social');
 $status = $ong['status_elegibilidade'] ?? ($_SESSION['ong']['status'] ?? 'pendente');

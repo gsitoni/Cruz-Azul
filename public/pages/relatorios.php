@@ -18,6 +18,7 @@ function formatarNumeroRelatorio($valor)
     return number_format($numero, 1, ',', '.');
 }
 
+// Variáveis para exibição
 $ongId = (int) ($_SESSION['ong']['id'] ?? 0);
 $nome = $_SESSION['ong']['nome'] ?? $_SESSION['ong']['email'] ?? 'ONG';
 

@@ -13,16 +13,13 @@ session_start();
  
 // Se já logado, redireciona
 if (isset($_SESSION['usuario'])) {
-    if (($_SESSION['tipo'] ?? '') === 'admin') {
-        header('Location: ../../src/admin/pages/dashboard.php');
-    } else {
-        header('Location: ./home_usuario.php');
-    }
+    header('Location: ./home_usuario.php');
     exit;
 }
  
 
 define('REGEX_EMAIL', '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/');
+// Alterado para exigir 8 caracteres, com numero e caractere especial.
 define('REGEX_SENHA', '/^(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>|]).{8,}$/');
  
 
@@ -63,19 +60,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $resposta = ['ok' => false, 'msg' => 'Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.'];
  
         } else {
-            $ehAdmin = ($usuario['permissao'] ?? 'Doador') === 'Admin';
-
             // Login OK — salva sessão
             $_SESSION['usuario'] = [
                 'id_usuario'    => $usuario['id_usuario'],
                 'email' => $usuario['email'],
+                'permissao' => $usuario['permissao'],
             ];
-            $_SESSION['tipo'] = $ehAdmin ? 'admin' : 'doador';
 
             $resposta = [
                 'ok'       => true,
                 'msg'      => 'Login realizado! Redirecionando...',
-                'redirect' => $ehAdmin ? '../../src/admin/pages/dashboard.php' : './home_usuario.php',
+                'redirect' => './home_usuario.php',
             ];
         }
     }
@@ -109,11 +104,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Senha -->
         <label for="senha">Senha</label>
         <div class="senha-wrap">
+            <!-- Alterado para 8 caracteres no texto de apoio do campo. -->
             <input type="password" id="senha" name="senha" placeholder="Mínimo 8 caracteres" required>
             <button type="button" class="btn-olho" id="btnOlho">Mostrar</button>
         </div>
+        <!-- Alterado para 8 caracteres na mensagem de validacao exibida ao usuario. -->
         <div class="erro-campo" id="erroSenha">A senha deve ter pelo menos 8 caracteres.</div>
-        <!-- <div class="dica">regex: /^.{6,}$/</div> -->
+        <!-- <div class="dica">regex: /^.{8,}$/</div> -->
  
         <!-- Mensagem geral -->
         <div class="msg" id="mensagem"></div>
@@ -130,6 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 //  validação em tempo real
 const REGEX_EMAIL = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+// Alterado para exigir 8 caracteres tambem na validacao do front-end.
 const REGEX_SENHA = /^(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>|]).{8,}$/;
  
 const campoEmail = document.getElementById('email');

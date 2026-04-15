@@ -10,7 +10,7 @@ require '../../src/api/database.php';
 
 $ongId = (int) ($_SESSION['ong']['id'] ?? 0);
 $erro = '';
-
+// Processa o formulário de edição
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = trim($_POST['nome_receptor'] ?? '');
     $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
