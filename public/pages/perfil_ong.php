@@ -1,6 +1,6 @@
 <?php
 session_start();
-
+// Verifica se a ONG está logada
 if (!isset($_SESSION['ong'])) {
     header('Location: login_ong.php');
     exit;
