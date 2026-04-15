@@ -7,7 +7,7 @@ header('X-Content-Type-Options: nosniff');
 
 require '../../src/api/database.php';
 
-// regex de validação
+// regex de validação//
 $REGEX_EMAIL = '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/';
 $REGEX_SENHA = '/^.{6,}$/';
 $REGEX_CNPJ  = '/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/';

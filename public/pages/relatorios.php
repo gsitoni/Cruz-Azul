@@ -5,6 +5,21 @@ if (!isset($_SESSION['ong'])) {
     exit;
 }
 
+require '../../src/api/database.php';
+
+function formatarNumeroRelatorio($valor)
+{
+    $numero = (float) $valor;
+
+    if ((float) ((int) $numero) === $numero) {
+        return number_format($numero, 0, ',', '.');
+    }
+
+    return number_format($numero, 1, ',', '.');
+}
+
+// Variáveis para exibição
+$ongId = (int) ($_SESSION['ong']['id'] ?? 0);
 $nome = $_SESSION['ong']['nome'] ?? $_SESSION['ong']['email'] ?? 'ONG';
 
 // Dados fictícios de relatório
