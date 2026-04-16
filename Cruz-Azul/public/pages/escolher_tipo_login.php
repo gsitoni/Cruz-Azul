@@ -42,7 +42,7 @@
         <h1>Escolher Tipo de Login</h1>
         <p>Selecione o tipo de conta para fazer login:</p>
         
-        <a href="login.php" class="tipo-option">Doador / Administrador</a>
+        <a href="login.php" class="tipo-option">Doador</a>
         <a href="login_ong.php" class="tipo-option">ONG</a>
         
         <a href="index.php" class="back-link">Voltar ao início</a>

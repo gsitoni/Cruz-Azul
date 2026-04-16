@@ -1,12 +1,12 @@
 <?php
- 
- //Necessário incluir banco de dados 
- require '../../src/api/database.php'; 
- 
- session_start();
- session_unset(); 
- session_destroy();
- session_start();
+// ==========================
+// Arquivo: login_admin.php
+// Localização: src/admin/
+// ==========================
+
+require '../../src/api/database.php';
+
+session_start();
 
 // Headers de segurança
 header('X-Content-Type-Options: nosniff');
@@ -14,74 +14,70 @@ header('X-Frame-Options: DENY');
 header('X-XSS-Protection: 1; mode=block');
 header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 
- 
-// Se já logado como doador, redireciona
-if (isset($_SESSION['usuario'])) {
-    header('Location: ./home_usuario.php');
+// Se já logado como admin, redireciona para dashboard
+if (isset($_SESSION['usuario']) && isset($_SESSION['usuario']['permissao']) && strpos($_SESSION['usuario']['permissao'], 'Admin') !== false) {
+    header('Location: pages/dashboard.php');
     exit;
 }
- 
 
 define('REGEX_EMAIL', '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/');
 define('REGEX_SENHA', '/^.{6,}$/');
- 
 
 $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
           strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
- 
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
- 
+    
     $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
     $senha = trim($_POST['senha'] ?? '');
- 
+    
     // --- Validação com regex ---
     if (empty($email) || empty($senha)) {
         $resposta = ['ok' => false, 'msg' => 'Preencha todos os campos.'];
- 
+    
     } elseif (!preg_match(REGEX_EMAIL, $email)) {
         $resposta = ['ok' => false, 'msg' => 'Formato de e-mail inválido.'];
- 
+    
     } elseif (!preg_match(REGEX_SENHA, $senha)) {
         $resposta = ['ok' => false, 'msg' => 'Senha deve ter pelo menos 6 caracteres.'];
- 
+    
     } else {
-        // Busca usuário no banco pelo e-mail (igual ao cadastro.php usa PDO)
+        // Busca usuário no banco pelo e-mail
         $stmt = $pdo->prepare("SELECT id_usuario, email, senha_hash, status_cadastro, permissao FROM usuario WHERE email = ?");
         $stmt->execute([$email]);
         $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
- 
+        
         if (!$usuario) {
             // Usuário não encontrado — mensagem genérica por segurança
             $resposta = ['ok' => false, 'msg' => 'E-mail ou senha incorretos.'];
- 
+        
         } elseif (!password_verify($senha, $usuario['senha_hash'])) {
             // Senha errada — mesma mensagem genérica
             $resposta = ['ok' => false, 'msg' => 'E-mail ou senha incorretos.'];
- 
+        
         } elseif (isset($usuario['status_cadastro']) && !$usuario['status_cadastro']) {
-            // Conta não confirmada (coluna criada pelo cadastro.php via token)
+            // Conta não confirmada
             $resposta = ['ok' => false, 'msg' => 'Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.'];
         
-        } elseif (strpos($usuario['permissao'], 'Admin') !== false) {
-            // Admin deve fazer login pela página específica de admin
-            $resposta = ['ok' => false, 'msg' => 'Administradores devem fazer login no painel administrativo. Acesse: admin/'];
+        } elseif (strpos($usuario['permissao'], 'Admin') === false) {
+            // Não tem permissão de admin
+            $resposta = ['ok' => false, 'msg' => 'Você não tem permissão para acessar este painel.'];
         
         } else {
             // Login OK — salva sessão
             $_SESSION['usuario'] = [
                 'id_usuario'    => $usuario['id_usuario'],
-                'email' => $usuario['email'],
-                'permissao' => $usuario['permissao'],
+                'email'         => $usuario['email'],
+                'permissao'     => $usuario['permissao'],
             ];
-            $redirect = (strpos($usuario['permissao'], 'Admin') !== false) ? '../../src/admin/pages/dashboard.php' : './home_usuario.php';
             $resposta = [
                 'ok'       => true,
                 'msg'      => 'Login realizado! Redirecionando...',
-                'redirect' => $redirect,
+                'redirect' => 'pages/dashboard.php',
             ];
         }
     }
- 
+    
     header('Content-Type: application/json');
     echo json_encode($resposta);
     exit;
@@ -92,13 +88,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — Cruz Azul</title>
-    <link rel="stylesheet" href="../assets/css/login.css">
+    <title>Login Administrativo — Cruz Azul</title>
+    <link rel="stylesheet" href="assets/css/admin_auth.css">
+    <style>
+        .container h2::before {
+            content: "🔐 ";
+        }
+    </style>
 </head>
 <body>
  
 <div class="container">
-    <h2>Entrar</h2>
+    <h2>Acesso Administrativo</h2>
  
     <form id="formLogin">
  
@@ -106,40 +107,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <label for="email">E-mail</label>
         <input type="text" id="email" name="email" placeholder="nome@dominio.com" required>
         <div class="erro-campo" id="erroEmail">Formato inválido. Ex: nome@site.com</div>
-        <!-- <div class="dica">regex: /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/</div> -->
  
         <!-- Senha -->
         <label for="senha">Senha</label>
         <div class="senha-wrap">
-            <!-- Alterado para 8 caracteres no texto de apoio do campo. -->
-            <input type="password" id="senha" name="senha" placeholder="Mínimo 12 caracteres" required>
+            <input type="password" id="senha" name="senha" placeholder="Digite sua senha" required>
             <button type="button" class="btn-olho" id="btnOlho">Mostrar</button>
         </div>
-        <!-- Alterado para 8 caracteres na mensagem de validacao exibida ao usuario. -->
-        <div class="erro-campo" id="erroSenha">A senha deve ter pelo menos 12 caracteres.</div>
-        <!-- <div class="dica">regex: /^.{8,}$/</div> -->
+        <div class="erro-campo" id="erroSenha">A senha deve ter pelo menos 6 caracteres.</div>
  
         <!-- Mensagem geral -->
         <div class="msg" id="mensagem"></div>
  
-        <button type="submit" id="btnEntrar">Entrar</button>
+        <button type="submit" id="btnEntrar">Entrar como Administrador</button>
     </form>
  
     <div class="link-cadastro">
-        Não tem conta? <a href="./cadastro.php">Cadastre-se aqui</a>
+        Novo administrador? <a href="./cadastro_admin.php">Cadastre-se aqui</a>
     </div>
 
     <div class="link-cadastro" style="margin-top: 15px;">
-        <a href="./recuperacao_de_senha.php">Esqueci minha senha</a>
+        <a href="./index.php">← Voltar</a>
     </div>
 </div>
  
 <script>
 
-//  validação em tempo real
+// Validação em tempo real
 const REGEX_EMAIL = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-// Alterado para exigir 8 caracteres tambem na validacao do front-end.
-const REGEX_SENHA = /^(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>|]).{8,}$/;
+const REGEX_SENHA = /^.{6,}$/;
  
 const campoEmail = document.getElementById('email');
 const campoSenha = document.getElementById('senha');
@@ -179,7 +175,6 @@ btnOlho.addEventListener('click', () => {
     btnOlho.textContent = tipo === 'password' ? 'Mostrar' : 'Ocultar';
 });
  
-
 document.getElementById('formLogin').addEventListener('submit', async function(e) {
     e.preventDefault();
  
@@ -201,7 +196,7 @@ document.getElementById('formLogin').addEventListener('submit', async function(e
     dados.append('senha', campoSenha.value);
  
     try {
-        const res  = await fetch('login.php', {
+        const res  = await fetch('login_admin.php', {
             method: 'POST',
             headers: { 'X-Requested-With': 'XMLHttpRequest' }, 
             body: dados
@@ -212,7 +207,7 @@ document.getElementById('formLogin').addEventListener('submit', async function(e
         if (json.ok) {
             mostrarMsg(json.msg, 'sucesso');
             // Redireciona após 1 segundo
-            setTimeout(() => { window.location.href = json.redirect || 'index.php'; }, 1000);
+            setTimeout(() => { window.location.href = json.redirect || 'pages/dashboard.php'; }, 1000);
         } else {
             mostrarMsg(json.msg, 'erro');
         }
@@ -221,7 +216,7 @@ document.getElementById('formLogin').addEventListener('submit', async function(e
         mostrarMsg('Erro de conexão. Tente novamente.', 'erro');
     } finally {
         btnEntrar.disabled    = false;
-        btnEntrar.textContent = 'Entrar';
+        btnEntrar.textContent = 'Entrar como Administrador';
     }
 });
  

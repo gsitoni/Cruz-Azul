@@ -16,7 +16,7 @@
         <a href="#sobre">Sobre</a>
         <a href="#doar">Doar</a>
         <a href="#funcionalidades">Funcionalidades</a>
-        <a href="./escolher_tipo.php">Cadastrar-se</a>
+        <a href="./escolher_tipo_cadastro.php">Cadastrar-se</a>
         <a href="./escolher_tipo_login.php">Entrar</a>
     </nav>
 </header>

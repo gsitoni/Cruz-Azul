@@ -90,7 +90,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Cadastro de Administrador</title>
-        <link rel="stylesheet" href="../assets/css/cadastro.css">
+        <link rel="stylesheet" href="assets/css/admin_auth.css">
     </head>
     <body>
 
@@ -166,7 +166,7 @@
 
                 if (json.ok) {
                     // mostrarMsg(json.msg, 'sucesso');
-                    window.location.href = 'cadastro_concluido.php?email=' + encodeURIComponent(document.getElementById('email').value.trim()) + '&tipo=admin';
+                    window.location.href = '../../public/pages/cadastro_concluido.php?email=' + encodeURIComponent(document.getElementById('email').value.trim()) + '&tipo=admin';
                 } else {
                     mostrarMsg(json.msg, 'erro');
                 }
