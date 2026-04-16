@@ -137,18 +137,19 @@ try {
  
         // Confirma que o doador pertence ao usuário logado
         $stmtCheck = $pdo->prepare(
-            "SELECT id_doador FROM doador WHERE email = ? LIMIT 1"
+            "SELECT id_doador FROM doador WHERE id_usuario = ? LIMIT 1"
         );
-        $stmtCheck->execute([$email_usuario]);
-        if (!$stmtCheck->fetch()) {
+        $stmtCheck->execute([$id_usuario]);
+        $doador = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+        if (!$doador) {
             throw new RuntimeException("Registro não encontrado para este usuário.");
         }
  
         // Atualiza nome
         $stmtUp = $pdo->prepare(
-            "UPDATE doador SET nome = ? WHERE email = ?"
+            "UPDATE doador SET nome = ? WHERE id_doador = ?"
         );
-        $stmtUp->execute([$nome, $email_usuario]);
+        $stmtUp->execute([$nome, (int) $doador['id_doador']]);
  
         // Alteração de senha (opcional)
         if ($nova_senha !== null) {
@@ -181,7 +182,7 @@ try {
             $stmtUpSenha->execute([$novoHash, $id_usuario]);
         }
  
-    // ── Ramo BENEFICIÁRIO ────────────────────────
+    // ── Ramo ONG ────────────────────────────────
     } elseif (isset($_POST['nome_receptor'])) {
  
         $nome_receptor = postStr('nome_receptor', 300);
@@ -197,30 +198,29 @@ try {
             throw new InvalidArgumentException("Localização inválida.");
         }
  
-        // Confirma que o beneficiário pertence ao usuário logado
+        // Confirma que a ONG pertence ao usuário logado
         $stmtCheck = $pdo->prepare(
-            "SELECT b.id_beneficiario
-               FROM beneficiario b
-               JOIN usuario u ON u.id_usuario = ?
-              WHERE b.email = ?
+            "SELECT id_ong
+               FROM ong
+              WHERE id_usuario = ?
               LIMIT 1"
         );
-        $stmtCheck->execute([$id_usuario, $email_usuario]);
+        $stmtCheck->execute([$id_usuario]);
         $ben = $stmtCheck->fetch(PDO::FETCH_ASSOC);
         if (!$ben) {
             throw new RuntimeException("Registro não encontrado para este usuário.");
         }
  
         $stmtUp = $pdo->prepare(
-            "UPDATE beneficiario
-                SET nome_receptor = ?,
+            "UPDATE ong
+                SET nome = ?,
                     localizacao   = ?
-              WHERE id_beneficiario = ?"
+              WHERE id_ong = ?"
         );
         $stmtUp->execute([
             $nome_receptor,
             $localizacao ?? '',
-            (int) $ben['id_beneficiario'],
+            (int) $ben['id_ong'],
         ]);
  
         // Alteração de senha (opcional) — igual ao ramo doador

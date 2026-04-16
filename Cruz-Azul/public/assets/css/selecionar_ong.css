@@ -1,0 +1,17 @@
+        body { font-family: Arial, sans-serif; background:#f4f6f8; margin:0; color:#333; }
+        nav { background:#007BFF; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+        nav .logo { color:#fff; font-weight:bold; }
+        nav a { color:#fff; margin-left:18px; text-decoration:none; font-size:14px; }
+        .container { max-width:900px; margin:30px auto; padding:0 20px; }
+        .header { margin-bottom:24px; }
+        .header h1 { color:#007BFF; margin-bottom:8px; }
+        .box { background:#fff; border-radius:10px; padding:24px; box-shadow:0 6px 18px rgba(0,0,0,0.08); }
+        .box h2 { margin-top:0; }
+        .alert { margin-bottom:18px; padding:12px 16px; border-radius:8px; background:#e7f3ff; color:#007BFF; }
+        .form-row { margin-bottom:16px; }
+        label { display:block; margin-bottom:6px; font-size:14px; }
+        input, textarea, select { width:100%; padding:12px; border:1px solid #ccc; border-radius:8px; font-size:14px; }
+        button { background:#007BFF; color:#fff; border:none; padding:12px 18px; border-radius:8px; cursor:pointer; }
+        button:hover { background:#0056b3; }
+        .ong-card { border:1px solid #ddd; border-radius:8px; padding:16px; margin-bottom:14px; }
+        .ong-card strong { display:block; margin-bottom:8px; }

@@ -50,16 +50,16 @@ $mapaCategorias = [
 
 if ($ongId > 0) {
     $stmt = $pdo->prepare('
-        SELECT id_beneficiario, nome_receptor, email, area_atuacao, status_elegibilidade, cidade, sigla_estado,
+        SELECT id_ong, nome, email, area_atuacao, status_elegibilidade, cidade, sigla_estado,
                localizacao, classificacao_risco, endereco, descricao, data_atualizacao
-        FROM beneficiario
-        WHERE id_beneficiario = ?
+        FROM ong
+        WHERE id_ong = ?
     ');
     $stmt->execute([$ongId]);
     $ong = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 
     if ($ong) {
-        $_SESSION['ong']['nome'] = $ong['nome_receptor'];
+        $_SESSION['ong']['nome'] = $ong['nome'];
         $_SESSION['ong']['email'] = $ong['email'];
         $_SESSION['ong']['area_atuacao'] = $ong['area_atuacao'];
         $_SESSION['ong']['status'] = $ong['status_elegibilidade'];
@@ -76,7 +76,7 @@ if ($ongId > 0) {
         FROM distribuicao di
         INNER JOIN estoque e ON e.id_lote = di.id_lote
         INNER JOIN doacao d ON d.id_doacao = e.id_doacao
-        WHERE di.id_beneficiario = ?
+        WHERE di.id_ong = ?
     ');
     $stmt->execute([$ongId]);
     $estatisticas = $stmt->fetch(PDO::FETCH_ASSOC) ?: $estatisticas;
@@ -92,7 +92,7 @@ if ($ongId > 0) {
         INNER JOIN estoque e ON e.id_lote = di.id_lote
         INNER JOIN doacao d ON d.id_doacao = e.id_doacao
         LEFT JOIN doador ON doador.id_doador = d.id_doador
-        WHERE di.id_beneficiario = ?
+        WHERE di.id_ong = ?
         ORDER BY di.data_hora DESC
         LIMIT 5
     ');
@@ -105,7 +105,7 @@ if ($ongId > 0) {
         FROM distribuicao di
         INNER JOIN estoque e ON e.id_lote = di.id_lote
         INNER JOIN doacao d ON d.id_doacao = e.id_doacao
-        WHERE di.id_beneficiario = ?
+        WHERE di.id_ong = ?
         GROUP BY d.categoria
     ');
     $stmt->execute([$ongId]);
@@ -123,7 +123,7 @@ if ($ongId > 0) {
     }
 }
 // Variáveis para exibição
-$nome = $ong['nome_receptor'] ?? ($_SESSION['ong']['nome'] ?? $_SESSION['ong']['email'] ?? 'ONG');
+$nome = $ong['nome'] ?? ($_SESSION['ong']['nome'] ?? $_SESSION['ong']['email'] ?? 'ONG');
 $area = $ong['area_atuacao'] ?? ($_SESSION['ong']['area_atuacao'] ?? 'Assistência social');
 $status = $ong['status_elegibilidade'] ?? ($_SESSION['ong']['status'] ?? 'pendente');
 $cidade = $ong['cidade'] ?? ($_SESSION['ong']['cidade'] ?? '');

@@ -1,19 +1,6 @@
 <?php
-session_start();
+require __DIR__ . '/auth.php';
 
-// Headers de segurança
-header('X-Content-Type-Options: nosniff');
-header('X-Frame-Options: DENY');
-header('X-XSS-Protection: 1; mode=block');
-header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
-
-// ==========================
-// PROTEÇÃO DE ACESSO
-// ==========================
-if (!isset($_SESSION['usuario']) || $_SESSION['tipo'] !== 'admin') {
-    header("Location: ../../../public/pages/login.php");
-    exit();
-}
 // ==========================
 // LOGOUT
 // ==========================
@@ -21,12 +8,6 @@ if (isset($_GET['logout'])) {
     session_destroy();
     header("Location: ../../../public/pages/login.php");
     exit();
-}
-// ==========================
-// CSRF
-// ==========================
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
 // ==========================

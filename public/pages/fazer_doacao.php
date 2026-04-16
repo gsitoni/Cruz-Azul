@@ -7,14 +7,15 @@ if (!isset($_SESSION['usuario'])) {
 
 require '../../src/api/database.php';
 
-$userEmail = $_SESSION['usuario']['email'];
+$userEmail    = $_SESSION['usuario']['email'];
 $primeiroNome = explode('@', $userEmail)[0];
 
 $ongId = intval($_GET['ong'] ?? 0);
 
+// Busca ONG
 $stmtOng = $pdo->prepare(
-    "SELECT id_beneficiario, nome_receptor FROM beneficiario
-     WHERE id_beneficiario = ? AND status_elegibilidade = 'ativo'"
+    "SELECT id_ong, nome FROM ong
+     WHERE id_ong = ? AND status_elegibilidade = 'ativo'"
 );
 $stmtOng->execute([$ongId]);
 $ongSelecionada = $stmtOng->fetch(PDO::FETCH_ASSOC);
@@ -24,8 +25,13 @@ if (!$ongSelecionada) {
     exit;
 }
 
-// Busca doador pelo e-mail do usuário logado
-$stmtDo = $pdo->prepare("SELECT id_doador, nome FROM doador WHERE email = ?");
+// Busca doador pelo usuário logado
+$stmtDo = $pdo->prepare(
+    "SELECT dr.id_doador, dr.nome
+     FROM doador dr
+     INNER JOIN usuario u ON u.id_usuario = dr.id_usuario
+     WHERE u.email = ?"
+);
 $stmtDo->execute([$userEmail]);
 $doador = $stmtDo->fetch(PDO::FETCH_ASSOC);
 
@@ -40,9 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data_validade      = trim($_POST['data_validade'] ?? '') ?: null;
     $estado_conservacao = trim($_POST['estado_conservacao'] ?? '') ?: null;
 
-    // Campos do doador (apenas se não tiver cadastro)
     $nomeDoa  = trim($_POST['nome_doador'] ?? '');
-    $cpf      = trim($_POST['cpf_cnpj'] ?? '');
+    $cpf      = trim($_POST['cpf'] ?? '');
     $telefone = trim($_POST['telefone'] ?? '');
 
     $categorias_validas = ['alimento','roupa','brinquedo','higiene','movel','eletronico','outro'];
@@ -61,14 +66,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($categoria !== 'alimento' && empty($estado_conservacao)) {
         $erro = 'Estado de conservação é obrigatório para itens não-perecíveis.';
     } else {
-        // Criar doador se ainda não existir
         if (!$doador) {
             if (empty($nomeDoa) || empty($cpf) || empty($telefone)) {
                 $erro = 'Preencha seus dados de doador: nome, CPF/CNPJ e telefone.';
             } else {
                 try {
                     $ins = $pdo->prepare(
-                        "INSERT INTO doador (cpf_cnpj, nome, telefone, email) VALUES (?, ?, ?, ?)"
+                        "INSERT INTO doador (id_usuario, cpf, nome, telefone)
+                         SELECT id_usuario, ?, ?, ? FROM usuario WHERE email = ?"
                     );
                     $ins->execute([$cpf, $nomeDoa, $telefone, $userEmail]);
                     $doador = ['id_doador' => $pdo->lastInsertId(), 'nome' => $nomeDoa];
@@ -84,12 +89,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $stmt = $pdo->prepare(
                     "INSERT INTO doacao
-                        (id_doador, id_beneficiario, categoria, item, quantidade, unidade_medida, data_validade, estado_conservacao, data_doacao)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURDATE())"
+                        (id_doador, categoria, item, quantidade, unidade_medida, data_validade, estado_conservacao, data_doacao)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE())"
                 );
                 $stmt->execute([
                     $doador['id_doador'],
-                    $ongId,
                     $categoria,
                     $item,
                     floatval($quantidade),
@@ -136,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="container">
     <div class="header">
         <h1>Registrar Doação</h1>
-        <p>Olá, <?php echo htmlspecialchars($primeiroNome); ?>! 👋 Você está doando para <strong><?php echo htmlspecialchars($ongSelecionada['nome_receptor']); ?></strong>.</p>
+        <p>Olá, <?php echo htmlspecialchars($primeiroNome); ?>! 👋 Você está doando para <strong><?php echo htmlspecialchars($ongSelecionada['nome']); ?></strong>.</p>
     </div>
     <div class="box">
         <?php if ($sucesso): ?>
@@ -155,10 +159,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                        value="<?php echo htmlspecialchars($_POST['nome_doador'] ?? ''); ?>" required>
             </div>
             <div class="form-row">
-                <label for="cpf_cnpj">CPF ou CNPJ</label>
-                <input type="text" id="cpf_cnpj" name="cpf_cnpj" maxlength="18"
+                <label for="cpf">CPF ou CNPJ</label>
+                <input type="text" id="cpf" name="cpf" maxlength="18"
                        placeholder="000.000.000-00"
-                       value="<?php echo htmlspecialchars($_POST['cpf_cnpj'] ?? ''); ?>" required>
+                       value="<?php echo htmlspecialchars($_POST['cpf'] ?? ''); ?>" required>
             </div>
             <div class="form-row">
                 <label for="telefone">Telefone</label>
@@ -241,9 +245,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="estado_conservacao">Estado de conservação</label>
                 <select id="estado_conservacao" name="estado_conservacao">
                     <option value="">Selecione</option>
-                    <option value="novo"      <?php echo (($_POST['estado_conservacao'] ?? '') === 'novo')      ? 'selected' : ''; ?>>Novo</option>
-                    <option value="usado"     <?php echo (($_POST['estado_conservacao'] ?? '') === 'usado')     ? 'selected' : ''; ?>>Usado</option>
-                    <option value="desgastado"<?php echo (($_POST['estado_conservacao'] ?? '') === 'desgastado')? 'selected' : ''; ?>>Desgastado</option>
+                    <option value="novo"       <?php echo (($_POST['estado_conservacao'] ?? '') === 'novo')       ? 'selected' : ''; ?>>Novo</option>
+                    <option value="usado"      <?php echo (($_POST['estado_conservacao'] ?? '') === 'usado')      ? 'selected' : ''; ?>>Usado</option>
+                    <option value="desgastado" <?php echo (($_POST['estado_conservacao'] ?? '') === 'desgastado') ? 'selected' : ''; ?>>Desgastado</option>
                 </select>
             </div>
 
@@ -275,7 +279,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             selectCon.required = false;
         }
     }
-    // Restaura os campos ao recarregar após erro de validação server-side
     alternarCampos(document.getElementById('categoria').value);
     </script>
 </div>

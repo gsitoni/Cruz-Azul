@@ -1,0 +1,199 @@
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            color: #333;
+        }
+
+        /* ── NAVBAR ── */
+        nav {
+            background-color: #007BFF;
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav .logo {
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+            font-size: 14px;
+        }
+
+        /* ── CONTEÚDO ── */
+        .conteudo {
+            max-width: 1000px;
+            margin: 24px auto;
+            padding: 0 20px;
+        }
+
+        .titulo {
+            font-size: 22px;
+            color: #007BFF;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .subtitulo {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        /* ── FILTROS ── */
+        .filtros {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .filtros h3 {
+            color: #007BFF;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .categorias {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .categoria-btn {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .categoria-btn:hover,
+        .categoria-btn.active {
+            background: #007BFF;
+            color: white;
+        }
+
+        /* ── CARDS DE SERVIÇOS ── */
+        .servicos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .servico-card {
+            background: white;
+            border-radius: 4px;
+            padding: 14px;
+            border: 1px solid #ddd;
+        }
+
+        .servico-card h3 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .servico-info {
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #444;
+        }
+
+        .servico-info strong {
+            color: #444;
+        }
+
+        .telefone {
+            background: #f5f5f5;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .distancia {
+            background: #f4f4f4;
+            color: #555;
+            border: 1px solid #ddd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .emergencia-card {
+            background: #fff;
+            color: #333;
+            border-color: #ddd;
+        }
+
+        .emergencia-card h3 {
+            color: #333;
+        }
+
+        .emergencia-card .telefone {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        /* ── BOTÃO VOLTAR ── */
+        .btn-voltar {
+            display: inline-block;
+            background: #666;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        /* ── RODAPÉ ── */
+        footer {
+            background-color: #00429f;
+            color: rgba(255,255,255,0.6);
+            text-align: center;
+            padding: 16px;
+            font-size: 13px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 640px) {
+            nav {
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+
+            nav a {
+                margin-left: 0;
+                margin-right: 12px;
+            }
+
+            .servicos-grid {
+                grid-template-columns: 1fr;
+            }
+        }

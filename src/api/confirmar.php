@@ -21,7 +21,7 @@ if (empty($token) || strlen($token) > 255) {
 } else {
     try {
         $stmt = $pdo->prepare(
-            "SELECT id_usuario, status_cadastro, permissao
+            "SELECT id_usuario, status_cadastro, tipo
                FROM usuario
               WHERE token_confirmacao = ?
               LIMIT 1"
@@ -46,25 +46,29 @@ if (empty($token) || strlen($token) > 255) {
             );
             $upd->execute([$usuario['id_usuario']]);
 
-            // Login automático após confirmação
-            // Busca email atualizado
+            // Login automático após confirmação seguindo o mesmo fluxo do login padrão.
             $stmtUser = $pdo->prepare(
-                "SELECT id_usuario, email FROM usuario WHERE id_usuario = ? LIMIT 1"
+                "SELECT id_usuario, nome, email, tipo, chave_2fa FROM usuario WHERE id_usuario = ? LIMIT 1"
             );
             $stmtUser->execute([$usuario['id_usuario']]);
             $userData = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
             $_SESSION['usuario'] = [
                 'id_usuario' => $userData['id_usuario'],
+                'nome'       => $userData['nome'],
                 'email'      => $userData['email'],
+                'tipo'       => $userData['tipo'],
             ];
 
-            $mensagem = 'E-mail confirmado com sucesso! Redirecionando...';
+            $_SESSION['2fa_ok'] = false;
+            $_SESSION['2fa_pendente'] = true;
+
+            $mensagem = 'E-mail confirmado com sucesso! Redirecionando para a verificação em duas etapas...';
             $tipo     = 'sucesso';
 
-            $redirect = (strpos($usuario['permissao'] ?? '', 'Admin') !== false)
-                ? '../../src/admin/pages/dashboard.php'
-                : '../pages/confirmacao_cadastro.php';
+            $redirect = empty($userData['chave_2fa'])
+                ? './2fatores/ativar_2fa.php'
+                : './2fatores/verificar_2fa.php';
         }
 
     } catch (PDOException $e) {

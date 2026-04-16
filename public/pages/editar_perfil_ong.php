@@ -29,9 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($erro === '') {
         $sql = '
-            UPDATE beneficiario
-            SET nome_receptor = ?, email = ?, area_atuacao = ?, localizacao = ?, cidade = ?, sigla_estado = ?, endereco = ?, descricao = ?, data_atualizacao = NOW()
-            WHERE id_beneficiario = ?';
+            UPDATE ong
+            SET nome = ?, email = ?, area_atuacao = ?, localizacao = ?, cidade = ?, sigla_estado = ?, endereco = ?, descricao = ?, data_atualizacao = NOW()
+            WHERE id_ong = ?';
         $parametros = [$nome, $email, $area, $localizacao, $cidade, $estado, $endereco, $descricao, $ongId];
 
         $stmt = $pdo->prepare($sql);
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     } else {
         $ong = [
-            'nome_receptor' => $nome,
+            'nome' => $nome,
             'email' => $email,
             'area_atuacao' => $area,
             'cidade' => $cidade,
@@ -60,9 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $stmt = $pdo->prepare('
-    SELECT nome_receptor, email, area_atuacao, localizacao, cidade, sigla_estado, endereco, descricao
-    FROM beneficiario
-    WHERE id_beneficiario = ?
+    SELECT nome, email, area_atuacao, localizacao, cidade, sigla_estado, endereco, descricao
+    FROM ong
+    WHERE id_ong = ?
 ');
 $stmt->execute([$ongId]);
 $ong = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -93,7 +93,7 @@ if (!$ong) {
     <form method="POST">
         <div style="margin-bottom: 15px;">
             <label for="nome_receptor" style="display:block; font-size: 14px; font-weight: bold; margin-bottom: 6px; color: #444;">Nome da ONG</label>
-            <input type="text" id="nome_receptor" name="nome_receptor" value="<?= htmlspecialchars($ong['nome_receptor']) ?>" required style="width: 100%; padding: 9px 10px; border: 1px solid #cfd6df; border-radius: 7px; font-size: 13px;">
+            <input type="text" id="nome_receptor" name="nome_receptor" value="<?= htmlspecialchars($ong['nome']) ?>" required style="width: 100%; padding: 9px 10px; border: 1px solid #cfd6df; border-radius: 7px; font-size: 13px;">
         </div>
 
         <div style="margin-bottom: 15px;">
