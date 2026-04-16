@@ -51,7 +51,7 @@ if ($ongId > 0) {
          FROM distribuicao di
          INNER JOIN estoque e ON e.id_lote = di.id_lote
          INNER JOIN doacao d ON d.id_doacao = e.id_doacao
-         WHERE di.id_beneficiario = ?'
+         WHERE di.id_ong = ?'
     );
     $stmt->execute([$ongId]);
     $resumo = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
@@ -79,7 +79,7 @@ if ($ongId > 0) {
          INNER JOIN estoque e ON e.id_lote = di.id_lote
          INNER JOIN doacao d ON d.id_doacao = e.id_doacao
          LEFT JOIN doador ON doador.id_doador = d.id_doador
-         WHERE di.id_beneficiario = ?
+         WHERE di.id_ong = ?
          ORDER BY di.data_hora DESC'
     );
     $stmt->execute([$ongId]);

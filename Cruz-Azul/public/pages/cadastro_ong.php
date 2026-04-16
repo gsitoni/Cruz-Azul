@@ -4,7 +4,6 @@ session_start();
 require '../../src/api/database.php';
 require '../../src/api/valida_senha.php';
 require '../../src/api/mailer.php';
-require '../../src/api/valida_senha.php';
 
 // regex de validação//
 $REGEX_EMAIL = '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/';
@@ -70,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // verifica se o e-mail ou CNPJ já existe no banco
         $cnpj_limpo = preg_replace('/\D/', '', $cnpj);
-        $stmt = $pdo->prepare("SELECT id_beneficiario FROM beneficiario WHERE email = ? OR cnpj = ?");
+        $stmt = $pdo->prepare("SELECT id_ong FROM ong WHERE email = ? OR cnpj = ?");
         $stmt->execute([$email, $cnpj_limpo]);
 
         if ($stmt->fetch()) {
@@ -83,11 +82,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $cep_limpo = preg_replace('/\D/', '', $cep);
 
             try {
+                $pdo->beginTransaction();
+
                 $stmt = $pdo->prepare("
-                    INSERT INTO beneficiario
-                        (nome_receptor, cnpj, email, localizacao, endereco, cidade,
-                         sigla_estado, area_atuacao, descricao, senha_hash, token_confirmacao, status_elegibilidade)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente')
+                    INSERT INTO ong
+                        (nome, cnpj, email, localizacao, endereco, cidade,
+                         sigla_estado, area_atuacao, descricao, senha_hash, token_confirmacao,
+                         classificacao_risco, status_elegibilidade)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'continuo', 'pendente')
                 ");
                 
                 $stmt->execute([
@@ -105,22 +107,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $r = ['ok' => false, 'msg' => 'Cadastro salvo, mas falha ao enviar e-mail.'];
                 }
-                // Fazer login automático
-                session_start();
-                $_SESSION['ong'] = [
-                    'id'           => $id_ong,
-                    'nome'         => $nome,
-                    'email'        => $email,
-                    'cnpj'         => $cnpj_limpo,
-                    'status'       => 'pendente' // ou aprovado se admin aprovar
-                ];
 
-                $r = [
-                    'ok'  => true,
-                    'msg' => "ONG <strong>$nome</strong> cadastrada com sucesso! Redirecionando..."
-                ];
+                $pdo->commit();
             } catch (PDOException $e) {
-                // Intercepta e expõe o erro exato do banco de dados
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+                error_log("cadastro_ong.php PDOException: " . $e->getMessage());
                 $r = [
                     'ok'  => false,
                     'msg' => "FALHA SQL: " . $e->getMessage()

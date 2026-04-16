@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-if (isset($_SESSION['beneficiario'])) {
+if (isset($_SESSION['ong'])) {
     header('Location: home_ong.php');
     exit;
 }
@@ -10,7 +10,7 @@ require '../../src/api/database.php';
 
 // regex de validação //
 $REGEX_EMAIL = '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/';
-$REGEX_SENHA = '/^.{6,}$/';
+$REGEX_SENHA = '/^.{12,}$/';
 
 // processa o formulário quando enviado
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -30,25 +30,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resposta = ['ok' => false, 'campo' => 'senha', 'msg' => 'Informe a senha.'];
 
     } elseif (!preg_match($REGEX_SENHA, $senha)) {
-        $resposta = ['ok' => false, 'campo' => 'senha', 'msg' => 'A senha deve ter pelo menos 6 caracteres.'];
+        $resposta = ['ok' => false, 'campo' => 'senha', 'msg' => 'A senha deve ter pelo menos 12 caracteres.'];
 
     } else {
         // busca a ONG no banco pelo e-mail
-        $stmt = $pdo->prepare("SELECT * FROM beneficiario WHERE email = ?");
+        $stmt = $pdo->prepare("SELECT * FROM ong WHERE email = ?");
         $stmt->execute([$email]);
         $ong = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$ong || !password_verify($senha, $ong['senha_hash'])) {
             $resposta = ['ok' => false, 'msg' => 'E-mail ou senha incorretos.'];
 
-        } elseif ($ong['status_elegibilidade'] === 'bloqueado') {
-            $resposta = ['ok' => false, 'msg' => 'Sua ONG foi bloqueada. Entre em contato com o administrador.'];
+        } elseif (($ong['status_elegibilidade'] ?? '') !== 'ativo') {
+            if (($ong['status_elegibilidade'] ?? '') === 'rejeitado') {
+                $resposta = ['ok' => false, 'msg' => 'Sua ONG foi rejeitada. Entre em contato com o administrador.'];
+            } else {
+                $resposta = ['ok' => false, 'msg' => 'Sua ONG ainda não foi aprovada. Aguarde a validação do administrador.'];
+            }
 
         } else {
             // login OK — salva os dados na sessão
             $_SESSION['ong'] = [
-                'id'           => $ong['id_beneficiario'],
-                'nome'         => $ong['nome_receptor'],
+                'id'           => $ong['id_ong'],
+                'nome'         => $ong['nome'],
                 'email'        => $ong['email'],
                 'area_atuacao' => $ong['area_atuacao'],
                 'status'       => $ong['status_elegibilidade'],
@@ -135,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script>
     // ── mesmos regex do PHP ──
     var REGEX_EMAIL = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-    var REGEX_SENHA = /^.{6,}$/;
+    var REGEX_SENHA = /^.{12,}$/;
 
     var campoEmail = document.getElementById('email');
     var campoSenha = document.getElementById('senha');
@@ -185,7 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     campoSenha.addEventListener('blur', function() {
         if (!REGEX_SENHA.test(campoSenha.value)) {
-            mostrarErroCampo('senha', 'erroSenha', 'Mínimo 6 caracteres.');
+            mostrarErroCampo('senha', 'erroSenha', 'Mínimo 12 caracteres.');
         }
     });
 
@@ -203,7 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!REGEX_SENHA.test(campoSenha.value)) {
-            mostrarErroCampo('senha', 'erroSenha', 'Mínimo 6 caracteres.');
+            mostrarErroCampo('senha', 'erroSenha', 'Mínimo 12 caracteres.');
             senhaOk = false;
         }
 

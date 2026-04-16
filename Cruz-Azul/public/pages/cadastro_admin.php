@@ -35,7 +35,7 @@
         } elseif ($resultadoSenha !== true) { 
             $resposta = ['ok' => false, 'msg' => $resultadoSenha];
         } else {
-            $stmt = $pdo->prepare("SELECT id_usuario, permissao FROM usuario WHERE email = ?");
+            $stmt = $pdo->prepare("SELECT id_usuario, tipo FROM usuario WHERE email = ?");
             $stmt->execute([$email]);
             $usuario_existente = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -43,28 +43,19 @@
             $hash  = password_hash($senha, PASSWORD_DEFAULT);
 
             if ($usuario_existente) {
-                // Usuário existe, atualizar permissao para incluir Admin
-                $nova_permissao = $usuario_existente['permissao'];
-                if ($nova_permissao === 'Doador') {
-                    $nova_permissao = 'Doador e Admin';
-                } elseif ($nova_permissao === 'Admin') {
-                    // Já é Admin, nada a fazer
-                } elseif ($nova_permissao === 'Doador e Admin') {
-                    // Já tem ambas
-                }
-                if ($nova_permissao !== $usuario_existente['permissao']) {
-                    $stmt = $pdo->prepare("UPDATE usuario SET permissao = ? WHERE id_usuario = ?");
-                    $stmt->execute([$nova_permissao, $usuario_existente['id_usuario']]);
+                if ($usuario_existente['tipo'] !== 'admin') {
+                    $stmt = $pdo->prepare("UPDATE usuario SET tipo = 'admin' WHERE id_usuario = ?");
+                    $stmt->execute([$usuario_existente['id_usuario']]);
                 }
                 $resposta = [
                     'ok'  => true,
-                    'msg' => "Permissões atualizadas! Você agora tem acesso como administrador."
+                    'msg' => "Tipo de usuário atualizado! Esta conta agora tem acesso como administrador."
                 ];
             } else {
                 // Novo usuário
                 $stmt = $pdo->prepare("
-                    INSERT INTO usuario (nome, email, senha_hash, token_confirmacao, permissao)
-                    VALUES (?, ?, ?, ?, 'Admin')
+                    INSERT INTO usuario (nome, email, senha_hash, token_confirmacao, tipo)
+                    VALUES (?, ?, ?, ?, 'admin')
                 ");
                 $stmt->execute([$nome, $email, $hash, $token]);
 

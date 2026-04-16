@@ -11,9 +11,9 @@ require '../../src/api/database.php';
 $ongId = (int) ($_SESSION['ong']['id'] ?? 0);
 
 $stmt = $pdo->prepare('
-    SELECT nome_receptor, email, area_atuacao, localizacao, cidade, sigla_estado, endereco, descricao, status_elegibilidade
-    FROM beneficiario
-    WHERE id_beneficiario = ?
+    SELECT nome, email, area_atuacao, localizacao, cidade, sigla_estado, endereco, descricao, status_elegibilidade
+    FROM ong
+    WHERE id_ong = ?
 ');
 $stmt->execute([$ongId]);
 $ong = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -23,7 +23,7 @@ if (!$ong) {
     exit;
 }
 
-$_SESSION['ong']['nome'] = $ong['nome_receptor'];
+$_SESSION['ong']['nome'] = $ong['nome'];
 $_SESSION['ong']['email'] = $ong['email'];
 $_SESSION['ong']['area_atuacao'] = $ong['area_atuacao'];
 $_SESSION['ong']['status'] = $ong['status_elegibilidade'];
@@ -55,7 +55,7 @@ $status = [
 
     <h1 style="font-size: 30px; margin-bottom: 20px; color: #111;">Perfil da ONG</h1>
     <p style="font-size: 16px; margin-bottom: 12px; color: #444;"><strong>E-mail:</strong> <?= htmlspecialchars($ong['email'] ?: 'Não informado') ?></p>
-    <p style="font-size: 16px; margin-bottom: 12px; color: #444;"><strong>Nome:</strong> <?= htmlspecialchars($ong['nome_receptor']) ?></p>
+    <p style="font-size: 16px; margin-bottom: 12px; color: #444;"><strong>Nome:</strong> <?= htmlspecialchars($ong['nome']) ?></p>
     <p style="font-size: 16px; margin-bottom: 12px; color: #444;"><strong>Status:</strong> <?= htmlspecialchars($status) ?></p>
     <p style="font-size: 16px; margin-bottom: 12px; color: #444;"><strong>Área de atuação:</strong> <?= htmlspecialchars($ong['area_atuacao'] ?: 'Não informada') ?></p>
     <p style="font-size: 16px; margin-bottom: 12px; color: #444;"><strong>Cidade / Estado:</strong> <?= htmlspecialchars($localizacao !== '' ? $localizacao : 'Não informado') ?></p>

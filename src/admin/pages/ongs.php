@@ -1,19 +1,6 @@
 <?php
-session_start();
+require __DIR__ . '/auth.php';
 
-// Headers de segurança
-header('X-Content-Type-Options: nosniff');
-header('X-Frame-Options: DENY');
-header('X-XSS-Protection: 1; mode=block');
-header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
-
-// ==========================
-// PROTEÇÃO DE ACESSO
-// ==========================
-if (!isset($_SESSION['usuario']) || $_SESSION['tipo'] !== 'admin') {
-    header("Location: ../../../public/pages/login.php");
-    exit();
-}
 // ==========================
 // LOGOUT
 // ==========================
@@ -21,12 +8,6 @@ if (isset($_GET['logout'])) {
     session_destroy();
     header("Location: ../../../public/pages/login.php");
     exit();
-}
-// ==========================
-// CSRF
-// ==========================
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
 // ==========================
@@ -47,11 +28,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     try {
         if ($acao === 'aprovar' && $id) {
-            $stmt = $pdo->prepare("UPDATE beneficiario SET status_elegibilidade = 'ativo' WHERE id_beneficiario = ?");
+            $stmt = $pdo->prepare("UPDATE ong SET status_elegibilidade = 'ativo' WHERE id_ong = ?");
             $stmt->execute([$id]);
             $_SESSION['msg'] = 'ONG aprovada com sucesso.';
         } elseif ($acao === 'rejeitar' && $id) {
-            $stmt = $pdo->prepare("UPDATE beneficiario SET status_elegibilidade = 'rejeitado' WHERE id_beneficiario = ?");
+            $stmt = $pdo->prepare("UPDATE ong SET status_elegibilidade = 'rejeitado' WHERE id_ong = ?");
             $stmt->execute([$id]);
             $_SESSION['msg'] = 'ONG rejeitada com sucesso.';
         } else {
@@ -78,7 +59,7 @@ unset($_SESSION['msg']);
 // QUERY ONGS
 // ==========================
 try {
-    $sql = "SELECT id_beneficiario, nome, email, telefone, endereco, status_elegibilidade FROM beneficiario WHERE 1=1";
+    $sql = "SELECT id_ong, nome, email, endereco, status_elegibilidade FROM ong WHERE 1=1";
     $params = [];
     
     if (!empty($busca)) {
@@ -152,7 +133,7 @@ try {
             <tr>
                 <th>Nome</th>
                 <th>Email</th>
-                <th>Telefone</th>
+                <th>Contato</th>
                 <th>Endereço</th>
                 <th>Status</th>
                 <th>Ações</th>
@@ -166,7 +147,7 @@ try {
                 <tr>
                     <td><?= htmlspecialchars($ong['nome']) ?></td>
                     <td><?= htmlspecialchars($ong['email']) ?></td>
-                    <td><?= htmlspecialchars($ong['telefone']) ?></td>
+                    <td><?= htmlspecialchars($ong['email'] ?: 'Nao informado') ?></td>
                     <td><?= htmlspecialchars($ong['endereco']) ?></td>
                     <td>
                         <span class="badge <?= $ong['status_elegibilidade'] === 'ativo' ? 'aprovado' : ($ong['status_elegibilidade'] === 'pendente' ? 'pendente' : 'rejeitado') ?>">
@@ -176,7 +157,7 @@ try {
                     <td>
                         <form method="POST" style="display:inline;">
                             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-                            <input type="hidden" name="id" value="<?= $ong['id_beneficiario'] ?>">
+                            <input type="hidden" name="id" value="<?= $ong['id_ong'] ?>">
                             <?php if($ong['status_elegibilidade'] === 'pendente'): ?>
                                 <button class="btn-aprovar" name="acao" value="aprovar">Aprovar</button>
                                 <button class="btn-rejeitar" name="acao" value="rejeitar">Rejeitar</button>

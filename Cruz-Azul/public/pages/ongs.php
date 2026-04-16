@@ -10,12 +10,12 @@ require '../../src/api/database.php';
 $primeiroNome = explode('@', $_SESSION['usuario']['email'])[0];
 
 $stmt = $pdo->query(
-    "SELECT id_beneficiario, nome_receptor, localizacao, classificacao_risco
-     FROM beneficiario
+    "SELECT id_ong, nome, localizacao, classificacao_risco
+     FROM ong
      WHERE status_elegibilidade = 'ativo'
-     ORDER BY nome_receptor ASC"
+     ORDER BY nome ASC"
 );
-$beneficiarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$ong = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $labels_risco = [
     'emergencia'       => 'Emergência',
@@ -58,20 +58,20 @@ $labels_risco = [
     <div class="titulo-secao">ONGs Cadastradas</div>
     <p>Olá, <?= htmlspecialchars($primeiroNome) ?>! 👋 Conheça as ONGs que você pode ajudar.</p>
 
-    <?php if (empty($beneficiarios)): ?>
+    <?php if (empty($ong)): ?>
         <div class="card-ong" style="text-align:center;color:#555;">
             Nenhuma ONG cadastrada ainda.
         </div>
     <?php else: ?>
         <div class="grid-ongs">
-            <?php foreach ($beneficiarios as $b): ?>
+            <?php foreach ($ong as $b): ?>
                 <div class="card-ong">
-                    <h3><?= htmlspecialchars($b['nome_receptor']) ?></h3>
+                    <h3><?= htmlspecialchars($b['nome']) ?></h3>
                     <p style="font-weight:500;color:#333;margin-bottom:8px;">
                         <?= htmlspecialchars($labels_risco[$b['classificacao_risco']] ?? $b['classificacao_risco']) ?>
                     </p>
                     <div class="cidade">📍 <?= htmlspecialchars($b['localizacao']) ?></div>
-                    <a href="fazer_doacao.php?ong=<?= (int)$b['id_beneficiario'] ?>" class="btn-doar" style="display:inline-block;margin-top:14px;">
+                    <a href="fazer_doacao.php?ong=<?= (int)$b['id_ong'] ?>" class="btn-doar" style="display:inline-block;margin-top:14px;">
                         Doar agora
                     </a>
                 </div>

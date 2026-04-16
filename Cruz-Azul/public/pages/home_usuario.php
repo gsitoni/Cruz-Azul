@@ -16,25 +16,26 @@ if (strpos($nome, '@') !== false) {
 $inicial = strtoupper(mb_substr($nome, 0, 1));
 
 $stmtEmerg = $pdo->query(
-    "SELECT id_beneficiario, nome_receptor, localizacao
-     FROM beneficiario
+    "SELECT id_ong, nome, localizacao
+     FROM ong
      WHERE classificacao_risco = 'emergencia' AND status_elegibilidade = 'ativo'
-     ORDER BY nome_receptor ASC"
+     ORDER BY nome ASC"
 );
 $ongsEmergencia = $stmtEmerg->fetchAll(PDO::FETCH_ASSOC);
 
 $userEmail = $_SESSION['usuario']['email'];
 $stmtDoacoes = $pdo->prepare(
-    "SELECT d.item, d.data_doacao, b.nome_receptor,
+    "SELECT d.item, d.data_doacao, b.nome,
             CASE WHEN dist.id_operacao IS NOT NULL THEN 'entregue'
                  WHEN e.id_lote IS NOT NULL THEN 'andamento'
                  ELSE 'pendente' END AS status_doacao
      FROM doacao d
      INNER JOIN doador dr ON dr.id_doador = d.id_doador
+     INNER JOIN usuario u  ON u.id_usuario = dr.id_usuario
      LEFT JOIN estoque e ON e.id_doacao = d.id_doacao
      LEFT JOIN distribuicao dist ON dist.id_lote = e.id_lote
-     LEFT JOIN beneficiario b ON b.id_beneficiario = dist.id_beneficiario
-     WHERE dr.email = ?
+     LEFT JOIN ong b ON b.id_ong = dist.id_ong
+     WHERE u.email = ?
      ORDER BY d.data_doacao DESC, d.criado_em DESC
      LIMIT 5"
 );
@@ -120,10 +121,10 @@ $ultimasDoacoes = $stmtDoacoes->fetchAll(PDO::FETCH_ASSOC);
         <div class="grid-ongs">
             <?php foreach ($ongsEmergencia as $ong): ?>
                 <div class="card-ong">
-                    <h3><?= htmlspecialchars($ong['nome_receptor']) ?></h3>
+                    <h3><?= htmlspecialchars($ong['nome']) ?></h3>
                     <span class="area" style="display:inline-block;margin-bottom:8px;font-size:12px;background:#fdecea;color:#b71c1c;padding:3px 10px;border-radius:999px;">Emergência</span>
                     <div class="cidade">📍 <?= htmlspecialchars($ong['localizacao']) ?></div>
-                    <a href="fazer_doacao.php?ong=<?= (int)$ong['id_beneficiario'] ?>" class="btn-doar" style="display:inline-block;margin-top:14px;">Doar agora</a>
+                    <a href="fazer_doacao.php?ong=<?= (int)$ong['id_ong'] ?>" class="btn-doar" style="display:inline-block;margin-top:14px;">Doar agora</a>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -153,7 +154,7 @@ $ultimasDoacoes = $stmtDoacoes->fetchAll(PDO::FETCH_ASSOC);
                 ?>
                     <tr>
                         <td><?= htmlspecialchars($d['item']) ?></td>
-                        <td><?= $d['nome_receptor'] ? htmlspecialchars($d['nome_receptor']) : '<span style="color:#aaa;">—</span>' ?></td>
+                        <td><?= $d['nome'] ? htmlspecialchars($d['nome']) : '<span style="color:#aaa;">—</span>' ?></td>
                         <td><?= htmlspecialchars(date('d/m/Y', strtotime($d['data_doacao']))) ?></td>
                         <td><span class="badge <?= $badgeClass ?>"><?= $badgeLabel ?></span></td>
                     </tr>

@@ -9,8 +9,7 @@ header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 require '../../src/api/database.php';
 
 try {
-    // Buscar ONGs por região (simulando com beneficiario)
-    $stmt = $pdo->prepare("SELECT nome, endereco, telefone, email FROM beneficiario WHERE status_elegibilidade = 'ativo' ORDER BY nome LIMIT 10");
+    $stmt = $pdo->prepare("SELECT nome, endereco, email FROM ong WHERE status_elegibilidade = 'ativo' ORDER BY nome LIMIT 10");
     $stmt->execute();
     $ongs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {

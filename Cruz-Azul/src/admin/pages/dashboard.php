@@ -1,42 +1,5 @@
 <?php
-// ==========================
-// CONFIG COOKIE SEGURO
-// ==========================
-$secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
- 
-session_set_cookie_params([
-    'lifetime' => 0,
-    'path' => '/Cruz-Azul',
-    'secure' => $secure,
-    'httponly' => true,
-    'samesite' => 'Lax'
-]);
-session_start();
- 
-// Headers de segurança
-header('X-Content-Type-Options: nosniff');
-header('X-Frame-Options: DENY');
-header('X-XSS-Protection: 1; mode=block');
-header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
- 
-// ==========================
-// PROTEÇÃO DE ACESSO
-// ==========================
-if (
-    !isset($_SESSION['usuario']) ||
-    !isset($_SESSION['usuario']['permissao']) ||
-    strpos($_SESSION['usuario']['permissao'], 'Admin') === false
-) {
-    header("Location: ../../../public/pages/login.php");
-    exit();
-}
- 
-// ==========================
-// CSRF TOKEN
-// ==========================
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
+require __DIR__ . '/auth.php';
  
 // ==========================
 // LOGOUT
@@ -59,8 +22,7 @@ try {
     // Logs de segurança (simulando, pois não há tabela logs)
     $logs = [];
     
-    // ONGs pendentes (usando tabela beneficiario ou algo, mas ajustando)
-    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM beneficiario WHERE status_elegibilidade = 'pendente'");
+    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM ong WHERE status_elegibilidade = 'pendente'");
     $stmt->execute();
     $ongs_pendentes = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
     
