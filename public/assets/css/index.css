@@ -33,7 +33,7 @@ body {
 
 /* HERO */
 .hero {
-    height: 80vh;
+    height: 90vh;
     background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
                 url("https://images.unsplash.com/photo-1529156069898-49953e39b3ac");
     background-size: cover;
@@ -71,8 +71,12 @@ body {
 
 /* SEÇÕES */
 .section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     padding: 50px;
     text-align: center;
+
 }
 
 .cards {

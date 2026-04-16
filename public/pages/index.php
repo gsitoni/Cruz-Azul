@@ -16,7 +16,7 @@
         <a href="#sobre">Sobre</a>
         <a href="#doar">Doar</a>
         <a href="#funcionalidades">Funcionalidades</a>
-        <a href="./escolher_tipo.php">Cadastrar-se</a>
+        <a href="./escolher_tipo_cadastro.php">Cadastrar-se</a>
         <a href="./escolher_tipo_login.php">Entrar</a>
     </nav>
 </header>
@@ -26,7 +26,7 @@
     <div class="hero-text">
         <h2>Transforme vidas com um clique</h2>
         <p>Conectamos doadores a ONGs confiáveis de forma segura e transparente.</p>
-        <a href="./escolher_tipo.php" class="btn">Quero Doar</a>
+        <a href="./escolher_tipo_login.php" class="btn">Quero Doar</a>
     </div>
 </section>
 

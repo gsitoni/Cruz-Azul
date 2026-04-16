@@ -44,7 +44,6 @@
         
         <a href="cadastro.php" class="tipo-option">Doador</a>
         <a href="cadastro_ong.php" class="tipo-option">ONG</a>
-        <a href="cadastro_admin.php" class="tipo-option">Administrador</a>
         
         <a href="index.php" class="back-link">Voltar ao início</a>
     </div>
