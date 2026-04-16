@@ -3,13 +3,17 @@
  //Necessário incluir banco de dados 
  require '../../src/api/database.php'; 
  
+ session_start();
+ session_unset(); 
+ session_destroy();
+ session_start();
+
 // Headers de segurança
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('X-XSS-Protection: 1; mode=block');
 header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 
-session_start();
  
 // Se já logado, redireciona
 if (isset($_SESSION['usuario'])) {
@@ -104,11 +108,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Senha -->
         <label for="senha">Senha</label>
         <div class="senha-wrap">
-            <input type="password" id="senha" name="senha" placeholder="Mínimo 6 caracteres" required>
+            <!-- Alterado para 8 caracteres no texto de apoio do campo. -->
+            <input type="password" id="senha" name="senha" placeholder="Mínimo 12 caracteres" required>
             <button type="button" class="btn-olho" id="btnOlho">Mostrar</button>
         </div>
-        <div class="erro-campo" id="erroSenha">A senha deve ter pelo menos 6 caracteres.</div>
-        <!-- <div class="dica">regex: /^.{6,}$/</div> -->
+        <!-- Alterado para 8 caracteres na mensagem de validacao exibida ao usuario. -->
+        <div class="erro-campo" id="erroSenha">A senha deve ter pelo menos 12 caracteres.</div>
+        <!-- <div class="dica">regex: /^.{8,}$/</div> -->
  
         <!-- Mensagem geral -->
         <div class="msg" id="mensagem"></div>
@@ -129,7 +135,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 //  validação em tempo real
 const REGEX_EMAIL = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-const REGEX_SENHA = /^.{6,}$/;
+// Alterado para exigir 8 caracteres tambem na validacao do front-end.
+const REGEX_SENHA = /^(?=.*\d)(?=.*[!@#$%^&*()\-_=+{};:,<.>|]).{8,}$/;
  
 const campoEmail = document.getElementById('email');
 const campoSenha = document.getElementById('senha');

@@ -8,16 +8,15 @@ if (basename($_SERVER['PHP_SELF']) == 'valida_senha.php') {
 
 function validarSenhaForte($senha) {
     // Definição dos critérios
-    $tamanho     = strlen($senha) >= 8;
+    $tamanho     = strlen($senha) >= 12;
     $maiuscula   = preg_match('/[A-Z]/', $senha);
     $minuscula   = preg_match('/[a-z]/', $senha);
     $numero      = preg_match('/[0-9]/', $senha);
-    
     $especial    = preg_match('/[!@#$%^&*()\-_=+{};:,<.>|]/', $senha);
 
     // Validações 
     if (!$tamanho) {
-        return "A senha deve ter pelo menos 8 caracteres.";
+        return "A senha deve ter pelo menos 12 caracteres.";
     }
     
     if (!$maiuscula || !$minuscula) {
@@ -33,5 +32,32 @@ function validarSenhaForte($senha) {
     }
 
     return true; 
+}
+
+function temSequencia($senha, $tamanhoMin = 4) {
+    $senha = strtolower($senha);
+    $len = strlen($senha);
+
+    for ($i = 0; $i <= $len - $tamanhoMin; $i++) {
+        $seq = substr($senha, $i, $tamanhoMin);
+
+        $crescente = true;
+        $decrescente = true;
+
+        for ($j = 0; $j < $tamanhoMin - 1; $j++) {
+            if (ord($seq[$j]) + 1 != ord($seq[$j + 1])) {
+                $crescente = false;
+            }
+            if (ord($seq[$j]) - 1 != ord($seq[$j + 1])) {
+                $decrescente = false;
+            }
+        }
+
+        if ($crescente || $decrescente) {
+            return true;
+        }
+    }
+
+    return false;
 }
 ?>

@@ -8,7 +8,7 @@ if (isset($_SESSION['beneficiario'])) {
 
 require '../../src/api/database.php';
 
-// regex de validação
+// regex de validação //
 $REGEX_EMAIL = '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/';
 $REGEX_SENHA = '/^.{6,}$/';
 
@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 type="password"
                 id="senha"
                 name="senha"
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 12 caracteres"
             >
             <button type="button" class="btn-olho" id="btnOlho">Mostrar</button>
         </div>

@@ -16,36 +16,47 @@ if (empty($token)) {
     $stmt->execute([$token]);
     $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$usuario) {
-        $mensagem = 'Link de confirmação inválido ou expirado.';
-    } elseif ($usuario['status_cadastro'] === 'confirmado') {
-        $mensagem = 'Sua conta já foi confirmada anteriormente. Faça login.';
-        $tipo     = 'info';
-    } else {
-        // Ativa a conta e apaga o token
-        $upd = $pdo->prepare("
-            UPDATE usuario SET status_cadastro = 'confirmado', token_confirmacao = NULL WHERE id_usuario = ?
-        ");
-        $upd->execute([$usuario['id_usuario']]);
-        
-        // Buscar permissao para redirecionamento
-        $stmt_perm = $pdo->prepare("SELECT permissao FROM usuario WHERE id_usuario = ?");
-        $stmt_perm->execute([$usuario['id_usuario']]);
-        $permissao = $stmt_perm->fetchColumn();
-        
-        // Fazer login automático
-        session_start();
-        $stmt_user = $pdo->prepare("SELECT id_usuario, email, permissao FROM usuario WHERE id_usuario = ?");
-        $stmt_user->execute([$usuario['id_usuario']]);
-        $user_data = $stmt_user->fetch(PDO::FETCH_ASSOC);
-        $_SESSION['usuario'] = $user_data;
-        
-        $mensagem = 'E-mail confirmado com sucesso! Redirecionando...';
-        $tipo     = 'sucesso';
-        
-        // Redirecionamento baseado na permissao
-        $redirect = (strpos($permissao, 'Admin') !== false) ? '../../src/admin/pages/dashboard.php' : '../pages/home_usuario.php';
-        header("Refresh: 3; url=$redirect"); // Redirecionar após 3 segundos
+        if (!$usuario) {
+            $mensagem = 'Link de confirmação inválido ou expirado.';
+
+        } elseif ($usuario['status_cadastro'] === 'confirmado') {
+            $mensagem = 'Sua conta já foi confirmada. Faça login.';
+            $tipo     = 'info';
+
+        } else {
+            // Ativa conta e apaga token
+            $upd = $pdo->prepare(
+                "UPDATE usuario
+                    SET status_cadastro    = 'confirmado',
+                        token_confirmacao  = NULL
+                  WHERE id_usuario = ?"
+            );
+            $upd->execute([$usuario['id_usuario']]);
+
+            // Login automático após confirmação
+            // Busca email atualizado
+            $stmtUser = $pdo->prepare(
+                "SELECT id_usuario, email FROM usuario WHERE id_usuario = ? LIMIT 1"
+            );
+            $stmtUser->execute([$usuario['id_usuario']]);
+            $userData = $stmtUser->fetch(PDO::FETCH_ASSOC);
+
+            $_SESSION['usuario'] = [
+                'id_usuario' => $userData['id_usuario'],
+                'email'      => $userData['email'],
+            ];
+
+            $mensagem = 'E-mail confirmado com sucesso! Redirecionando...';
+            $tipo     = 'sucesso';
+
+            $redirect = (strpos($usuario['permissao'] ?? '', 'Admin') !== false)
+                ? '../../src/admin/pages/dashboard.php'
+                : '../pages/confirmacao_cadastro.php';
+        }
+
+    } catch (PDOException $e) {
+        error_log("confirmar.php PDOException: " . $e->getMessage());
+        $mensagem = 'Erro interno. Tente novamente.';
     }
 }
 ?>

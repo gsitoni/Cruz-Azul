@@ -105,10 +105,10 @@
             <input type="email" id="email" name="email" required>
 
             <label>Senha</label>
-            <input type="password" id="senha" name="senha" required>
+            <input type="password" id="senha" name="senha" placeholder="Mínimo 12 caracteres" required>
 
             <label>Confirmar Senha</label>
-            <input type="password" id="confirmarSenha" required>
+            <input type="password" id="confirmarSenha" placeholder="Repita a senha" required>
 
             <div class="lgpd-box">
                 <input type="checkbox" id="lgpd" required>
@@ -119,10 +119,6 @@
 
             <button type="submit" id="btnCadastrar">Cadastrar Administrador</button>
         </form>
-
-        <p style="text-align: center; margin-top: 20px;">
-            Já tem uma conta? <a href="login.php">Faça login</a>
-        </p>
     </div>
 
     <script>
@@ -169,8 +165,8 @@
                 const json = await res.json();
 
                 if (json.ok) {
-                    mostrarMsg(json.msg, 'sucesso');
-                    // window.location.href = 'index.php'; // Redirecionar para a página home
+                    // mostrarMsg(json.msg, 'sucesso');
+                    window.location.href = 'cadastro_concluido.php?email=' + encodeURIComponent(document.getElementById('email').value.trim()) + '&tipo=admin';
                 } else {
                     mostrarMsg(json.msg, 'erro');
                 }

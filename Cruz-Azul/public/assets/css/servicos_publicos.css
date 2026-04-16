@@ -14,7 +14,7 @@
         /* ── NAVBAR ── */
         nav {
             background-color: #007BFF;
-            padding: 12px 24px;
+            padding: 14px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -33,43 +33,40 @@
             font-size: 14px;
         }
 
-        nav a:hover {
-            text-decoration: underline;
-        }
-
         /* ── CONTEÚDO ── */
         .conteudo {
             max-width: 1000px;
-            margin: 30px auto;
+            margin: 24px auto;
             padding: 0 20px;
         }
 
         .titulo {
-            font-size: 24px;
+            font-size: 22px;
             color: #007BFF;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             text-align: center;
         }
 
         .subtitulo {
-            font-size: 16px;
+            font-size: 14px;
             color: #666;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
             text-align: center;
         }
 
         /* ── FILTROS ── */
         .filtros {
             background: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 24px;
         }
 
         .filtros h3 {
             color: #007BFF;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            font-size: 16px;
         }
 
         .categorias {
@@ -81,12 +78,11 @@
         .categoria-btn {
             background: #f0f0f0;
             color: #333;
-            border: none;
+            border: 1px solid #ddd;
             padding: 8px 16px;
-            border-radius: 20px;
+            border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
-            transition: all 0.2s;
         }
 
         .categoria-btn:hover,
@@ -99,36 +95,37 @@
         .servicos-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            gap: 14px;
+            margin-bottom: 24px;
         }
 
         .servico-card {
             background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-left: 4px solid #007BFF;
+            border-radius: 4px;
+            padding: 14px;
+            border: 1px solid #ddd;
         }
 
         .servico-card h3 {
-            color: #007BFF;
-            margin-bottom: 10px;
-            font-size: 18px;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 15px;
         }
 
         .servico-info {
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-size: 14px;
+            color: #444;
         }
 
         .servico-info strong {
-            color: #555;
+            color: #444;
         }
 
         .telefone {
-            background: #e7f3ff;
-            color: #007BFF;
+            background: #f5f5f5;
+            color: #333;
+            border: 1px solid #ddd;
             padding: 4px 8px;
             border-radius: 4px;
             font-weight: bold;
@@ -137,10 +134,11 @@
         }
 
         .distancia {
-            background: #fff3e0;
-            color: #e07820;
+            background: #f4f4f4;
+            color: #555;
+            border: 1px solid #ddd;
             padding: 2px 6px;
-            border-radius: 10px;
+            border-radius: 4px;
             font-size: 12px;
             font-weight: bold;
             display: inline-block;
@@ -148,18 +146,18 @@
         }
 
         .emergencia-card {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-            color: white;
-            border-left-color: #ff4757;
+            background: #fff;
+            color: #333;
+            border-color: #ddd;
         }
 
         .emergencia-card h3 {
-            color: white;
+            color: #333;
         }
 
         .emergencia-card .telefone {
-            background: rgba(255,255,255,0.2);
-            color: white;
+            background: #f5f5f5;
+            color: #333;
         }
 
         /* ── BOTÃO VOLTAR ── */
@@ -169,13 +167,9 @@
             color: white;
             padding: 10px 20px;
             text-decoration: none;
-            border-radius: 6px;
+            border-radius: 4px;
             margin-bottom: 20px;
             font-size: 14px;
-        }
-
-        .btn-voltar:hover {
-            background: #555;
         }
 
         /* ── RODAPÉ ── */
@@ -186,4 +180,20 @@
             padding: 16px;
             font-size: 13px;
             margin-top: 20px;
+        }
+
+        @media (max-width: 640px) {
+            nav {
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+
+            nav a {
+                margin-left: 0;
+                margin-right: 12px;
+            }
+
+            .servicos-grid {
+                grid-template-columns: 1fr;
+            }
         }

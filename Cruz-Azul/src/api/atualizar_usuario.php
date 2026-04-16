@@ -68,6 +68,7 @@ header("X-Content-Type-Options: nosniff");
 header("Referrer-Policy: strict-origin-when-cross-origin");
  
 require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/valida_senha.php';
  
 // ──────────────────────────────────────────────
 // 1. Verificações de sessão e método HTTP
@@ -210,8 +211,9 @@ try {
             if ($senha_atual === null) {
                 throw new InvalidArgumentException("Informe a senha atual para alterá-la.");
             }
-            if (mb_strlen($nova_senha, 'UTF-8') < 6) {
-                throw new InvalidArgumentException("A nova senha deve ter pelo menos 6 caracteres.");
+            $validacao = validarSenhaForte($nova_senha);
+            if ($validacao !== true) {
+                throw new InvalidArgumentException($validacao);
             }
             if ($nova_senha !== $conf_senha) {
                 throw new InvalidArgumentException("As senhas não coincidem.");
@@ -286,30 +288,31 @@ try {
             if ($senha_atual === null) {
                 throw new InvalidArgumentException("Informe a senha atual para alterá-la.");
             }
-            if (mb_strlen($nova_senha, 'UTF-8') < 6) {
-                throw new InvalidArgumentException("A nova senha deve ter pelo menos 6 caracteres.");
+            $validacao = validarSenhaForte($nova_senha);
+            if ($validacao !== true) {
+                throw new InvalidArgumentException($validacao);
             }
             if ($nova_senha !== $conf_senha) {
                 throw new InvalidArgumentException("As senhas não coincidem.");
             }
- 
+
             $stmtSenha = $pdo->prepare(
                 "SELECT senha_hash FROM usuario WHERE id_usuario = ? LIMIT 1"
             );
             $stmtSenha->execute([$id_usuario]);
             $row = $stmtSenha->fetch(PDO::FETCH_ASSOC);
- 
+
             if (!$row || !password_verify($senha_atual, $row['senha_hash'])) {
                 throw new InvalidArgumentException("Senha atual incorreta.");
             }
- 
+
             $novoHash = password_hash($nova_senha, PASSWORD_DEFAULT);
             $stmtUpSenha = $pdo->prepare(
                 "UPDATE usuario SET senha_hash = ? WHERE id_usuario = ?"
             );
             $stmtUpSenha->execute([$novoHash, $id_usuario]);
         }
- 
+
     } else {
         // Nenhum campo reconhecido → possível adulteração do formulário
         throw new InvalidArgumentException("Dados do formulário inválidos.");

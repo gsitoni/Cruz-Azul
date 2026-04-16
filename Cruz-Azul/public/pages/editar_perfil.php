@@ -44,6 +44,7 @@ header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-in
 header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
  
 require_once __DIR__ . '/../../src/api/database.php';
+require_once __DIR__ . '/../../src/api/valida_senha.php';
  
 // --- Autenticação ---
 if (!isset($_SESSION['usuario']) || empty($_SESSION['usuario']['id_usuario'])) {
@@ -216,7 +217,7 @@ function e(string $v): string {
                            name="nova_senha"
                            maxlength="255"
                            autocomplete="new-password">
-                    <span class="aviso">Mínimo 6 caracteres.</span>
+                    <span class="aviso">Mínimo 12 caracteres.</span>
                 </div>
  
                 <div class="campo">
@@ -268,7 +269,7 @@ function e(string $v): string {
                            name="nova_senha"
                            maxlength="255"
                            autocomplete="new-password">
-                    <span class="aviso">Mínimo 6 caracteres.</span>
+                    <span class="aviso">Mínimo 12 caracteres.</span>
                 </div>
  
                 <div class="campo">

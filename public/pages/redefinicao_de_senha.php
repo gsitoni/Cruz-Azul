@@ -113,10 +113,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <h2 class="subtitulo"> Redefinição de senha </h2>
 
     <div class="condicoes">
-        <b><p class="condicao"> Sua nova senha: </p></b>
-        <p class="condicao" id="condicao_tamanho">Mínimo 10 caracteres</p>
-        <p class="condicao" id="condicao_especial">1 caractere especial (@, #, $, %)</p>
-        <p class="condicao" id="condicao_numero">Deve conter números</p>
+        <b><p class="condicao">Sua nova senha deve ter:</p></b>
+        <p class="condicao" id="condicao_tamanho">Mínimo 12 caracteres</p>
+        <p class="condicao" id="condicao_maiuscula">Pelo menos uma letra maiúscula</p>
+        <p class="condicao" id="condicao_minuscula">Pelo menos uma letra minúscula</p>
+        <p class="condicao" id="condicao_numero">Pelo menos um número</p>
+        <p class="condicao" id="condicao_especial">Pelo menos um caractere especial (@, #, $, %, etc.)</p>
         <p class="condicao" id="condicao_sequencia">Sem sequências (abcd, 1234)</p>
     </div>
 
