@@ -47,11 +47,12 @@ $dados = $tipos[$tipo] ?? $tipos['usuario'];
         }
 
         .sucesso-container {
-            background: #f0f9ff;
-            border: 2px solid #4CAF50;
-            border-radius: 10px;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+            border: 2px solid #1976d2;
+            border-radius: 15px;
             padding: 40px;
             margin: 20px 0;
+            box-shadow: 0 8px 32px rgba(25, 118, 210, 0.15);
         }
 
         .icone-grande {
@@ -60,29 +61,33 @@ $dados = $tipos[$tipo] ?? $tipos['usuario'];
         }
 
         h2 {
-            color: #4CAF50;
-            font-size: 24px;
+            color: #1976d2;
+            font-size: 28px;
             margin-bottom: 15px;
+            font-weight: 700;
         }
 
         .email-destaque {
             background: white;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
+            border: 2px solid #e3f2fd;
+            border-radius: 10px;
+            padding: 15px;
             margin: 20px 0;
             font-weight: bold;
             word-break: break-all;
-            color: #333;
+            color: #1565c0;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.1);
         }
 
         .instrucoes {
             text-align: left;
             background: white;
-            padding: 20px;
-            border-radius: 5px;
+            padding: 25px;
+            border-radius: 10px;
             margin: 20px 0;
-            border-left: 4px solid #4CAF50;
+            border-left: 5px solid #1976d2;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
         .instrucoes ol {
@@ -92,53 +97,70 @@ $dados = $tipos[$tipo] ?? $tipos['usuario'];
 
         .instrucoes li {
             margin-bottom: 10px;
+            color: #424242;
         }
 
         .botoes {
             display: flex;
-            gap: 10px;
+            gap: 15px;
             justify-content: center;
             flex-wrap: wrap;
-            margin-top: 20px;
+            margin-top: 30px;
         }
 
         .btn {
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 12px 24px;
+            border-radius: 8px;
             text-decoration: none;
             border: none;
             cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            min-width: 160px;
         }
 
         .btn-primario {
-            background: #4CAF50;
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
             color: white;
+            box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
         }
 
         .btn-primario:hover {
-            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(25, 118, 210, 0.4);
         }
 
         .btn-secundario {
-            background: #f0f0f0;
-            color: #333;
-            border: 2px solid #333;
+            background: white;
+            color: #1976d2;
+            border: 2px solid #1976d2;
+            box-shadow: 0 4px 15px rgba(25, 118, 210, 0.1);
         }
 
         .btn-secundario:hover {
-            background: #e0e0e0;
+            background: #1976d2;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(25, 118, 210, 0.3);
         }
 
         .aviso {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            color: #856404;
-            padding: 15px;
-            border-radius: 5px;
+            background: linear-gradient(135deg, #fff8e1 0%, #fff3c4 100%);
+            border: 1px solid #ffb74d;
+            color: #f57c00;
+            padding: 18px;
+            border-radius: 10px;
             margin: 20px 0;
             font-size: 14px;
+            box-shadow: 0 4px 12px rgba(255, 183, 77, 0.1);
+        }
+
+        .mensagem-sucesso {
+            color: #2e7d32;
+            font-size: 18px;
+            margin-top: 10px;
+            font-weight: 500;
         }
     </style>
 </head>
@@ -148,7 +170,7 @@ $dados = $tipos[$tipo] ?? $tipos['usuario'];
     <div class="sucesso-container">
         <div class="icone-grande"><?= htmlspecialchars($dados['icone'], ENT_QUOTES, 'UTF-8') ?></div>
         <h2><?= htmlspecialchars($dados['titulo'], ENT_QUOTES, 'UTF-8') ?></h2>
-        <p><?= htmlspecialchars($dados['mensagem'], ENT_QUOTES, 'UTF-8') ?></p>
+        <p class="mensagem-sucesso">✅ <?= htmlspecialchars($dados['mensagem'], ENT_QUOTES, 'UTF-8') ?></p>
     </div>
 
     <?php if (!empty($email)): ?>
@@ -168,17 +190,20 @@ $dados = $tipos[$tipo] ?? $tipos['usuario'];
     </div>
 
     <div class="aviso">
-        ⏱️ O link de confirmação é válido por <strong>24 horas</strong>. Após esse período, você precisará fazer um novo cadastro.
+        <strong>⏱️ Importante:</strong> O link de confirmação enviado para seu e-mail é válido por <strong> 5 minutos </strong>.
+        Após esse período, você precisará fazer um novo cadastro. Verifique também sua pasta de <strong>spam</strong> se não encontrar o e-mail.
     </div>
 
     <div class="botoes">
-        <a href="index.php" class="btn btn-primario">← Voltar ao Início</a>
         <?php if ($tipo === 'admin'): ?>
-            <a href="../../src/admin/index.php" class="btn btn-secundario">Ir para Painel Admin</a>
+            <a href="../../src/admin/login_admin.php" class="btn btn-secundario">🔐 Fazer Login como Admin</a>
+            <a href="../../src/admin/index.php" class="btn btn-primario">🏠 Ir para Painel Admin</a>
         <?php elseif ($tipo === 'ong'): ?>
-            <a href="login_ong.php" class="btn btn-secundario">Fazer Login como ONG</a>
+            <a href="login_ong.php" class="btn btn-secundario">🏢 Fazer Login como ONG</a>
+            <a href="index.php" class="btn btn-primario">🏠 Voltar ao Início</a>
         <?php else: ?>
-            <a href="login.php" class="btn btn-secundario">Fazer Login</a>
+            <a href="login.php" class="btn btn-secundario">👤 Fazer Login</a>
+            <a href="index.php" class="btn btn-primario">🏠 Voltar ao Início</a>
         <?php endif; ?>
     </div>
 </div>
