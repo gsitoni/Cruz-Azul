@@ -6,7 +6,7 @@ require __DIR__ . '/auth.php';
 // ==========================
 if (isset($_GET['logout'])) {
     session_destroy();
-    header("Location: ../../../public/pages/login.php");
+    header("Location: ../index.php");
     exit();
 }
 
@@ -78,8 +78,22 @@ try {
     $stmt->execute($params);
     $ongs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
+    $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM ong WHERE status_elegibilidade = 'pendente'");
+    $stmt->execute();
+    $totalPendentes = (int) ($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM ong WHERE status_elegibilidade = 'ativo'");
+    $stmt->execute();
+    $totalAtivas = (int) ($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM ong WHERE status_elegibilidade = 'rejeitado'");
+    $stmt->execute();
+    $totalRejeitadas = (int) ($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
 } catch (PDOException $e) {
     $ongs = [];
+    $totalPendentes = 0;
+    $totalAtivas = 0;
+    $totalRejeitadas = 0;
 }
 ?>
 
@@ -89,48 +103,82 @@ try {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solicitações de ONGs</title>
-<link rel="stylesheet" href="../assets/css/ongs.css">
+<link rel="stylesheet" href="../assets/css/ongs.css?v=20260423b">
 </head>
 
 <body>
 
-<header>
-    <h1>Cruz Azul ✙</h1>
+<header class="topbar">
+    <div>
+        <h1>Cruz Azul Admin</h1>
+        <p>Central de analise e moderacao de ONGs</p>
+    </div>
     <nav>
         <a href="./dashboard.php">Dashboard</a>
-        <a href="./ongs.php">ONGs</a>
+        <a class="active" href="./ongs.php">ONGs</a>
         <a href="./logs.php">Logs</a>
-        <a href="./usuarios.php">Usuários</a>
-        <a href="./configuracoes.php">Configurações</a>
+        <a href="./usuarios.php">Usuarios</a>
+        <a href="./configuracoes.php">Configuracoes</a>
         <a href="./ongs.php?logout=true">Sair</a>
     </nav>
 </header>
 
 <main class="container">
 
-<h2>Gerenciamento de ONGs</h2>
+<section class="page-header">
+    <h2>Gerenciamento de ONGs</h2>
+    <p>Visualize o status das solicitacoes e aprove ou rejeite cadastros pendentes com rastreabilidade.</p>
+</section>
 
 <?php if(!empty($msg)): ?>
-    <p style="color:green;"><?= htmlspecialchars($msg) ?></p>
+    <p class="flash-msg"><?= htmlspecialchars($msg) ?></p>
 <?php endif; ?>
+
+<section class="stats-grid">
+    <article class="stat-card stat-pendente">
+        <h3>Pendentes</h3>
+        <p><?= $totalPendentes ?></p>
+    </article>
+    <article class="stat-card">
+        <h3>Ativas</h3>
+        <p><?= $totalAtivas ?></p>
+    </article>
+    <article class="stat-card">
+        <h3>Rejeitadas</h3>
+        <p><?= $totalRejeitadas ?></p>
+    </article>
+    <article class="stat-card">
+        <h3>Total em analise</h3>
+        <p><?= count($ongs) ?></p>
+    </article>
+</section>
 
 <!-- FILTROS -->
 <form method="GET" class="filters">
-    <input type="text" name="busca" placeholder="Buscar ONG..." value="<?= htmlspecialchars($busca) ?>">
+    <input type="text" name="busca" placeholder="Buscar ONG por nome..." value="<?= htmlspecialchars($busca) ?>">
     <select name="status">
         <option value="">Status</option>
-        <option value="pendente">Pendente</option>
-        <option value="ativo">Ativo</option>
-        <option value="rejeitado">Rejeitado</option>
+        <option value="pendente" <?= $status === 'pendente' ? 'selected' : '' ?>>Pendente</option>
+        <option value="ativo" <?= $status === 'ativo' ? 'selected' : '' ?>>Ativo</option>
+        <option value="rejeitado" <?= $status === 'rejeitado' ? 'selected' : '' ?>>Rejeitado</option>
     </select>
-    <button type="submit">Filtrar</button>
+    <div class="filter-actions">
+        <button type="submit">Filtrar</button>
+        <a href="./ongs.php" class="btn-clear">Limpar</a>
+    </div>
 </form>
 
 <!-- TABELA -->
 <section class="table-box">
+    <div class="table-header">
+        <strong>Resultado da consulta</strong>
+        <span><?= count($ongs) ?> ONG(s) encontrada(s)</span>
+    </div>
+    <div class="table-wrapper">
     <table>
         <thead>
             <tr>
+                <th>ID</th>
                 <th>Nome</th>
                 <th>Email</th>
                 <th>Contato</th>
@@ -141,26 +189,31 @@ try {
         </thead>
         <tbody>
             <?php if(empty($ongs)): ?>
-                <tr><td colspan="6">Nenhuma ONG encontrada</td></tr>
+                <tr><td colspan="7" class="empty">Nenhuma ONG encontrada</td></tr>
             <?php endif; ?>
             <?php foreach($ongs as $ong): ?>
                 <tr>
+                    <td>#<?= (int) $ong['id_ong'] ?></td>
                     <td><?= htmlspecialchars($ong['nome']) ?></td>
                     <td><?= htmlspecialchars($ong['email']) ?></td>
                     <td><?= htmlspecialchars($ong['email'] ?: 'Nao informado') ?></td>
-                    <td><?= htmlspecialchars($ong['endereco']) ?></td>
+                    <td><?= htmlspecialchars($ong['endereco'] ?: 'Nao informado') ?></td>
                     <td>
                         <span class="badge <?= $ong['status_elegibilidade'] === 'ativo' ? 'aprovado' : ($ong['status_elegibilidade'] === 'pendente' ? 'pendente' : 'rejeitado') ?>">
                             <?= strtoupper($ong['status_elegibilidade']) ?>
                         </span>
                     </td>
                     <td>
-                        <form method="POST" style="display:inline;">
+                        <form method="POST" class="action-form">
                             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                             <input type="hidden" name="id" value="<?= $ong['id_ong'] ?>">
                             <?php if($ong['status_elegibilidade'] === 'pendente'): ?>
-                                <button class="btn-aprovar" name="acao" value="aprovar">Aprovar</button>
-                                <button class="btn-rejeitar" name="acao" value="rejeitar">Rejeitar</button>
+                                <div class="action-buttons">
+                                    <button class="btn-aprovar" name="acao" value="aprovar" data-acao="aprovar">Aprovar</button>
+                                    <button class="btn-rejeitar" name="acao" value="rejeitar" data-acao="rejeitar">Rejeitar</button>
+                                </div>
+                            <?php else: ?>
+                                <span class="status-finalizado">Sem acoes pendentes</span>
                             <?php endif; ?>
                         </form>
                     </td>
@@ -168,6 +221,7 @@ try {
             <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 </section>
 
 </main>

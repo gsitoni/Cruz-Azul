@@ -6,16 +6,21 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 require __DIR__ . '/database.php';
 
 $token = trim($_GET['token'] ?? '');
+$tipoSolicitado = strtolower(trim($_GET['tipo'] ?? ''));
 $status = 'erro';
 $mensagem = 'Link de confirmacao invalido ou expirado.';
 $email = '';
+$tipoConta = $tipoSolicitado;
 
 if ($token === '' || strlen($token) > 255) {
     $mensagem = 'Token de confirmacao invalido ou ausente.';
 } else {
     try {
         $stmt = $pdo->prepare(
-            'SELECT id_usuario, email, status_cadastro FROM usuario WHERE token_confirmacao = ? LIMIT 1'
+            sprintf(
+                'SELECT id_usuario, email, status_cadastro, %s FROM usuario WHERE token_confirmacao = ? LIMIT 1',
+                obterSelecaoPerfilUsuario($pdo, '')
+            )
         );
         $stmt->execute([$token]);
         $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -30,6 +35,7 @@ if ($token === '' || strlen($token) > 255) {
             $status = 'info';
             $mensagem = 'Sua conta ja estava confirmada. Agora voce pode entrar normalmente.';
             $email = (string) ($usuario['email'] ?? '');
+            $tipoConta = (string) ($usuario['tipo'] ?? $tipoConta);
         } else {
             $upd = $pdo->prepare(
                 "UPDATE usuario SET status_cadastro = 'confirmado', token_confirmacao = NULL WHERE id_usuario = ?"
@@ -39,6 +45,7 @@ if ($token === '' || strlen($token) > 255) {
             $status = 'sucesso';
             $mensagem = 'Cadastro confirmado com sucesso. Sua conta ja pode acessar a plataforma.';
             $email = (string) ($usuario['email'] ?? '');
+            $tipoConta = (string) ($usuario['tipo'] ?? $tipoConta);
         }
     } catch (PDOException $e) {
         error_log('confirmar.php PDOException: ' . $e->getMessage());
@@ -46,11 +53,18 @@ if ($token === '' || strlen($token) > 255) {
     }
 }
 
+$ehAdmin = stripos($tipoConta, 'admin') !== false;
+
 $query = http_build_query([
     'status' => $status,
     'msg' => $mensagem,
     'email' => $email,
+    'tipo' => $ehAdmin ? 'admin' : 'usuario',
 ]);
 
-header('Location: ../../public/pages/confirmacao_realizada.php?' . $query);
+$destino = $ehAdmin
+    ? '../../src/admin/pages/confirmacao_realizada.php'
+    : '../../public/pages/confirmacao_realizada.php';
+
+header('Location: ' . $destino . '?' . $query);
 exit;

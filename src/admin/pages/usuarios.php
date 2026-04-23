@@ -6,7 +6,7 @@ require __DIR__ . '/auth.php';
 // ==========================
 if (isset($_GET['logout'])) {
     session_destroy();
-    header("Location: ../../../public/pages/login.php");
+    header("Location: ../index.php");
     exit();
 }
 
@@ -93,29 +93,34 @@ unset($_SESSION['msg']);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Usuários - Cruz Azul</title>
-<link rel="stylesheet" href="../assets/css/usuarios.css">
+<link rel="stylesheet" href="../assets/css/usuarios.css?v=20260423a">
 </head>
 
 <body>
 
-<header class="header">
-    <h1>Cruz Azul ✙</h1>
+<header class="topbar">
+    <div>
+        <h1>Cruz Azul Admin</h1>
+        <p>Gestao de contas da plataforma</p>
+    </div>
     <nav>
         <a href="./dashboard.php">Dashboard</a>
         <a href="./ongs.php">ONGs</a>
         <a href="./logs.php">Logs</a>
-        <a href="./usuarios.php">Usuários</a>
-        <a href="./configuracoes.php">Configurações</a>
+        <a class="active" href="./usuarios.php">Usuarios</a>
+        <a href="./configuracoes.php">Configuracoes</a>
         <a href="./usuarios.php?logout=true">Sair</a>
     </nav>
 </header>
 
 <main class="container">
-
-<h2>Controle de Usuários</h2>
+<section class="page-header">
+    <h2>Controle de usuarios</h2>
+    <p>Acompanhe status, busque contas e execute acoes administrativas com seguranca.</p>
+</section>
 
 <?php if($msg): ?>
-<p style="color:green;"><?= htmlspecialchars($msg) ?></p>
+<p class="flash-msg"><?= htmlspecialchars($msg) ?></p>
 <?php endif; ?>
 
 <!-- FILTROS -->
@@ -123,15 +128,23 @@ unset($_SESSION['msg']);
     <input type="text" name="busca" placeholder="Buscar por email..." value="<?= htmlspecialchars($busca) ?>">
     <select name="status">
         <option value="">Status</option>
-        <option value="pendente">Pendente</option>
-        <option value="confirmado">Confirmado</option>
-        <option value="bloqueado">Bloqueado</option>
+        <option value="pendente" <?= $status === 'pendente' ? 'selected' : '' ?>>Pendente</option>
+        <option value="confirmado" <?= $status === 'confirmado' ? 'selected' : '' ?>>Confirmado</option>
+        <option value="bloqueado" <?= $status === 'bloqueado' ? 'selected' : '' ?>>Bloqueado</option>
     </select>
-    <button type="submit">Filtrar</button>
+    <div class="filter-actions">
+        <button type="submit">Filtrar</button>
+        <a href="./usuarios.php" class="btn-clear">Limpar</a>
+    </div>
 </form>
 
 <!-- TABELA -->
 <section class="table-box">
+    <div class="table-header">
+        <strong>Resultado da consulta</strong>
+        <span><?= count($usuarios) ?> usuario(s) encontrado(s)</span>
+    </div>
+    <div class="table-wrapper">
     <table>
         <thead>
             <tr>
@@ -144,7 +157,7 @@ unset($_SESSION['msg']);
         </thead>
         <tbody>
             <?php if(empty($usuarios)): ?>
-                <tr><td colspan="5">Nenhum usuário encontrado</td></tr>
+                <tr><td colspan="5" class="empty">Nenhum usuario encontrado</td></tr>
             <?php endif; ?>
             <?php foreach($usuarios as $u): ?>
                 <tr>
@@ -157,21 +170,24 @@ unset($_SESSION['msg']);
                     </td>
                     <td><?= htmlspecialchars($u['data_criacao']) ?></td>
                     <td>
-                        <form method="POST" style="display:inline;">
+                        <form method="POST" class="action-form">
                             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                             <input type="hidden" name="id" value="<?= $u['id_usuario'] ?>">
+                            <div class="action-buttons">
                             <?php if($u['status_cadastro'] === 'confirmado'): ?>
-                                <button class="btn-bloquear" name="acao" value="bloquear">Bloquear</button>
+                                <button class="btn-bloquear" name="acao" value="bloquear" type="submit">Bloquear</button>
                             <?php elseif($u['status_cadastro'] === 'bloqueado'): ?>
-                                <button class="btn-ativar" name="acao" value="desbloquear">Desbloquear</button>
+                                <button class="btn-ativar" name="acao" value="desbloquear" type="submit">Desbloquear</button>
                             <?php endif; ?>
-                            <button class="btn-excluir" name="acao" value="excluir" onclick="return confirm('Tem certeza?')">Excluir</button>
+                            <button class="btn-excluir" name="acao" value="excluir" type="submit" onclick="return confirm('Tem certeza?')">Excluir</button>
+                            </div>
                         </form>
                     </td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 </section>
 
 </main>

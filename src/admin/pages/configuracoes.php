@@ -6,7 +6,7 @@ require __DIR__ . '/auth.php';
 // ==========================
 if (isset($_GET['logout'])) {
     session_destroy();
-    header("Location: ../../../public/pages/login.php");
+    header("Location: ../index.php");
     exit();
 }
 
@@ -53,26 +53,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Configurações - Cruz Azul</title>
-<link rel="stylesheet" href="../assets/css/configuracoes.css">
+<link rel="stylesheet" href="../assets/css/configuracoes.css?v=20260423a">
 </head>
 
 <body>
 
-<header class="header">
-    <h1>Cruz Azul ✙</h1>
+<header class="topbar">
+    <div>
+        <h1>Cruz Azul Admin</h1>
+        <p>Parametros de seguranca e operacao</p>
+    </div>
     <nav>
         <a href="dashboard.php">Dashboard</a>
         <a href="ongs.php">ONGs</a>
         <a href="logs.php">Logs</a>
-        <a href="usuarios.php">Usuários</a>
-        <a href="configuracoes.php">Configurações</a>
+        <a href="usuarios.php">Usuarios</a>
+        <a class="active" href="configuracoes.php">Configuracoes</a>
         <a href="?logout=true">Sair</a>
     </nav>
 </header>
 
 <main class="container">
-
-<h2>Configurações do Sistema</h2>
+<section class="page-header">
+    <h2>Configuracoes do sistema</h2>
+    <p>Gerencie os parametros principais da plataforma em um painel unificado.</p>
+</section>
 
 <?php if($msg): ?>
 <div class="alert alert-success">
@@ -86,9 +91,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 <?php endif; ?>
 
-<!-- SEÇÃO: INFORMAÇÕES GERAIS -->
 <section class="config-section">
-    <h3>📋 Informações Gerais</h3>
+    <h3>Informacoes gerais</h3>
 
     <form method="POST" class="form-config">
         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
@@ -139,111 +143,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </label>
         </div>
 
-        <button type="submit" class="btn-save">Salvar Configurações</button>
+        <button type="submit" class="btn-primary">Salvar configuracoes</button>
     </form>
 </section>
 
-        <div class="form-group">
-            <label for="email_admin">Email Administrativo:</label>
-            <input type="email" id="email_admin" name="email_admin" 
-                   value="<?= htmlspecialchars($config['email_admin']) ?>" required>
-        </div>
-
-        <div class="form-group">
-            <label for="email_noreply">Email No-Reply:</label>
-            <input type="email" id="email_noreply" name="email_noreply" 
-                   value="<?= htmlspecialchars($config['email_noreply']) ?>" required>
-        </div>
-
-        <button type="submit" class="btn-primary">Salvar Alterações</button>
-    </form>
-</section>
-
-<!-- SEÇÃO: SEGURANÇA -->
 <section class="config-section">
-    <h3>🔒 Segurança</h3>
-
-    <form method="POST" class="form-config">
-        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-        <input type="hidden" name="acao" value="atualizar_config">
-
-        <div class="form-group">
-            <label for="tentativas_login">Máximo de Tentativas de Login:</label>
-            <input type="number" id="tentativas_login" name="tentativas_login" 
-                   value="<?= htmlspecialchars($config['tentativas_login']) ?>" min="1" required>
-        </div>
-
-        <div class="form-group">
-            <label for="timeout_sessao">Timeout de Sessão (segundos):</label>
-            <input type="number" id="timeout_sessao" name="timeout_sessao" 
-                   value="<?= htmlspecialchars($config['timeout_sessao']) ?>" min="60" required>
-        </div>
-
-        <div class="form-group form-checkbox">
-            <label>
-                <input type="checkbox" name="autenticacao_2fa" 
-                       <?= $config['autenticacao_2fa'] ? 'checked' : '' ?>>
-                Ativar Autenticação em Dois Fatores
-            </label>
-        </div>
-
-        <button type="submit" class="btn-primary">Salvar Alterações</button>
-    </form>
-</section>
-
-<!-- SEÇÃO: NOTIFICAÇÕES -->
-<section class="config-section">
-    <h3>📧 Notificações</h3>
-
-    <form method="POST" class="form-config">
-        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-        <input type="hidden" name="acao" value="atualizar_config">
-
-        <div class="form-group form-checkbox">
-            <label>
-                <input type="checkbox" name="notificacoes_email" 
-                       <?= $config['notificacoes_email'] ? 'checked' : '' ?>>
-                Ativar Notificações por Email
-            </label>
-        </div>
-
-        <button type="submit" class="btn-primary">Salvar Alterações</button>
-    </form>
-</section>
-
-<!-- SEÇÃO: MANUTENÇÃO -->
-<section class="config-section">
-    <h3>🔧 Manutenção</h3>
-
-    <div class="maintenance-actions">
-        <form method="POST" style="display:inline;">
-            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-            <input type="hidden" name="acao" value="resetar_cache">
-            <button type="submit" class="btn-warning" onclick="return confirm('Deseja resetar o cache do sistema?')">
-                🗑️ Limpar Cache
-            </button>
-        </form>
-
-        <form method="POST" style="display:inline;">
-            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-            <input type="hidden" name="acao" value="backup_database">
-            <button type="submit" class="btn-info" onclick="return confirm('Iniciar backup do banco de dados?')">
-                💾 Fazer Backup
-            </button>
-        </form>
-    </div>
-</section>
-
-<!-- SEÇÃO: INFORMAÇÕES DO SISTEMA -->
-<section class="config-section">
-    <h3>ℹ️ Informações do Sistema</h3>
-
+    <h3>Informacoes do ambiente</h3>
     <div class="system-info">
-        <p><strong>Versão PHP:</strong> <?= phpversion() ?></p>
-        <p><strong>Versão MySQL:</strong> TODO: Implementar query</p>
-        <p><strong>Memória Disponível:</strong> TODO: Implementar função</p>
-        <p><strong>Espaço em Disco:</strong> TODO: Implementar função</p>
-        <p><strong>Taxa de Uptime:</strong> TODO: Implementar cálculo</p>
+        <p><strong>Versao PHP:</strong> <?= htmlspecialchars(phpversion()) ?></p>
+        <p><strong>2FA de administradores:</strong> <?= $config['autenticacao_2fa'] ? 'Ativado' : 'Desativado' ?></p>
+        <p><strong>Notificacoes por email:</strong> <?= $config['notificacoes_email'] ? 'Ativadas' : 'Desativadas' ?></p>
+        <p><strong>Timeout de sessao:</strong> <?= (int) $config['timeout_sessao'] ?> segundos</p>
     </div>
 </section>
 

@@ -16,12 +16,9 @@ function obterBaseUrl(): string {
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
     if (!empty($_SERVER['SCRIPT_NAME'])) {
-        $basePath = dirname(dirname(dirname((string) $_SERVER['SCRIPT_NAME'])));
-        $basePath = str_replace('\\', '/', $basePath);
-        $basePath = rtrim($basePath, '/');
-        if ($basePath === '') {
-            $basePath = '';
-        }
+        $scriptName = str_replace('\\', '/', (string) $_SERVER['SCRIPT_NAME']);
+        $basePath = preg_replace('#/(public|src)(/.*)?$#', '', $scriptName);
+        $basePath = is_string($basePath) ? rtrim($basePath, '/') : '';
         return $scheme . '://' . $host . $basePath;
     }
 
@@ -59,8 +56,8 @@ function enviarEmail(string $para, string $nomePara, string $assunto, string $co
     }
 }
 
-function enviarEmailConfirmacao(string $para, string $nome, string $token): bool {
-    $link = obterBaseUrl() . '/src/api/confirmar.php?token=' . urlencode($token);
+function enviarEmailConfirmacao(string $para, string $nome, string $token, string $tipo = 'usuario'): bool {
+    $link = obterBaseUrl() . '/src/api/confirmar.php?token=' . urlencode($token) . '&tipo=' . urlencode($tipo);
     $nome_safe = htmlspecialchars($nome, ENT_QUOTES, 'UTF-8');
 
     $corpo = "

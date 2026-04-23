@@ -58,7 +58,7 @@ function gerarTOTP($secret) {
 
 
 // VERIFICAR TOTP
-function verificarTOTP($secret, $codigoUsuario, $tolerancia = 1) {
+function verificarTOTP($secret, $codigoUsuario, $tolerancia = 2) {
     $timeSlice = floor(time() / 30);
 
     for ($i = -$tolerancia; $i <= $tolerancia; $i++) {

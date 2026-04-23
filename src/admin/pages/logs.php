@@ -6,7 +6,7 @@ require __DIR__ . '/auth.php';
 // ==========================
 if (isset($_GET['logout'])) {
     session_destroy();
-    header("Location: ../../../public/pages/login.php");
+    header("Location: ../index.php");
     exit();
 }
 
@@ -63,41 +63,55 @@ function badgeClass($nivel) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Logs - Cruz Azul</title>
-<link rel="stylesheet" href="../assets/css/logs.css">
+<link rel="stylesheet" href="../assets/css/logs.css?v=20260423a">
 </head>
 
 <body>
 
-<header class="header">
-    <h1>Cruz Azul ✙</h1>
+<header class="topbar">
+    <div>
+        <h1>Cruz Azul Admin</h1>
+        <p>Painel de monitoramento e auditoria</p>
+    </div>
     <nav>
         <a href="./dashboard.php">Dashboard</a>
         <a href="./ongs.php">ONGs</a>
-        <a href="./logs.php">Logs</a>
-        <a href="./usuarios.php">Usuários</a>
-        <a href="./configuracoes.php">Configurações</a>
+        <a class="active" href="./logs.php">Logs</a>
+        <a href="./usuarios.php">Usuarios</a>
+        <a href="./configuracoes.php">Configuracoes</a>
         <a href="./logs.php?logout=true">Sair</a>
     </nav>
 </header>
 
 <main class="container">
 
-<h2>Logs de Segurança</h2>
+<section class="page-header">
+    <h2>Logs de seguranca</h2>
+    <p>Visualize eventos recentes da plataforma e filtre por usuario, acao ou nivel de criticidade.</p>
+</section>
 
 <!-- FILTROS -->
 <form method="GET" class="filters">
     <input type="text" name="busca" placeholder="Buscar..." value="<?= htmlspecialchars($busca) ?>">
     <select name="nivel">
         <option value="">Todos os níveis</option>
-        <option value="info">Info</option>
-        <option value="alerta">Alerta</option>
-        <option value="critico">Crítico</option>
+        <option value="info" <?= $nivel === 'info' ? 'selected' : '' ?>>Info</option>
+        <option value="alerta" <?= $nivel === 'alerta' ? 'selected' : '' ?>>Alerta</option>
+        <option value="critico" <?= $nivel === 'critico' ? 'selected' : '' ?>>Critico</option>
     </select>
-    <button type="submit">Filtrar</button>
+    <div class="filter-actions">
+        <button type="submit">Filtrar</button>
+        <a href="./logs.php" class="btn-clear">Limpar</a>
+    </div>
 </form>
 
 <!-- TABELA -->
 <section class="table-box">
+    <div class="table-header">
+        <strong>Eventos encontrados</strong>
+        <span><?= count($logs_filtrados) ?> registro(s)</span>
+    </div>
+    <div class="table-wrapper">
     <table>
         <thead>
             <tr>
@@ -109,7 +123,7 @@ function badgeClass($nivel) {
         </thead>
         <tbody>
             <?php if(empty($logs_filtrados)): ?>
-                <tr><td colspan="4">Nenhum log encontrado</td></tr>
+                <tr><td colspan="4" class="empty">Nenhum log encontrado</td></tr>
             <?php endif; ?>
             <?php foreach($logs_filtrados as $log): ?>
                 <tr>
@@ -125,6 +139,7 @@ function badgeClass($nivel) {
             <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 </section>
 </main>
 
