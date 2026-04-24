@@ -178,32 +178,30 @@ try {
     <table>
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Contato</th>
-                <th>Endereço</th>
-                <th>Status</th>
-                <th>Ações</th>
+                <th scope="col" class="col-id">ID</th>
+                <th scope="col">Nome</th>
+                <th scope="col">E-mail</th>
+                <th scope="col">Endereço</th>
+                <th scope="col" class="col-status">Status</th>
+                <th scope="col" class="col-actions">Ações</th>
             </tr>
         </thead>
         <tbody>
             <?php if(empty($ongs)): ?>
-                <tr><td colspan="7" class="empty">Nenhuma ONG encontrada</td></tr>
+                <tr><td colspan="6" class="empty">Nenhuma ONG encontrada</td></tr>
             <?php endif; ?>
             <?php foreach($ongs as $ong): ?>
                 <tr>
-                    <td>#<?= (int) $ong['id_ong'] ?></td>
-                    <td><?= htmlspecialchars($ong['nome']) ?></td>
-                    <td><?= htmlspecialchars($ong['email']) ?></td>
-                    <td><?= htmlspecialchars($ong['email'] ?: 'Nao informado') ?></td>
-                    <td><?= htmlspecialchars($ong['endereco'] ?: 'Nao informado') ?></td>
-                    <td>
+                    <td class="col-id mono">#<?= (int) $ong['id_ong'] ?></td>
+                    <td class="cell-strong"><?= htmlspecialchars($ong['nome']) ?></td>
+                    <td class="cell-muted"><?= htmlspecialchars($ong['email']) ?></td>
+                    <td class="cell-muted"><?= htmlspecialchars($ong['endereco'] ?: '—') ?></td>
+                    <td class="col-status">
                         <span class="badge <?= $ong['status_elegibilidade'] === 'ativo' ? 'aprovado' : ($ong['status_elegibilidade'] === 'pendente' ? 'pendente' : 'rejeitado') ?>">
                             <?= strtoupper($ong['status_elegibilidade']) ?>
                         </span>
                     </td>
-                    <td>
+                    <td class="col-actions">
                         <form method="POST" class="action-form">
                             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                             <input type="hidden" name="id" value="<?= $ong['id_ong'] ?>">

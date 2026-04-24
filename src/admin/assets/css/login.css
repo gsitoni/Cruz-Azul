@@ -118,6 +118,13 @@ form {
     gap: 12px;
 }
 
+#etapaEmail {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
 label {
     font-weight: 700;
 }
@@ -125,6 +132,7 @@ label {
 input {
     width: 100%;
     border: 1px solid #c9d8e7;
+    margin: 30px;
     border-radius: 14px;
     padding: 14px 16px;
     font-size: 1rem;
@@ -142,27 +150,6 @@ input.invalido {
     box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.12);
 }
 
-.senha-wrap {
-    position: relative;
-}
-
-.senha-wrap input {
-    padding-right: 106px;
-}
-
-.btn-olho {
-    position: absolute;
-    top: 50%;
-    right: 10px;
-    transform: translateY(-50%);
-    border: 0;
-    border-radius: 10px;
-    padding: 9px 14px;
-    background: #e7eef7;
-    color: #21425f;
-    font-weight: 700;
-    cursor: pointer;
-}
 
 .erro-campo {
     display: none;
@@ -212,16 +199,9 @@ input.invalido {
     transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
 }
 
-#btnEntrar:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 14px 30px rgba(13, 110, 253, 0.25);
-}
-
-#btnEntrar:disabled {
-    cursor: wait;
-    opacity: 0.8;
-    transform: none;
-    box-shadow: none;
+#link_cadastro {
+    text-align: center;
+    margin-top: 10px;
 }
 
 .support-links {

@@ -122,24 +122,26 @@ $dataAtualizacao = date('d/m/Y H:i');
                 <?php if (empty($ultimasPendentes)): ?>
                     <p class="empty-state">Nao ha ONGs pendentes no momento.</p>
                 <?php else: ?>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>E-mail</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($ultimasPendentes as $ong): ?>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead>
                                 <tr>
-                                    <td><?= htmlspecialchars($ong['nome'], ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars($ong['email'], ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><span class="badge pending"><?= strtoupper(htmlspecialchars($ong['status_elegibilidade'], ENT_QUOTES, 'UTF-8')) ?></span></td>
+                                    <th scope="col">Nome</th>
+                                    <th scope="col">E-mail</th>
+                                    <th scope="col" class="col-narrow">Status</th>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($ultimasPendentes as $ong): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($ong['nome'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars($ong['email'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td class="col-narrow"><span class="badge pending"><?= strtoupper(htmlspecialchars($ong['status_elegibilidade'], ENT_QUOTES, 'UTF-8')) ?></span></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 <?php endif; ?>
             </article>
 

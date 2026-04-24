@@ -121,16 +121,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label>E-mail</label>
             <input type="email" id="email" name="email" required>
 
-            <label>Senha</label>
-            <input type="password" id="senha" name="senha" placeholder="Minimo 12 caracteres" required>
+            <label>Chat_id</label>
+            <input type="number" id="chat_id" name="chat_id" required>
 
-            <label>Confirmar Senha</label>
-            <input type="password" id="confirmarSenha" placeholder="Repita a senha" required>
-
-            <div class="lgpd-box">
-                <input type="checkbox" id="lgpd" required>
-                <label for="lgpd">Aceito os <a href="../../../public/pages/privacidade.php" target="_blank">Termos de Privacidade</a>.</label>
-            </div>
 
             <div class="msg" id="mensagem"></div>
 
