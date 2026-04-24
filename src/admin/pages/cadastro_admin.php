@@ -20,24 +20,21 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = trim(strip_tags($_POST['nome'] ?? ''));
     $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
-    $senha = trim($_POST['senha'] ?? '');
+    $chat_id = trim($_POST['chat_id'] ?? '');
     $lgpd = $_POST['lgpd'] ?? '';
 
-    $resultadoSenha = validarSenhaForte($senha);
-
-    if ($nome === '' || $email === '' || $senha === '') {
+    if ($nome === '' || $email === '' || $chat_id === '') {
         $resposta = ['ok' => false, 'msg' => 'Preencha todos os campos.'];
     } elseif ($lgpd !== 'true') {
         $resposta = ['ok' => false, 'msg' => 'Voce deve aceitar os termos da LGPD.'];
     } elseif (!preg_match('/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/', $email)) {
         $resposta = ['ok' => false, 'msg' => 'E-mail invalido.'];
-    } elseif ($resultadoSenha !== true) {
-        $resposta = ['ok' => false, 'msg' => $resultadoSenha];
+    } elseif (!preg_match('/^\d+$/', $chat_id) || strlen($chat_id) < 5) {
+        $resposta = ['ok' => false, 'msg' => 'Chat ID do Telegram invalido.'];
     } else {
         $colunaPerfil = obterColunaPerfilUsuario($pdo);
         $valorAdmin = obterValorPerfilAdmin($pdo);
         $token = bin2hex(random_bytes(32));
-        $hash = password_hash($senha, PASSWORD_DEFAULT);
 
         $stmt = $pdo->prepare(
             sprintf(
@@ -81,10 +78,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } else {
             $stmt = $pdo->prepare("
-                INSERT INTO usuario (nome, email, senha_hash, token_confirmacao, {$colunaPerfil})
+                INSERT INTO usuario (nome, email, chat_id, token_confirmacao, {$colunaPerfil})
                 VALUES (?, ?, ?, ?, ?)
             ");
-            $stmt->execute([$nome, $email, $hash, $token, $valorAdmin]);
+            $stmt->execute([$nome, $email, $chat_id, $token, $valorAdmin]);
 
             if (enviarEmailConfirmacao($email, $nome, $token, 'admin')) {
                 $resposta = [
@@ -108,22 +105,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro de Administrador</title>
-    <link rel="stylesheet" href="../../../public/assets/css/cadastro.css">
+    <link rel="stylesheet" href="../assets/css/cadastro_admin.css">
 </head>
 <body>
     <div class="container">
         <h2>Cadastro de Administrador</h2>
 
         <form id="formCadastro">
-            <label>Nome</label>
-            <input type="text" id="nome" name="nome" required>
+            <label for="nome">Nome completo</label>
+            <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required>
+            <div class="erro-campo" id="erroNome">Digite seu nome completo.</div>
 
-            <label>E-mail</label>
-            <input type="email" id="email" name="email" required>
+            <label for="email">E-mail</label>
+            <input type="email" id="email" name="email" placeholder="seu@email.com" required>
+            <div class="erro-campo" id="erroEmail">Informe um e-mail válido.</div>
 
-            <label>Chat_id</label>
-            <input type="number" id="chat_id" name="chat_id" required>
+            <label for="chat_id">Chat ID do Telegram</label>
+            <input type="text" id="chat_id" name="chat_id" placeholder="Digite seu Chat ID (apenas números)" pattern="[0-9]+" required>
+            <div class="erro-campo" id="erroChatId">Digite um Chat ID válido (apenas números).</div>
+            <small style="color: #666; font-size: 0.85rem; margin-top: 5px; display: block;">
+                Para obter seu Chat ID, envie uma mensagem para <a href="https://t.me/userinfobot" target="_blank" style="color: var(--primary);">@userinfobot</a> no Telegram.
+            </small>
 
+            <div style="margin: 20px 0;">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="lgpd" name="lgpd" value="true" style="width: auto; margin-right: 8px;">
+                    <span style="font-size: 0.9rem;">Aceito os termos da LGPD e confirmo que sou administrador autorizado.</span>
+                </label>
+                <div class="erro-campo" id="erroLgpd">Você precisa aceitar os termos da LGPD.</div>
+            </div>
 
             <div class="msg" id="mensagem"></div>
 
@@ -135,6 +145,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const form = document.getElementById('formCadastro');
         const msgDiv = document.getElementById('mensagem');
         const btnCad = document.getElementById('btnCadastrar');
+        const campoNome = document.getElementById('nome');
+        const campoEmail = document.getElementById('email');
+        const campoChatId = document.getElementById('chat_id');
+        const campoLgpd = document.getElementById('lgpd');
+        const erroNome = document.getElementById('erroNome');
+        const erroEmail = document.getElementById('erroEmail');
+        const erroChatId = document.getElementById('erroChatId');
+        const erroLgpd = document.getElementById('erroLgpd');
+
+        // Validação em tempo real
+        campoNome.addEventListener('input', () => validarNome());
+        campoEmail.addEventListener('input', () => validarEmail());
+        campoChatId.addEventListener('input', () => validarChatId());
+        campoLgpd.addEventListener('change', () => validarLgpd());
+
+        function validarNome() {
+            if (campoNome.value.trim().length < 3) {
+                campoNome.classList.add('invalido');
+                erroNome.classList.add('visivel');
+                return false;
+            } else {
+                campoNome.classList.remove('invalido');
+                erroNome.classList.remove('visivel');
+                return true;
+            }
+        }
+
+        function validarEmail() {
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailRegex.test(campoEmail.value)) {
+                campoEmail.classList.add('invalido');
+                erroEmail.classList.add('visivel');
+                return false;
+            } else {
+                campoEmail.classList.remove('invalido');
+                erroEmail.classList.remove('visivel');
+                return true;
+            }
+        }
+
+        function validarChatId() {
+            const chatIdRegex = /^\d+$/;
+            if (!chatIdRegex.test(campoChatId.value) || campoChatId.value.length < 5) {
+                campoChatId.classList.add('invalido');
+                erroChatId.classList.add('visivel');
+                return false;
+            } else {
+                campoChatId.classList.remove('invalido');
+                erroChatId.classList.remove('visivel');
+                return true;
+            }
+        }
+
+        function validarLgpd() {
+            if (!campoLgpd.checked) {
+                erroLgpd.classList.add('visivel');
+                return false;
+            } else {
+                erroLgpd.classList.remove('visivel');
+                return true;
+            }
+        }
+
+        function mostrarMsg(texto, tipo) {
+            msgDiv.innerHTML = texto;
+            msgDiv.className = 'msg ' + tipo;
+        }
 
         form.addEventListener('submit', async function (e) {
             e.preventDefault();
@@ -142,28 +219,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             msgDiv.className = 'msg';
             msgDiv.innerHTML = '';
 
-            const senha = document.getElementById('senha').value;
-            const confirmarSenha = document.getElementById('confirmarSenha').value;
-            const lgpdChecked = document.getElementById('lgpd').checked;
+            const nomeValido = validarNome();
+            const emailValido = validarEmail();
+            const chatIdValido = validarChatId();
+            const lgpdValida = validarLgpd();
 
-            if (senha !== confirmarSenha) {
-                mostrarMsg('As senhas nao coincidem.', 'erro');
-                return;
-            }
-
-            if (!lgpdChecked) {
-                mostrarMsg('Voce precisa aceitar a LGPD.', 'erro');
+            if (!nomeValido || !emailValido || !chatIdValido || !lgpdValida) {
+                mostrarMsg('Por favor, corrija os campos destacados.', 'erro');
                 return;
             }
 
             btnCad.disabled = true;
-            btnCad.textContent = 'Aguarde...';
+            btnCad.textContent = 'Cadastrando...';
 
             const dados = new FormData();
-            dados.append('nome', document.getElementById('nome').value.trim());
-            dados.append('email', document.getElementById('email').value.trim());
-            dados.append('senha', senha);
-            dados.append('lgpd', lgpdChecked);
+            dados.append('nome', campoNome.value.trim());
+            dados.append('email', campoEmail.value.trim());
+            dados.append('chat_id', campoChatId.value.trim());
+            dados.append('lgpd', campoLgpd.checked ? 'true' : '');
 
             try {
                 const res = await fetch('cadastro_admin.php', {
@@ -175,7 +248,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const json = await res.json();
 
                 if (json.ok) {
-                    window.location.href = 'cadastro_concluido.php?email=' + encodeURIComponent(document.getElementById('email').value.trim()) + '&tipo=admin';
+                    mostrarMsg(json.msg, 'sucesso');
+                    setTimeout(() => {
+                        window.location.href = 'cadastro_concluido.php?email=' + encodeURIComponent(campoEmail.value.trim()) + '&tipo=admin';
+                    }, 2000);
                 } else {
                     mostrarMsg(json.msg, 'erro');
                 }
@@ -186,11 +262,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 btnCad.textContent = 'Cadastrar Administrador';
             }
         });
-
-        function mostrarMsg(texto, tipo) {
-            msgDiv.innerHTML = texto;
-            msgDiv.className = 'msg ' + tipo;
-        }
     </script>
 </body>
 </html>
