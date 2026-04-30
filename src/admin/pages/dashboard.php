@@ -1,117 +1,179 @@
 <?php
 require __DIR__ . '/auth.php';
- 
-// ==========================
-// LOGOUT
-// ==========================
+
 if (isset($_GET['logout'])) {
     session_destroy();
-    header("Location: ../../../public/pages/login.php");
+    header("Location: ../index.php");
     exit();
 }
- 
-// ==========================
-// CONEXÃO BANCO
-// ==========================
+
 require __DIR__ . '/../../api/database.php';
- 
-// ==========================
-// DADOS DO BANCO
-// ==========================
+
 try {
-    // Logs de segurança (simulando, pois não há tabela logs)
-    $logs = [];
-    
-    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM ong WHERE status_elegibilidade = 'pendente'");
+    $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM ong WHERE status_elegibilidade = 'pendente'");
     $stmt->execute();
-    $ongs_pendentes = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-    
-    // Usuários
-    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM usuario");
+    $ongsPendentes = (int) ($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM ong WHERE status_elegibilidade = 'ativo'");
     $stmt->execute();
-    $total_usuarios = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-    
-    // Doações
-    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM doacao");
+    $ongsAtivas = (int) ($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM ong WHERE status_elegibilidade = 'rejeitado'");
     $stmt->execute();
-    $total_doacoes = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-    
+    $ongsRejeitadas = (int) ($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM usuario");
+    $stmt->execute();
+    $totalUsuarios = (int) ($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM doacao");
+    $stmt->execute();
+    $totalDoacoes = (int) ($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+
+    $stmt = $pdo->prepare("
+        SELECT id_ong, nome, email, status_elegibilidade
+        FROM ong
+        WHERE status_elegibilidade = 'pendente'
+        ORDER BY id_ong DESC
+        LIMIT 5
+    ");
+    $stmt->execute();
+    $ultimasPendentes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     die("Erro no banco: " . $e->getMessage());
 }
+
+$nomeAdmin = htmlspecialchars($_SESSION['usuario']['nome'] ?? 'Administrador', ENT_QUOTES, 'UTF-8');
+$totalONGs = $ongsPendentes + $ongsAtivas + $ongsRejeitadas;
+$taxaAtivacao = $totalONGs > 0 ? round(($ongsAtivas / $totalONGs) * 100) : 0;
+$dataAtualizacao = date('d/m/Y H:i');
 ?>
- 
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard - Cruz Azul</title>
-<link rel="stylesheet" href="../assets/css/dashboard.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Cruz Azul</title>
+    <link rel="stylesheet" href="../assets/css/dashboard.css?v=20260423b">
 </head>
- 
 <body>
- 
-<header>
-    <h1>Cruz Azul ✙</h1>
-    <nav>
-        <ul>
-            <li><a href="./dashboard.php">Dashboard</a></li>
-            <li><a href="./ongs.php">ONGs</a></li>
-            <li><a href="./logs.php">Logs</a></li>
-            <li><a href="./usuarios.php">Usuários</a></li>
-            <li><a href="./configuracoes.php">Configurações</a></li>
-            <li><a href="?logout=true">Sair</a></li>
-        </ul>
-    </nav>
-</header>
- 
-<section>
-    <h2>Dashboard de Segurança</h2>
- 
-    <article>
-        <h3>⚠️ Visão Geral</h3>
-        <ul>
-            <li>Usuário logado: <strong><?= htmlspecialchars($_SESSION['usuario']['nome'] ?? 'Admin') ?></strong></li>
-            <li>Status: <strong>Seguro</strong></li>
-            <li>ONGs pendentes: <strong><?= $ongs_pendentes ?></strong></li>
-            <li>Total usuários: <strong><?= $total_usuarios ?></strong></li>
-            <li>Total doações: <strong><?= $total_doacoes ?></strong></li>
-        </ul>
-    </article>
- 
-    <article>
-        <h3>🚨 Alertas</h3>
-        <p>Nenhum alerta crítico no momento</p>
-        <p>ONGs pendentes: <?= $ongs_pendentes ?></p>
-    </article>
- 
-    <article>
-        <h3>📜 Estatísticas</h3>
-        <ul>
-            <li>Usuários registrados: <?= $total_usuarios ?></li>
-            <li>Doações realizadas: <?= $total_doacoes ?></li>
-            <li>ONGs ativas: (não implementado)</li>
-        </ul>
-    </article>
-</section>
- 
-<section>
-<h2>Solicitações de ONGs Pendentes</h2>
-<p>Total de solicitações pendentes: <?= $ongs_pendentes ?></p>
-<p><a href="./ongs.php">Gerenciar ONGs →</a></p>
-</section>
- 
-<section>
-<h2>Gerenciamento de Usuários</h2>
-<p>Total de usuários: <?= $total_usuarios ?></p>
-<p><a href="./usuarios.php">Gerenciar usuários →</a></p>
-</section>
- 
-<footer>
-<p>&copy; 2026 Cruz Azul</p>
-</footer>
-<script src="../assets/js/dashboard.js"></script>
- 
+    <header class="topbar">
+        <div>
+            <h1>Cruz Azul Admin</h1>
+            <p>Painel central de acompanhamento e moderacao</p>
+        </div>
+        <nav>
+            <ul>
+                <li><a class="active" href="./dashboard.php">Dashboard</a></li>
+                <li><a href="./ongs.php">ONGs</a></li>
+                <li><a href="./logs.php">Logs</a></li>
+                <li><a href="./usuarios.php">Usuarios</a></li>
+                <li><a href="./configuracoes.php">Configuracoes</a></li>
+                <li><a href="?logout=true">Sair</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="page">
+        <section class="hero">
+            <div>
+                <span class="eyebrow">Visao operacional</span>
+                <h2>Ola, <?= $nomeAdmin ?></h2>
+                <p>Priorize as ONGs pendentes e acompanhe os indicadores essenciais da plataforma em tempo real.</p>
+                <span class="hero-update">Atualizado em <?= htmlspecialchars($dataAtualizacao, ENT_QUOTES, 'UTF-8') ?></span>
+            </div>
+            <a class="hero-action" href="./ongs.php">Revisar solicitacoes</a>
+        </section>
+
+        <section class="metrics-grid">
+            <article class="metric-card alert">
+                <h3>ONGs pendentes</h3>
+                <p class="value"><?= $ongsPendentes ?></p>
+                <span class="meta">Exigem avaliacao administrativa</span>
+            </article>
+
+            <article class="metric-card">
+                <h3>ONGs ativas</h3>
+                <p class="value"><?= $ongsAtivas ?></p>
+                <span class="meta">Taxa de ativacao: <?= $taxaAtivacao ?>%</span>
+            </article>
+
+            <article class="metric-card">
+                <h3>Usuarios cadastrados</h3>
+                <p class="value"><?= $totalUsuarios ?></p>
+                <span class="meta">Contas totais no ecossistema</span>
+            </article>
+
+            <article class="metric-card">
+                <h3>Doacoes registradas</h3>
+                <p class="value"><?= $totalDoacoes ?></p>
+                <span class="meta">Volume historico de operacoes</span>
+            </article>
+        </section>
+
+        <section class="panel-grid">
+            <article class="panel">
+                <div class="panel-header">
+                    <h3>Fila de aprovacao imediata</h3>
+                    <a href="./ongs.php">Abrir gerenciamento completo</a>
+                </div>
+
+                <?php if (empty($ultimasPendentes)): ?>
+                    <p class="empty-state">Nao ha ONGs pendentes no momento.</p>
+                <?php else: ?>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Nome</th>
+                                    <th scope="col">E-mail</th>
+                                    <th scope="col" class="col-narrow">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($ultimasPendentes as $ong): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($ong['nome'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars($ong['email'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td class="col-narrow"><span class="badge pending"><?= strtoupper(htmlspecialchars($ong['status_elegibilidade'], ENT_QUOTES, 'UTF-8')) ?></span></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </article>
+
+            <article class="panel panel-list">
+                <h3>Resumo estrategico</h3>
+                <ul>
+                    <li><strong><?= $ongsPendentes ?></strong> solicitacoes aguardando moderacao.</li>
+                    <li><strong><?= $ongsRejeitadas ?></strong> ONGs rejeitadas para revisao de politica.</li>
+                    <li><strong><?= $totalUsuarios ?></strong> usuarios impactados pelos servicos.</li>
+                    <li><strong><?= $totalDoacoes ?></strong> registros de doacao consolidados.</li>
+                </ul>
+            </article>
+        </section>
+
+        <section class="quick-actions">
+            <a href="./ongs.php" class="quick-card">
+                <strong>Gestao de ONGs</strong>
+                <span>Aprove, rejeite e acompanhe pendencias.</span>
+            </a>
+            <a href="./usuarios.php" class="quick-card">
+                <strong>Usuarios</strong>
+                <span>Consulte cadastro e governanca de contas.</span>
+            </a>
+            <a href="./logs.php" class="quick-card">
+                <strong>Auditoria</strong>
+                <span>Revise eventos e rastros operacionais.</span>
+            </a>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Cruz Azul</p>
+    </footer>
 </body>
 </html>

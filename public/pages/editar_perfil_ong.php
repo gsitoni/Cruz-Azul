@@ -1,6 +1,3 @@
-ditar perfil ong · PHP
-Copiar
-
 <?php
 session_start();
  

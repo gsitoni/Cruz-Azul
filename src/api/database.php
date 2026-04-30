@@ -1,16 +1,28 @@
 <?php
-// db.php - Conexão com o banco de dados
-$host   = 'localhost';
-$dbname = 'cruzazul';
-$user   = 'root';
-$pass   = '';
+// db.php - Conexao com o banco de dados
+$host = 'localhost';
+$user = 'root';
+$pass = '';
+$dbnames = ['cruzazul (2)', 'cruzazul'];
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Erro na conexão: " . $e->getMessage());
+$pdo = null;
+$ultimoErro = null;
+
+foreach ($dbnames as $dbname) {
+    try {
+        $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        break;
+    } catch (PDOException $e) {
+        $ultimoErro = $e;
+    }
 }
+
+if (!$pdo instanceof PDO) {
+    $mensagem = $ultimoErro ? $ultimoErro->getMessage() : 'Nenhum banco configurado foi encontrado.';
+    die("Erro na conexao: " . $mensagem);
+}
+
 function colunaExiste(PDO $pdo, string $tabela, string $coluna): bool
 {
     static $cache = [];

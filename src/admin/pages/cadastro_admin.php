@@ -1,109 +1,138 @@
 <?php
-    ob_start();
-    // cadastro_admin.php - Processa o formulário de cadastro de administrador
-    
-    // Headers de segurança
-    header('X-Content-Type-Options: nosniff');
-    header('X-Frame-Options: DENY');
-    header('X-XSS-Protection: 1; mode=block');
-    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+ob_start();
 
-    require '../../vendor/autoload.php';
-    require '../../src/api/database.php';
-    require '../../src/api/mailer.php';
-    require '../../src/api/valida_senha.php'; 
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('X-XSS-Protection: 1; mode=block');
+header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 
-    // Responde requisições AJAX em JSON
-    $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
-            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+require __DIR__ . '/../../../vendor/autoload.php';
+require __DIR__ . '/../../api/database.php';
+require __DIR__ . '/../../api/mailer.php';
+require __DIR__ . '/../../api/valida_senha.php';
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $nome  = trim(strip_tags($_POST['nome']  ?? ''));
-        $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
-        $senha = trim($_POST['senha'] ?? '');
-        $lgpd  = $_POST['lgpd'] ?? ''; // Captura o aceite da LGPD
+session_start();
 
-        // --- Validações ---
-        $resultadoSenha = validarSenhaForte($senha); // Chame a função aqui
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    unset($_SESSION['usuario'], $_SESSION['2fa_ok'], $_SESSION['2fa_pendente'], $_SESSION['2fa_secret_temp'], $_SESSION['csrf_token']);
+}
 
-        if (empty($nome) || empty($email) || empty($senha)) {
-            $resposta = ['ok' => false, 'msg' => 'Preencha todos os campos.'];
-        } elseif ($lgpd !== 'true') { 
-            $resposta = ['ok' => false, 'msg' => 'Você deve aceitar os termos da LGPD.'];
-        } elseif (!preg_match('/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/', $email)) {
-            $resposta = ['ok' => false, 'msg' => 'E-mail inválido.'];
-        } elseif ($resultadoSenha !== true) { 
-            $resposta = ['ok' => false, 'msg' => $resultadoSenha];
-        } else {
-            $stmt = $pdo->prepare("SELECT id_usuario, tipo FROM usuario WHERE email = ?");
-            $stmt->execute([$email]);
-            $usuario_existente = $stmt->fetch(PDO::FETCH_ASSOC);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nome = trim(strip_tags($_POST['nome'] ?? ''));
+    $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
+    $chat_id = trim($_POST['chat_id'] ?? '');
+    $lgpd = $_POST['lgpd'] ?? '';
 
-            $token = bin2hex(random_bytes(32));
-            $hash  = password_hash($senha, PASSWORD_DEFAULT);
+    if ($nome === '' || $email === '' || $chat_id === '') {
+        $resposta = ['ok' => false, 'msg' => 'Preencha todos os campos.'];
+    } elseif ($lgpd !== 'true') {
+        $resposta = ['ok' => false, 'msg' => 'Voce deve aceitar os termos da LGPD.'];
+    } elseif (!preg_match('/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/', $email)) {
+        $resposta = ['ok' => false, 'msg' => 'E-mail invalido.'];
+    } elseif (!preg_match('/^\d+$/', $chat_id) || strlen($chat_id) < 5) {
+        $resposta = ['ok' => false, 'msg' => 'Chat ID do Telegram invalido.'];
+    } else {
+        $colunaPerfil = obterColunaPerfilUsuario($pdo);
+        $valorAdmin = obterValorPerfilAdmin($pdo);
+        $token = bin2hex(random_bytes(32));
 
-            if ($usuario_existente) {
-                if ($usuario_existente['tipo'] !== 'admin') {
-                    $stmt = $pdo->prepare("UPDATE usuario SET tipo = 'admin' WHERE id_usuario = ?");
-                    $stmt->execute([$usuario_existente['id_usuario']]);
+        $stmt = $pdo->prepare(
+            sprintf(
+                'SELECT id_usuario, nome, email, status_cadastro, token_confirmacao, %s FROM usuario WHERE email = ? LIMIT 1',
+                obterSelecaoPerfilUsuario($pdo, '')
+            )
+        );
+        $stmt->execute([$email]);
+        $usuarioExistente = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($usuarioExistente) {
+            if (($usuarioExistente['tipo'] ?? '') !== $valorAdmin) {
+                $stmt = $pdo->prepare("UPDATE usuario SET {$colunaPerfil} = ? WHERE id_usuario = ?");
+                $stmt->execute([$valorAdmin, $usuarioExistente['id_usuario']]);
+            }
+
+            $statusCadastro = (string) ($usuarioExistente['status_cadastro'] ?? '');
+            $tokenConfirmacao = (string) ($usuarioExistente['token_confirmacao'] ?? '');
+            $nomeDestino = $nome !== '' ? $nome : (string) ($usuarioExistente['nome'] ?? 'Administrador');
+
+            if ($statusCadastro !== 'confirmado') {
+                if ($tokenConfirmacao === '') {
+                    $tokenConfirmacao = $token;
+                    $stmt = $pdo->prepare('UPDATE usuario SET token_confirmacao = ? WHERE id_usuario = ?');
+                    $stmt->execute([$tokenConfirmacao, $usuarioExistente['id_usuario']]);
                 }
-                $resposta = [
-                    'ok'  => true,
-                    'msg' => "Tipo de usuário atualizado! Esta conta agora tem acesso como administrador."
-                ];
-            } else {
-                // Novo usuário
-                $stmt = $pdo->prepare("
-                    INSERT INTO usuario (nome, email, senha_hash, token_confirmacao, tipo)
-                    VALUES (?, ?, ?, ?, 'admin')
-                ");
-                $stmt->execute([$nome, $email, $hash, $token]);
 
-                if (enviarEmailConfirmacao($email, $nome, $token)) {
+                if (enviarEmailConfirmacao($email, $nomeDestino, $tokenConfirmacao, 'admin')) {
                     $resposta = [
-                        'ok'  => true,
-                        'msg' => "Cadastro de administrador realizado! Verifique seu e-mail <strong>{$email}</strong> para confirmar a conta."
+                        'ok' => true,
+                        'msg' => "Conta administrativa atualizada. Enviamos um e-mail de confirmacao para <strong>{$email}</strong>."
                     ];
                 } else {
-                    $resposta = ['ok' => false, 'msg' => 'Cadastro salvo, mas falha ao enviar e-mail.'];
+                    $resposta = ['ok' => false, 'msg' => 'Conta atualizada, mas houve falha ao enviar o e-mail de confirmacao.'];
                 }
+            } else {
+                $resposta = [
+                    'ok' => true,
+                    'msg' => 'Esta conta ja esta confirmada e agora tem acesso como administrador.'
+                ];
+            }
+        } else {
+            $stmt = $pdo->prepare("
+                INSERT INTO usuario (nome, email, chat_id, token_confirmacao, {$colunaPerfil})
+                VALUES (?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([$nome, $email, $chat_id, $token, $valorAdmin]);
+
+            if (enviarEmailConfirmacao($email, $nome, $token, 'admin')) {
+                $resposta = [
+                    'ok' => true,
+                    'msg' => "Cadastro de administrador realizado! Verifique seu e-mail <strong>{$email}</strong> para confirmar a conta."
+                ];
+            } else {
+                $resposta = ['ok' => false, 'msg' => 'Cadastro salvo, mas falha ao enviar e-mail.'];
             }
         }
-
-        header('Content-Type: application/json');
-        echo json_encode($resposta);
-        exit;
     }
-    ?>
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Cadastro de Administrador</title>
-        <link rel="stylesheet" href="../assets/css/cadastro.css">
-    </head>
-    <body>
 
+    header('Content-Type: application/json; charset=UTF-8');
+    echo json_encode($resposta);
+    exit;
+}
+?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Administrador</title>
+    <link rel="stylesheet" href="../assets/css/cadastro_admin.css">
+</head>
+<body>
     <div class="container">
         <h2>Cadastro de Administrador</h2>
 
         <form id="formCadastro">
-            <label>Nome</label>
-            <input type="text" id="nome" name="nome" required>
+            <label for="nome">Nome completo</label>
+            <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required>
+            <div class="erro-campo" id="erroNome">Digite seu nome completo.</div>
 
-            <label>E-mail</label>
-            <input type="email" id="email" name="email" required>
+            <label for="email">E-mail</label>
+            <input type="email" id="email" name="email" placeholder="seu@email.com" required>
+            <div class="erro-campo" id="erroEmail">Informe um e-mail válido.</div>
 
-            <label>Senha</label>
-            <input type="password" id="senha" name="senha" placeholder="Mínimo 12 caracteres" required>
+            <label for="chat_id">Chat ID do Telegram</label>
+            <input type="text" id="chat_id" name="chat_id" placeholder="Digite seu Chat ID (apenas números)" pattern="[0-9]+" required>
+            <div class="erro-campo" id="erroChatId">Digite um Chat ID válido (apenas números).</div>
+            <small style="color: #666; font-size: 0.85rem; margin-top: 5px; display: block;">
+                Para obter seu Chat ID, envie uma mensagem para <a href="https://t.me/userinfobot" target="_blank" style="color: var(--primary);">@userinfobot</a> no Telegram.
+            </small>
 
-            <label>Confirmar Senha</label>
-            <input type="password" id="confirmarSenha" placeholder="Repita a senha" required>
-
-            <div class="lgpd-box">
-                <input type="checkbox" id="lgpd" required>
-                <label for="lgpd">Aceito os <a href="privacidade.php" target="_blank">Termos de Privacidade</a>.</label>
+            <div style="margin: 20px 0;">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="lgpd" name="lgpd" value="true" style="width: auto; margin-right: 8px;">
+                    <span style="font-size: 0.9rem;">Aceito os termos da LGPD e confirmo que sou administrador autorizado.</span>
+                </label>
+                <div class="erro-campo" id="erroLgpd">Você precisa aceitar os termos da LGPD.</div>
             </div>
 
             <div class="msg" id="mensagem"></div>
@@ -113,9 +142,76 @@
     </div>
 
     <script>
-        const form    = document.getElementById('formCadastro');
-        const msgDiv  = document.getElementById('mensagem');
-        const btnCad  = document.getElementById('btnCadastrar');
+        const form = document.getElementById('formCadastro');
+        const msgDiv = document.getElementById('mensagem');
+        const btnCad = document.getElementById('btnCadastrar');
+        const campoNome = document.getElementById('nome');
+        const campoEmail = document.getElementById('email');
+        const campoChatId = document.getElementById('chat_id');
+        const campoLgpd = document.getElementById('lgpd');
+        const erroNome = document.getElementById('erroNome');
+        const erroEmail = document.getElementById('erroEmail');
+        const erroChatId = document.getElementById('erroChatId');
+        const erroLgpd = document.getElementById('erroLgpd');
+
+        // Validação em tempo real
+        campoNome.addEventListener('input', () => validarNome());
+        campoEmail.addEventListener('input', () => validarEmail());
+        campoChatId.addEventListener('input', () => validarChatId());
+        campoLgpd.addEventListener('change', () => validarLgpd());
+
+        function validarNome() {
+            if (campoNome.value.trim().length < 3) {
+                campoNome.classList.add('invalido');
+                erroNome.classList.add('visivel');
+                return false;
+            } else {
+                campoNome.classList.remove('invalido');
+                erroNome.classList.remove('visivel');
+                return true;
+            }
+        }
+
+        function validarEmail() {
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailRegex.test(campoEmail.value)) {
+                campoEmail.classList.add('invalido');
+                erroEmail.classList.add('visivel');
+                return false;
+            } else {
+                campoEmail.classList.remove('invalido');
+                erroEmail.classList.remove('visivel');
+                return true;
+            }
+        }
+
+        function validarChatId() {
+            const chatIdRegex = /^\d+$/;
+            if (!chatIdRegex.test(campoChatId.value) || campoChatId.value.length < 5) {
+                campoChatId.classList.add('invalido');
+                erroChatId.classList.add('visivel');
+                return false;
+            } else {
+                campoChatId.classList.remove('invalido');
+                erroChatId.classList.remove('visivel');
+                return true;
+            }
+        }
+
+        function validarLgpd() {
+            if (!campoLgpd.checked) {
+                erroLgpd.classList.add('visivel');
+                return false;
+            } else {
+                erroLgpd.classList.remove('visivel');
+                return true;
+            }
+        }
+
+        function mostrarMsg(texto, tipo) {
+            msgDiv.innerHTML = texto;
+            msgDiv.className = 'msg ' + tipo;
+        }
 
         form.addEventListener('submit', async function (e) {
             e.preventDefault();
@@ -123,31 +219,27 @@
             msgDiv.className = 'msg';
             msgDiv.innerHTML = '';
 
-            const senha          = document.getElementById('senha').value;
-            const confirmarSenha = document.getElementById('confirmarSenha').value;
-            const lgpdChecked    = document.getElementById('lgpd').checked; // Verifica o checkbox
+            const nomeValido = validarNome();
+            const emailValido = validarEmail();
+            const chatIdValido = validarChatId();
+            const lgpdValida = validarLgpd();
 
-            if (senha !== confirmarSenha) {
-                mostrarMsg('As senhas não coincidem!', 'erro');
+            if (!nomeValido || !emailValido || !chatIdValido || !lgpdValida) {
+                mostrarMsg('Por favor, corrija os campos destacados.', 'erro');
                 return;
             }
 
-            if (!lgpdChecked) { // Validação visual do aceite
-                mostrarMsg('Você precisa aceitar a LGPD.', 'erro');
-                return;
-            }
-
-            btnCad.disabled    = true;
-            btnCad.textContent = 'Aguarde...';
+            btnCad.disabled = true;
+            btnCad.textContent = 'Cadastrando...';
 
             const dados = new FormData();
-            dados.append('nome',  document.getElementById('nome').value.trim());
-            dados.append('email', document.getElementById('email').value.trim());
-            dados.append('senha', senha);
-            dados.append('lgpd',  lgpdChecked); // Envia o estado do checkbox
+            dados.append('nome', campoNome.value.trim());
+            dados.append('email', campoEmail.value.trim());
+            dados.append('chat_id', campoChatId.value.trim());
+            dados.append('lgpd', campoLgpd.checked ? 'true' : '');
 
             try {
-                const res  = await fetch('cadastro_admin.php', {
+                const res = await fetch('cadastro_admin.php', {
                     method: 'POST',
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     body: dados
@@ -156,24 +248,20 @@
                 const json = await res.json();
 
                 if (json.ok) {
-                    // mostrarMsg(json.msg, 'sucesso');
-                    window.location.href = 'cadastro_concluido.php?email=' + encodeURIComponent(document.getElementById('email').value.trim()) + '&tipo=admin';
+                    mostrarMsg(json.msg, 'sucesso');
+                    setTimeout(() => {
+                        window.location.href = 'cadastro_concluido.php?email=' + encodeURIComponent(campoEmail.value.trim()) + '&tipo=admin';
+                    }, 2000);
                 } else {
                     mostrarMsg(json.msg, 'erro');
                 }
             } catch (err) {
-                mostrarMsg('Erro de conexão. Tente novamente.', 'erro');
+                mostrarMsg('Erro de conexao. Tente novamente.', 'erro');
             } finally {
-                btnCad.disabled    = false;
+                btnCad.disabled = false;
                 btnCad.textContent = 'Cadastrar Administrador';
             }
         });
-
-        function mostrarMsg(texto, tipo) {
-            msgDiv.innerHTML  = texto;
-            msgDiv.className  = 'msg ' + tipo;
-        }
     </script>
-
-    </body>
-    </html>
+</body>
+</html>
