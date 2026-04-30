@@ -22,10 +22,10 @@ $labels_risco = [
 ];
 
 $stmt = $pdo->query(
-    "SELECT id_beneficiario, nome_receptor, classificacao_risco
-     FROM beneficiario
-     WHERE status_elegibilidade = 'aprovada'
-     ORDER BY nome_receptor ASC"
+    "SELECT id_ong, nome, classificacao_risco
+     FROM ong
+     WHERE status_elegibilidade = 'ativo'
+     ORDER BY nome ASC"
 );
 $ongs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -75,9 +75,9 @@ if ($ongId > 0) {
         <?php else: ?>
             <?php foreach ($ongs as $ong): ?>
                 <div class="ong-card">
-                    <strong><?= htmlspecialchars($ong['nome_receptor']) ?></strong>
+                    <strong><?= htmlspecialchars($ong['nome']) ?></strong>
                     <div><?= htmlspecialchars($labels_risco[$ong['classificacao_risco']] ?? $ong['classificacao_risco']) ?></div>
-                    <a href="fazer_doacao.php?ong=<?= (int)$ong['id_beneficiario'] ?>">Registrar doação</a>
+                    <a href="fazer_doacao.php?ong=<?= (int)$ong['id_ong'] ?>">Registrar doação</a>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>

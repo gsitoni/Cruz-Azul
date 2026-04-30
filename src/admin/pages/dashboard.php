@@ -1,39 +1,6 @@
 <?php
-// ==========================
-// CONFIG COOKIE SEGURO
-// ==========================
-$secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
-
-session_set_cookie_params([
-    'lifetime' => 0,
-    'path' => '/Cruz-Azul',
-    'secure' => $secure,
-    'httponly' => true,
-    'samesite' => 'Strict'
-]);
-session_start();
-
-// Headers de segurança
-header('X-Content-Type-Options: nosniff');
-header('X-Frame-Options: DENY');
-header('X-XSS-Protection: 1; mode=block');
-header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
-
-// ==========================
-// PROTEÇÃO DE ACESSO
-// ==========================
-if (!isset($_SESSION['usuario']) || $_SESSION['tipo'] !== 'admin') {
-    header("Location: ../../../public/pages/login.php");
-    exit();
-}
-
-// ==========================
-// CSRF TOKEN
-// ==========================
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-
+require __DIR__ . '/auth.php';
+ 
 // ==========================
 // LOGOUT
 // ==========================
@@ -42,12 +9,12 @@ if (isset($_GET['logout'])) {
     header("Location: ../../../public/pages/login.php");
     exit();
 }
-
+ 
 // ==========================
 // CONEXÃO BANCO
 // ==========================
-require '../../api/database.php';
-
+require __DIR__ . '/../../api/database.php';
+ 
 // ==========================
 // DADOS DO BANCO
 // ==========================
@@ -55,8 +22,7 @@ try {
     // Logs de segurança (simulando, pois não há tabela logs)
     $logs = [];
     
-    // ONGs pendentes (usando tabela beneficiario ou algo, mas ajustando)
-    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM beneficiario WHERE status_elegibilidade = 'pendente'");
+    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM ong WHERE status_elegibilidade = 'pendente'");
     $stmt->execute();
     $ongs_pendentes = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
     
@@ -74,7 +40,7 @@ try {
     die("Erro no banco: " . $e->getMessage());
 }
 ?>
-
+ 
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -83,9 +49,9 @@ try {
 <title>Dashboard - Cruz Azul</title>
 <link rel="stylesheet" href="../assets/css/dashboard.css">
 </head>
-
+ 
 <body>
-
+ 
 <header>
     <h1>Cruz Azul ✙</h1>
     <nav>
@@ -99,10 +65,10 @@ try {
         </ul>
     </nav>
 </header>
-
+ 
 <section>
     <h2>Dashboard de Segurança</h2>
-
+ 
     <article>
         <h3>⚠️ Visão Geral</h3>
         <ul>
@@ -113,13 +79,13 @@ try {
             <li>Total doações: <strong><?= $total_doacoes ?></strong></li>
         </ul>
     </article>
-
+ 
     <article>
         <h3>🚨 Alertas</h3>
         <p>Nenhum alerta crítico no momento</p>
         <p>ONGs pendentes: <?= $ongs_pendentes ?></p>
     </article>
-
+ 
     <article>
         <h3>📜 Estatísticas</h3>
         <ul>
@@ -129,23 +95,23 @@ try {
         </ul>
     </article>
 </section>
-
+ 
 <section>
 <h2>Solicitações de ONGs Pendentes</h2>
 <p>Total de solicitações pendentes: <?= $ongs_pendentes ?></p>
 <p><a href="./ongs.php">Gerenciar ONGs →</a></p>
 </section>
-
+ 
 <section>
 <h2>Gerenciamento de Usuários</h2>
 <p>Total de usuários: <?= $total_usuarios ?></p>
 <p><a href="./usuarios.php">Gerenciar usuários →</a></p>
 </section>
-
+ 
 <footer>
 <p>&copy; 2026 Cruz Azul</p>
 </footer>
 <script src="../assets/js/dashboard.js"></script>
-
+ 
 </body>
 </html>

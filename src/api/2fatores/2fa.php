@@ -11,8 +11,6 @@ function gerarSecret($tamanho = 16) {
     return $secret;
 }
 
-$secret = gerarSecret();
-
 
 // CONVERTER BASE32 (CORRIGIDO)
 function b32Decode($b32) {
@@ -86,22 +84,4 @@ function verificarTOTP($secret, $codigoUsuario, $tolerancia = 1) {
 
     return false;
 }
-
-// VERIFICAÇÃO
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $codigo = $_POST['codigo'];
-
-    if (verificarTOTP($secret, $codigo)) {
-        echo "Código válido - login autorizado<br>";
-    } else {
-        echo "Código inválido<br>";
-    }
-}
 ?>
-
-<img src="./geraqr.php?secret=<?php echo $secret; ?>">
-
-<form method="POST">
-    <input type="text" name="codigo" placeholder="Digite o código">
-    <button type="submit">Verificar</button>
-</form>

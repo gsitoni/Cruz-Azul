@@ -13,13 +13,14 @@ $primeiroNome = explode('@', $userEmail)[0];
 // Busca doações do usuário logado via e-mail do doador
 $stmt = $pdo->prepare(
     "SELECT d.data_doacao, d.categoria, d.item, d.quantidade, d.unidade_medida,
-            b.nome_receptor
+            b.nome
      FROM doacao d
      INNER JOIN doador dr ON dr.id_doador = d.id_doador
+     INNER JOIN usuario u ON u.id_usuario = dr.id_usuario
      LEFT JOIN estoque e ON e.id_doacao = d.id_doacao
      LEFT JOIN distribuicao dist ON dist.id_lote = e.id_lote
-     LEFT JOIN beneficiario b ON b.id_beneficiario = dist.id_beneficiario
-     WHERE dr.email = ?
+     LEFT JOIN ong b ON b.id_ong = dist.id_ong
+     WHERE u.email = ?
      ORDER BY d.data_doacao DESC, d.criado_em DESC"
 );
 $stmt->execute([$userEmail]);
@@ -78,7 +79,7 @@ $doacoes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <td><?php echo htmlspecialchars(ucfirst($doacao['categoria'])); ?></td>
                         <td><?php echo htmlspecialchars($doacao['item']); ?></td>
                         <td><?php echo htmlspecialchars($doacao['quantidade'] + 0); ?> <?php echo htmlspecialchars($doacao['unidade_medida']); ?></td>
-                        <td><?php echo $doacao['nome_receptor'] ? htmlspecialchars($doacao['nome_receptor']) : '<span style="color:#aaa;">Aguardando distribuição</span>'; ?></td>
+                        <td><?php echo $doacao['nome'] ? htmlspecialchars($doacao['nome']) : '<span style="color:#aaa;">Aguardando distribuição</span>'; ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

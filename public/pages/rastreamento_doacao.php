@@ -19,18 +19,18 @@ require '../../src/api/database.php';
 
 try {
     // Buscar doação do usuário
-    $stmt = $pdo->prepare("SELECT d.id_doacao, d.categoria, d.item, d.quantidade, d.unidade_medida, d.data_doacao, 
+        $stmt = $pdo->prepare("SELECT d.id_doacao, d.categoria, d.item, d.quantidade, d.unidade_medida, d.data_doacao, 
                           CASE WHEN dist.id_operacao IS NOT NULL THEN 'entregue'
                                WHEN e.id_lote IS NOT NULL THEN 'andamento'
                                ELSE 'pendente' END AS status_doacao,
-                          b.nome_receptor as destino
+                         b.nome as destino
                           FROM doacao d 
                           INNER JOIN doador dr ON dr.id_doador = d.id_doador
                           LEFT JOIN estoque e ON e.id_doacao = d.id_doacao
                           LEFT JOIN distribuicao dist ON dist.id_lote = e.id_lote
-                          LEFT JOIN beneficiario b ON b.id_beneficiario = dist.id_beneficiario
-                          WHERE d.id_doacao = ? AND dr.email = ?");
-    $stmt->execute([$doacaoId, $usuario['email']]);
+                         LEFT JOIN ong b ON b.id_ong = dist.id_ong
+                         WHERE d.id_doacao = ? AND dr.id_usuario = ?");
+        $stmt->execute([$doacaoId, (int) ($usuario['id_usuario'] ?? 0)]);
     $doacao_db = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($doacao_db) {

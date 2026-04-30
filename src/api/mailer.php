@@ -11,6 +11,23 @@ require __DIR__ . '/../../vendor/phpmailer/PHPMailer-master/src/SMTP.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+function obterBaseUrl(): string {
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+    if (!empty($_SERVER['SCRIPT_NAME'])) {
+        $basePath = dirname(dirname(dirname((string) $_SERVER['SCRIPT_NAME'])));
+        $basePath = str_replace('\\', '/', $basePath);
+        $basePath = rtrim($basePath, '/');
+        if ($basePath === '') {
+            $basePath = '';
+        }
+        return $scheme . '://' . $host . $basePath;
+    }
+
+    return $scheme . '://' . $host;
+}
+
 function criarMailer(): PHPMailer {
     $mail = new PHPMailer(true);
     $mail->isSMTP();
@@ -43,7 +60,7 @@ function enviarEmail(string $para, string $nomePara, string $assunto, string $co
 }
 
 function enviarEmailConfirmacao(string $para, string $nome, string $token): bool {
-    $link = 'http://localhost/Cruz-Azul/public/pages/confirmacao_cadastro.php?token=' . urlencode($token);
+    $link = obterBaseUrl() . '/src/api/confirmar.php?token=' . urlencode($token);
     $nome_safe = htmlspecialchars($nome, ENT_QUOTES, 'UTF-8');
 
     $corpo = "
@@ -63,7 +80,7 @@ function enviarEmailConfirmacao(string $para, string $nome, string $token): bool
 }
 
 function enviarEmailRecuperacao(string $para, string $nome, string $token): bool {
-    $link = 'http://localhost/Cruz-Azul/public/pages/redefinicao_de_senha.php?token=' . urlencode($token);
+    $link = obterBaseUrl() . '/public/pages/redefinicao_de_senha.php?token=' . urlencode($token);
     $nome_safe = htmlspecialchars($nome, ENT_QUOTES, 'UTF-8');
 
     $corpo = "
