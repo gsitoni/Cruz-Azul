@@ -131,7 +131,7 @@ if (isset($_GET['status']) && $_GET['status'] === 'atualizado') {
 
     <div class="acoes">
         <a href="editar_perfil.php" class="btn-primary">Editar Informações</a>
-        <a href="logout.php"        class="btn-secondary">Sair</a>
+        <a href="home_usuario.php"        class="btn-secondary">Sair</a>
     </div>
 
 </div>
