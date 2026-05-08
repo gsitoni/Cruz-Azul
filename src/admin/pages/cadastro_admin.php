@@ -8,6 +8,7 @@ header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 
 require __DIR__ . '/../../../vendor/autoload.php';
 require __DIR__ . '/../../api/database.php';
+/** @var PDO $pdo */
 require __DIR__ . '/../../api/mailer.php';
 require __DIR__ . '/../../api/valida_senha.php';
 
@@ -47,8 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($usuarioExistente) {
             if (($usuarioExistente['tipo'] ?? '') !== $valorAdmin) {
-                $stmt = $pdo->prepare("UPDATE usuario SET {$colunaPerfil} = ? WHERE id_usuario = ?");
-                $stmt->execute([$valorAdmin, $usuarioExistente['id_usuario']]);
+                $stmt = $pdo->prepare("UPDATE usuario SET {$colunaPerfil} = ?, telegram_chat_id = ?, telegram_2fa_ativo = TRUE WHERE id_usuario = ?");
+                $stmt->execute([$valorAdmin, $chat_id, $usuarioExistente['id_usuario']]);
+            } else {
+                $stmt = $pdo->prepare("UPDATE usuario SET telegram_chat_id = ?, telegram_2fa_ativo = TRUE WHERE id_usuario = ?");
+                $stmt->execute([$chat_id, $usuarioExistente['id_usuario']]);
             }
 
             $statusCadastro = (string) ($usuarioExistente['status_cadastro'] ?? '');
@@ -78,10 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } else {
             $stmt = $pdo->prepare("
-                INSERT INTO usuario (nome, email, chat_id, token_confirmacao, {$colunaPerfil})
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO usuario (nome, email, senha_hash, telegram_chat_id, telegram_2fa_ativo, token_confirmacao, {$colunaPerfil})
+                VALUES (?, ?, ?, ?, TRUE, ?, ?)
             ");
-            $stmt->execute([$nome, $email, $chat_id, $token, $valorAdmin]);
+            $stmt->execute([$nome, $email, '', $chat_id, $token, $valorAdmin]);
 
             if (enviarEmailConfirmacao($email, $nome, $token, 'admin')) {
                 $resposta = [

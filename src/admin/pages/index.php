@@ -4,19 +4,44 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
+// ======================================
+// RESET
+// ======================================
+
 if (!empty($_GET['reset'])) {
-    unset($_SESSION['usuario'], $_SESSION['2fa_ok'], $_SESSION['2fa_pendente'], $_SESSION['2fa_secret_temp'], $_SESSION['csrf_token']);
-    header('Location: ./pages/login.php?reset=1');
+
+    session_unset();
+
+    session_destroy();
+
+    header('Location: ./login.php');
+
     exit();
 }
 
-$ehAdmin = !empty($_SESSION['usuario']['tipo']) && stripos((string) $_SESSION['usuario']['tipo'], 'admin') !== false;
-$doisFatoresOk = !empty($_SESSION['2fa_ok']);
-$doisFatoresPendente = !empty($_SESSION['2fa_pendente']);
+// ======================================
+// ADMIN LOGADO
+// ======================================
 
-if ($ehAdmin || $doisFatoresOk || $doisFatoresPendente) {
-    unset($_SESSION['usuario'], $_SESSION['2fa_ok'], $_SESSION['2fa_pendente'], $_SESSION['2fa_secret_temp'], $_SESSION['csrf_token']);
+$adminLogado =
+    !empty($_SESSION['usuario']) &&
+    !empty($_SESSION['admin_autenticado']);
+
+// ======================================
+// REDIRECIONA
+// ======================================
+
+if ($adminLogado) {
+
+    header('Location: ./dashboard.php');
+
+    exit();
 }
 
-header('Location: ./pages/login.php?reset=1');
+// ======================================
+// LOGIN
+// ======================================
+
+header('Location: ./login.php');
+
 exit();

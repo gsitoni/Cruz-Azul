@@ -52,6 +52,7 @@ if ($_SESSION['rec_count'] > 5) {
 
 // Só carrega dependências pesadas após todas as validações
 require_once __DIR__ . '/database.php';
+/** @var PDO $pdo */
 require_once __DIR__ . '/mailer.php';
 
 $email = filter_input(INPUT_POST, 'email_recuperacao', FILTER_SANITIZE_EMAIL);

@@ -24,6 +24,7 @@ if (
 }
  
 require_once __DIR__ . '/database.php';
+/** @var PDO $pdo */
  
 try {
     $pdo->beginTransaction();
