@@ -12,6 +12,7 @@ header("X-Content-Type-Options: nosniff");
 header("Referrer-Policy: strict-origin-when-cross-origin");
  
 require_once __DIR__ . '/database.php';
+/** @var PDO $pdo */
 require_once __DIR__ . '/valida_senha.php';
  
 // ──────────────────────────────────────────────

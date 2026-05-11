@@ -40,7 +40,7 @@ if (!empty($_SESSION['usuario']['id_usuario'])) {
     $camposDoador = [
         'nome'            => ['tabela' => 'doador',  'valor' => 'Usuário Removido'],
         'cpf'             => ['tabela' => 'doador',  'valor' => null],
-        'telefone'        => ['tabela' => 'doador',  'valor' => '00000000000'],
+        'telefone'        => ['tabela' => 'doador',  'valor' => ''],
         'data_nascimento' => ['tabela' => 'doador',  'valor' => null],
         'email'           => ['tabela' => 'usuario', 'valor' => null], // gera email fake
     ];
@@ -121,4 +121,3 @@ if (!empty($_SESSION['usuario']['id_usuario'])) {
 } else {
     echo json_encode(['ok' => false, 'msg' => 'Não autorizado.']);
 }
- 

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 14/04/2026 às 14:10
+-- Tempo de geração: 16/04/2026 às 16:11
 -- Versão do servidor: 10.4.32-MariaDB
 -- Versão do PHP: 8.2.12
 
@@ -34,7 +34,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_marcar_lotes_vencidos` ()   BEGI
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_suspender_beneficiarios_expirados` ()   BEGIN
-    UPDATE beneficiario
+    UPDATE ong
     SET status_elegibilidade = 'suspenso'
     WHERE status_elegibilidade = 'ativo'
       AND data_atualizacao < DATE_SUB(NOW(), INTERVAL 6 MONTH);
@@ -45,46 +45,13 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
--- Estrutura para tabela `beneficiario`
---
-
-CREATE TABLE `beneficiario` (
-  `id_beneficiario` int(10) UNSIGNED NOT NULL,
-  `nome_receptor` varchar(300) NOT NULL,
-  `cnpj` char(18) NOT NULL,
-  `localizacao` varchar(50) NOT NULL,
-  `classificacao_risco` enum('emergencia','continuo','pontual','baixa_prioridade') NOT NULL,
-  `status_elegibilidade` enum('pendente','aprovada','rejeitada') DEFAULT 'pendente',
-  `data_atualizacao` datetime NOT NULL DEFAULT current_timestamp(),
-  `criado_em` datetime NOT NULL DEFAULT current_timestamp(),
-  `sigla_estado` varchar(2) DEFAULT NULL,
-  `endereco` varchar(200) DEFAULT NULL,
-  `cidade` varchar(50) DEFAULT NULL,
-  `descricao` varchar(300) DEFAULT NULL,
-  `senha_hash` varchar(200) DEFAULT NULL,
-  `email` varchar(200) DEFAULT NULL,
-  `token_confirmacao` varchar(200) DEFAULT NULL,
-  `area_atuacao` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Despejando dados para a tabela `beneficiario`
---
-
-INSERT INTO `beneficiario` (`id_beneficiario`, `nome_receptor`, `cnpj`, `localizacao`, `classificacao_risco`, `status_elegibilidade`, `data_atualizacao`, `criado_em`, `sigla_estado`, `endereco`, `cidade`, `descricao`, `senha_hash`, `email`, `token_confirmacao`, `area_atuacao`) VALUES
-(3, 'Abrigo Esperança', '15.672.083/0001-32', '59797-199', 'emergencia', '', '2026-04-11 11:22:07', '2026-04-11 11:22:07', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(5, 'Bismark Otto', '12345678000190', '82560370', 'emergencia', 'pendente', '2026-04-13 10:37:29', '2026-04-13 10:37:29', 'PR', 'Rua Ary Barroso', 'Curitiba', 'aaa', '$2y$10$ZUpDIrUrov0vCZVTjbb.XuNcsI3qvw2RlYnP/o0NYNTzAmdNIh.2u', 'beargamessirwhiter25@gmail.com', '039d7b1291708f162158ce1ec0addc3e', 'Alimentação');
-
--- --------------------------------------------------------
-
---
 -- Estrutura para tabela `distribuicao`
 --
 
 CREATE TABLE `distribuicao` (
   `id_operacao` int(10) UNSIGNED NOT NULL,
   `id_lote` int(10) UNSIGNED NOT NULL,
-  `id_beneficiario` int(10) UNSIGNED NOT NULL,
+  `id_ong` int(10) UNSIGNED NOT NULL,
   `id_voluntario` int(10) UNSIGNED NOT NULL,
   `quantidade_retirada` decimal(12,3) NOT NULL,
   `data_hora` datetime NOT NULL DEFAULT current_timestamp(),
@@ -96,7 +63,7 @@ CREATE TABLE `distribuicao` (
 -- Despejando dados para a tabela `distribuicao`
 --
 
-INSERT INTO `distribuicao` (`id_operacao`, `id_lote`, `id_beneficiario`, `id_voluntario`, `quantidade_retirada`, `data_hora`, `comprovante_url`, `criado_em`) VALUES
+INSERT INTO `distribuicao` (`id_operacao`, `id_lote`, `id_ong`, `id_voluntario`, `quantidade_retirada`, `data_hora`, `comprovante_url`, `criado_em`) VALUES
 (6, 2, 3, 3, 1.847, '2026-04-11 11:25:50', 'comprovantes/dist-001.pdf', '2026-04-11 11:25:50');
 
 --
@@ -113,32 +80,36 @@ DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `tg_distribuicao_valida` BEFORE INSERT ON `distribuicao` FOR EACH ROW BEGIN
     DECLARE v_status_vol VARCHAR(20);
-    DECLARE v_status_ben VARCHAR(20);
+    DECLARE v_status_ong VARCHAR(20);
     DECLARE v_status_lot VARCHAR(20);
     DECLARE v_qtd_atual  DECIMAL(12,3);
-
+ 
     SELECT status_operacional INTO v_status_vol
         FROM voluntario WHERE id_voluntario = NEW.id_voluntario;
     IF v_status_vol <> 'ativo' THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Voluntário não está ativo.';
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Voluntário não está ativo.';
     END IF;
-
-    SELECT status_elegibilidade INTO v_status_ben
-        FROM beneficiario WHERE id_beneficiario = NEW.id_beneficiario;
-    IF v_status_ben <> 'ativo' THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Beneficiário não está ativo/elegível.';
+ 
+    SELECT status_elegibilidade INTO v_status_ong
+        FROM ong WHERE id_ong = NEW.id_ong;
+    IF v_status_ong <> 'ativo' THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'ONG não está ativa/elegível.';
     END IF;
-
+ 
     SELECT status_operacional, quantidade_atual
         INTO v_status_lot, v_qtd_atual
         FROM estoque WHERE id_lote = NEW.id_lote;
     IF v_status_lot <> 'disponivel' THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Lote não está disponível.';
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Lote não está disponível.';
     END IF;
     IF NEW.quantidade_retirada > v_qtd_atual THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Quantidade retirada excede saldo do lote.';
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Quantidade retirada excede saldo do lote.';
     END IF;
-
+ 
     UPDATE estoque
     SET quantidade_atual   = quantidade_atual - NEW.quantidade_retirada,
         status_operacional = CASE
@@ -161,7 +132,7 @@ CREATE TABLE `doacao` (
   `id_doador` int(10) UNSIGNED NOT NULL,
   `categoria` enum('alimento','roupa','brinquedo','higiene','movel','eletronico','outro') NOT NULL,
   `item` varchar(200) NOT NULL,
-  `quantidade` decimal(12,3) NOT NULL,
+  `quantidade` int(11) DEFAULT NULL,
   `unidade_medida` varchar(30) NOT NULL,
   `data_validade` date DEFAULT NULL,
   `estado_conservacao` enum('novo','usado','desgastado') DEFAULT NULL,
@@ -174,7 +145,7 @@ CREATE TABLE `doacao` (
 --
 
 INSERT INTO `doacao` (`id_doacao`, `id_doador`, `categoria`, `item`, `quantidade`, `unidade_medida`, `data_validade`, `estado_conservacao`, `data_doacao`, `criado_em`) VALUES
-(3, 3, 'alimento', 'Óleo de soja', 48.683, 'unidade', '2026-07-13', NULL, '2025-09-30', '2026-04-11 11:22:45');
+(3, 3, 'alimento', 'Óleo de soja', 49, 'unidade', '2026-07-13', NULL, '2025-09-30', '2026-04-11 11:22:45');
 
 --
 -- Acionadores `doacao`
@@ -195,6 +166,37 @@ CREATE TRIGGER `tg_doacao_cria_lote` AFTER INSERT ON `doacao` FOR EACH ROW BEGIN
     );
 END
 $$
+DELIMITER ;
+DELIMITER $$
+
+CREATE TRIGGER `tg_log_doacao`
+AFTER INSERT ON `doacao`
+FOR EACH ROW
+BEGIN
+
+    INSERT INTO logs_sistema (
+        tipo,
+        categoria,
+        acao,
+        descricao,
+        tabela_afetada,
+        id_referencia
+    )
+    VALUES (
+        'INFO',
+        'DOACAO',
+        'Nova doação cadastrada',
+        CONCAT(
+            'Doação do item ',
+            NEW.item,
+            ' cadastrada.'
+        ),
+        'doacao',
+        NEW.id_doacao
+    );
+
+END$$
+
 DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `tg_doacao_valida_insert` BEFORE INSERT ON `doacao` FOR EACH ROW BEGIN
@@ -245,11 +247,11 @@ DELIMITER ;
 
 CREATE TABLE `doador` (
   `id_doador` int(10) UNSIGNED NOT NULL,
-  `cpf_cnpj` varchar(18) NOT NULL,
+  `id_usuario` int(10) UNSIGNED DEFAULT NULL,
+  `cpf` varchar(15) DEFAULT NULL,
   `nome` varchar(200) NOT NULL,
   `data_nascimento` date DEFAULT NULL,
   `telefone` varchar(20) NOT NULL,
-  `email` varchar(254) NOT NULL,
   `criado_em` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -257,9 +259,9 @@ CREATE TABLE `doador` (
 -- Despejando dados para a tabela `doador`
 --
 
-INSERT INTO `doador` (`id_doador`, `cpf_cnpj`, `nome`, `data_nascimento`, `telefone`, `email`, `criado_em`) VALUES
-(2, '123.456.789-00', 'Maria Silva', '1990-05-15', '11987654321', 'maria@email.com', '2026-04-11 11:15:17'),
-(3, '938.761.450-66', 'Cecília Ramos', '1997-04-21', '11929958838', 'cecília.ramos143@uol.com.br', '2026-04-11 11:21:44');
+INSERT INTO `doador` (`id_doador`, `id_usuario`, `cpf`, `nome`, `data_nascimento`, `telefone`, `criado_em`) VALUES
+(2, NULL, '123.456.789-00', 'Maria Silva', '1990-05-15', '11987654321', '2026-04-11 11:15:17'),
+(3, NULL, '938.761.450-66', 'Cecília Ramos', '1997-04-21', '11929958838', '2026-04-11 11:21:44');
 
 -- --------------------------------------------------------
 
@@ -290,6 +292,40 @@ INSERT INTO `estoque` (`id_lote`, `codigo_lote`, `id_doacao`, `item`, `quantidad
 -- --------------------------------------------------------
 
 --
+-- Estrutura para tabela `ong`
+--
+
+CREATE TABLE `ong` (
+  `id_ong` int(10) UNSIGNED NOT NULL,
+  `id_usuario` int(10) UNSIGNED DEFAULT NULL,
+  `nome` varchar(300) NOT NULL,
+  `cnpj` char(18) NOT NULL,
+  `localizacao` varchar(50) NOT NULL,
+  `classificacao_risco` enum('emergencia','continuo','pontual','baixa_prioridade') NOT NULL,
+  `status_elegibilidade` enum('pendente','aprovado','rejeitado','ativo','suspenso') NOT NULL DEFAULT 'pendente',
+  `data_atualizacao` datetime NOT NULL DEFAULT current_timestamp(),
+  `criado_em` datetime NOT NULL DEFAULT current_timestamp(),
+  `sigla_estado` varchar(2) DEFAULT NULL,
+  `endereco` varchar(200) DEFAULT NULL,
+  `cidade` varchar(50) DEFAULT NULL,
+  `descricao` varchar(300) DEFAULT NULL,
+  `senha_hash` varchar(200) DEFAULT NULL,
+  `email` varchar(200) DEFAULT NULL,
+  `token_confirmacao` varchar(200) DEFAULT NULL,
+  `area_atuacao` varchar(50) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Despejando dados para a tabela `ong`
+--
+
+INSERT INTO `ong` (`id_ong`, `id_usuario`, `nome`, `cnpj`, `localizacao`, `classificacao_risco`, `status_elegibilidade`, `data_atualizacao`, `criado_em`, `sigla_estado`, `endereco`, `cidade`, `descricao`, `senha_hash`, `email`, `token_confirmacao`, `area_atuacao`) VALUES
+(3, NULL, 'Abrigo Esperança', '15.672.083/0001-32', '59797-199', 'emergencia', 'aprovado', '2026-04-11 11:22:07', '2026-04-11 11:22:07', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(5, NULL, 'Bismark Otto', '12345678000190', '82560370', 'emergencia', 'ativo', '2026-04-13 10:37:29', '2026-04-13 10:37:29', 'PR', 'Rua Ary Barroso', 'Curitiba', 'aaa', '$2y$10$ZUpDIrUrov0vCZVTjbb.XuNcsI3qvw2RlYnP/o0NYNTzAmdNIh.2u', 'beargamessirwhiter25@gmail.com', '039d7b1291708f162158ce1ec0addc3e', 'Alimentação');
+
+-- --------------------------------------------------------
+
+--
 -- Estrutura para tabela `usuario`
 --
 
@@ -298,25 +334,78 @@ CREATE TABLE `usuario` (
   `nome` varchar(200) NOT NULL,
   `email` varchar(254) NOT NULL,
   `senha_hash` text NOT NULL,
+
+  `telegram_chat_id` VARCHAR(50) DEFAULT NULL,
+  `telegram_2fa_ativo` BOOLEAN DEFAULT FALSE,
+
   `status_cadastro` enum('pendente','confirmado','bloqueado') NOT NULL DEFAULT 'pendente',
   `token_confirmacao` varchar(255) DEFAULT NULL,
   `token_recuperacao` varchar(255) DEFAULT NULL,
   `token_expira_em` datetime DEFAULT NULL,
   `chave_2fa` varchar(64) DEFAULT NULL,
   `data_criacao` datetime NOT NULL DEFAULT current_timestamp(),
-  `permissao` enum('Doador','Admin','Doador e Admin') DEFAULT 'Doador'
+  `tipo` enum('usuario','admin','ong','doador') NOT NULL DEFAULT 'usuario'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Despejando dados para a tabela `usuario`
 --
 
-INSERT INTO `usuario` (`id_usuario`, `nome`, `email`, `senha_hash`, `status_cadastro`, `token_confirmacao`, `token_recuperacao`, `token_expira_em`, `chave_2fa`, `data_criacao`, `permissao`) VALUES
-(1, '', 'usuario1655@terra.com.br', 'a2ca37fe6fdc490b8f7ce841e1701a169d2b1697c6b5b5c63f94abb8f9b6d6dd', 'confirmado', NULL, NULL, NULL, NULL, '2026-04-11 11:21:32', NULL),
-(2, '', 'teste@teste.com', '$2y$10$35jJlOeRUIRvNodUNE3QNu0Bds70sgshRhCGaoRf3rWYHvwMRsW3S', 'confirmado', NULL, NULL, NULL, NULL, '2026-04-11 21:09:44', NULL),
-(3, 'nome', 'ablu@gmail.com', '$2y$10$lFtaI.y4kU5wlO7sdJs4beD2iLlRSje41ATpdcVdsoEhrDKkG1VkO', 'pendente', '8062f5936f559de19f6b20e2d916798f6119261e71ad5feab8287d05ceca70b5', NULL, NULL, NULL, '2026-04-12 14:54:31', NULL),
-(5, 'nome', 'email@teste.com', '$2y$10$S4Q4Je8gRKoNrkcNUoHRSOQ9A2gaqt3lyrxyE1LAwU49plENZN/5G', 'pendente', 'a412968ba7042df1848118e531f1213f52c9be769ded05b75a16871009c69543', NULL, NULL, NULL, '2026-04-12 15:01:30', NULL),
-(28, 'nome', 'beargamessirwhiter25@gmail.com', '$2y$10$5.aO.FBEKYW98ZQuHC4ba.CEeBSviPXBuwA6Ule3iGxztAhCy9kyS', 'pendente', 'b73b16df44cc3dff253dc8c3999d509490461f3dd172229e4173e0aa622f23fd', NULL, NULL, NULL, '2026-04-14 08:42:57', 'Doador');
+INSERT INTO `usuario` (`id_usuario`, `nome`, `email`, `senha_hash`, `status_cadastro`, `token_confirmacao`, `token_recuperacao`, `token_expira_em`, `chave_2fa`, `data_criacao`, `tipo`) VALUES
+(1, '', 'usuario1655@terra.com.br', 'a2ca37fe6fdc490b8f7ce841e1701a169d2b1697c6b5b5c63f94abb8f9b6d6dd', 'confirmado', NULL, NULL, NULL, NULL, '2026-04-11 11:21:32', ''),
+(2, '', 'teste@teste.com', '$2y$10$35jJlOeRUIRvNodUNE3QNu0Bds70sgshRhCGaoRf3rWYHvwMRsW3S', 'confirmado', NULL, NULL, NULL, NULL, '2026-04-11 21:09:44', ''),
+(3, 'nome', 'ablu@gmail.com', '$2y$10$lFtaI.y4kU5wlO7sdJs4beD2iLlRSje41ATpdcVdsoEhrDKkG1VkO', 'pendente', '8062f5936f559de19f6b20e2d916798f6119261e71ad5feab8287d05ceca70b5', NULL, NULL, NULL, '2026-04-12 14:54:31', ''),
+(5, 'nome', 'email@teste.com', '$2y$10$S4Q4Je8gRKoNrkcNUoHRSOQ9A2gaqt3lyrxyE1LAwU49plENZN/5G', 'pendente', 'a412968ba7042df1848118e531f1213f52c9be769ded05b75a16871009c69543', NULL, NULL, NULL, '2026-04-12 15:01:30', '');
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `logs_sistema`
+--
+
+CREATE TABLE `logs_sistema` (
+  `id_log` bigint(20) UNSIGNED NOT NULL,
+
+  `id_usuario` int(10) UNSIGNED DEFAULT NULL,
+
+  `tipo` enum(
+    'INFO',
+    'WARNING',
+    'ERROR',
+    'CRITICAL'
+  ) NOT NULL DEFAULT 'INFO',
+
+  `categoria` enum(
+    'LOGIN',
+    'CADASTRO',
+    'DOACAO',
+    'ESTOQUE',
+    'DISTRIBUICAO',
+    'ONG',
+    'VOLUNTARIO',
+    'USUARIO',
+    'SISTEMA',
+    'SEGURANCA'
+  ) NOT NULL,
+
+  `acao` varchar(255) NOT NULL,
+
+  `descricao` text DEFAULT NULL,
+
+  `tabela_afetada` varchar(100) DEFAULT NULL,
+
+  `id_referencia` int(10) UNSIGNED DEFAULT NULL,
+
+  `ip_origem` varchar(45) DEFAULT NULL,
+
+  `user_agent` text DEFAULT NULL,
+
+  `data_hora` datetime NOT NULL
+  DEFAULT current_timestamp()
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -343,7 +432,6 @@ CREATE TABLE `voluntario` (
 
 INSERT INTO `voluntario` (`id_voluntario`, `nome`, `cpf`, `telefone`, `email`, `funcao`, `disponibilidade`, `data_entrada`, `status_operacional`, `criado_em`) VALUES
 (3, 'Ryan Mendonça', '052.481.973-41', '11973140807', 'ryan.mendonça430@uol.com.br', 'recepcionista', 'dias_uteis', '2024-01-16', 'ativo', '2026-04-11 11:21:58');
-
 --
 -- Acionadores `voluntario`
 --
@@ -369,12 +457,23 @@ DELIMITER ;
 --
 
 --
--- Índices de tabela `beneficiario`
+-- Índices de tabela `logs_sistema`
 --
-ALTER TABLE `beneficiario`
-  ADD PRIMARY KEY (`id_beneficiario`),
-  ADD UNIQUE KEY `uq_beneficiario_cnpj` (`cnpj`),
-  ADD KEY `idx_beneficiario_status` (`status_elegibilidade`);
+
+ALTER TABLE `logs_sistema`
+  ADD PRIMARY KEY (`id_log`),
+
+  ADD KEY `idx_logs_usuario`
+  (`id_usuario`),
+
+  ADD KEY `idx_logs_tipo`
+  (`tipo`),
+
+  ADD KEY `idx_logs_categoria`
+  (`categoria`),
+
+  ADD KEY `idx_logs_data`
+  (`data_hora`);
 
 --
 -- Índices de tabela `distribuicao`
@@ -382,8 +481,8 @@ ALTER TABLE `beneficiario`
 ALTER TABLE `distribuicao`
   ADD PRIMARY KEY (`id_operacao`),
   ADD KEY `idx_distribuicao_lote` (`id_lote`),
-  ADD KEY `idx_distribuicao_ben` (`id_beneficiario`),
-  ADD KEY `idx_distribuicao_vol` (`id_voluntario`);
+  ADD KEY `idx_distribuicao_vol` (`id_voluntario`),
+  ADD KEY `idx_distribuicao_ong` (`id_ong`);
 
 --
 -- Índices de tabela `doacao`
@@ -397,9 +496,8 @@ ALTER TABLE `doacao`
 --
 ALTER TABLE `doador`
   ADD PRIMARY KEY (`id_doador`),
-  ADD UNIQUE KEY `uq_doador_cpf_cnpj` (`cpf_cnpj`),
-  ADD UNIQUE KEY `uq_doador_telefone` (`telefone`),
-  ADD UNIQUE KEY `uq_doador_email` (`email`);
+  ADD UNIQUE KEY `uq_doador_cpf_cnpj` (`cpf`),
+  ADD KEY `idx_doador_usuario` (`id_usuario`);
 
 --
 -- Índices de tabela `estoque`
@@ -410,6 +508,15 @@ ALTER TABLE `estoque`
   ADD UNIQUE KEY `uq_estoque_doacao` (`id_doacao`),
   ADD KEY `idx_estoque_status` (`status_operacional`),
   ADD KEY `idx_estoque_validade` (`data_validade`);
+
+--
+-- Índices de tabela `ong`
+--
+ALTER TABLE `ong`
+  ADD PRIMARY KEY (`id_ong`),
+  ADD UNIQUE KEY `uq_beneficiario_cnpj` (`cnpj`),
+  ADD KEY `idx_ong_usuario` (`id_usuario`),
+  ADD KEY `idx_ong_status` (`status_elegibilidade`);
 
 --
 -- Índices de tabela `usuario`
@@ -433,10 +540,12 @@ ALTER TABLE `voluntario`
 --
 
 --
--- AUTO_INCREMENT de tabela `beneficiario`
+-- AUTO_INCREMENT de tabela `logs_sistema`
 --
-ALTER TABLE `beneficiario`
-  MODIFY `id_beneficiario` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+ALTER TABLE `logs_sistema`
+  MODIFY `id_log`
+  bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de tabela `distribuicao`
@@ -454,7 +563,7 @@ ALTER TABLE `doacao`
 -- AUTO_INCREMENT de tabela `doador`
 --
 ALTER TABLE `doador`
-  MODIFY `id_doador` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_doador` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT de tabela `estoque`
@@ -463,10 +572,16 @@ ALTER TABLE `estoque`
   MODIFY `id_lote` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de tabela `ong`
+--
+ALTER TABLE `ong`
+  MODIFY `id_ong` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
 -- AUTO_INCREMENT de tabela `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `id_usuario` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `id_usuario` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
 
 --
 -- AUTO_INCREMENT de tabela `voluntario`
@@ -479,11 +594,22 @@ ALTER TABLE `voluntario`
 --
 
 --
+-- Restrições para tabela `logs_sistema`
+--
+
+ALTER TABLE `logs_sistema`
+  ADD CONSTRAINT `fk_logs_usuario`
+  FOREIGN KEY (`id_usuario`)
+  REFERENCES `usuario` (`id_usuario`)
+  ON DELETE SET NULL
+  ON UPDATE CASCADE;
+
+--
 -- Restrições para tabelas `distribuicao`
 --
 ALTER TABLE `distribuicao`
-  ADD CONSTRAINT `fk_dist_beneficiario` FOREIGN KEY (`id_beneficiario`) REFERENCES `beneficiario` (`id_beneficiario`),
   ADD CONSTRAINT `fk_dist_lote` FOREIGN KEY (`id_lote`) REFERENCES `estoque` (`id_lote`),
+  ADD CONSTRAINT `fk_dist_ong` FOREIGN KEY (`id_ong`) REFERENCES `ong` (`id_ong`) ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_dist_voluntario` FOREIGN KEY (`id_voluntario`) REFERENCES `voluntario` (`id_voluntario`);
 
 --
@@ -493,10 +619,22 @@ ALTER TABLE `doacao`
   ADD CONSTRAINT `fk_doacao_doador` FOREIGN KEY (`id_doador`) REFERENCES `doador` (`id_doador`);
 
 --
+-- Restrições para tabelas `doador`
+--
+ALTER TABLE `doador`
+  ADD CONSTRAINT `fk_doador_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON UPDATE CASCADE;
+
+--
 -- Restrições para tabelas `estoque`
 --
 ALTER TABLE `estoque`
   ADD CONSTRAINT `fk_estoque_doacao` FOREIGN KEY (`id_doacao`) REFERENCES `doacao` (`id_doacao`);
+
+--
+-- Restrições para tabelas `ong`
+--
+ALTER TABLE `ong`
+  ADD CONSTRAINT `fk_ong_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON UPDATE CASCADE;
 
 DELIMITER $$
 --

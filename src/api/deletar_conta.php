@@ -163,3 +163,4 @@ try {
     error_log("deletar_conta.php Exception: " . $e->getMessage());
     echo json_encode(['ok' => false, 'msg' => 'Erro interno. Tente novamente.']);
 }
+ 

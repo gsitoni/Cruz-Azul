@@ -227,8 +227,9 @@ input.invalido {
 .support-links {
     margin-top: 24px;
     display: flex;
+    justify-content: center;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 25px;
 }
 
 .support-links a {

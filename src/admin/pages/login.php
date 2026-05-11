@@ -1,8 +1,9 @@
 <?php
 
-require _DIR_ . '/../../api/database.php';
-
 session_start();
+
+require __DIR__ . '/../../api/database.php';
+/** @var PDO $pdo */
 
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
@@ -10,74 +11,222 @@ header('X-XSS-Protection: 1; mode=block');
 header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 
 if (!empty($_GET['reset'])) {
-    unset($_SESSION['usuario'], $_SESSION['2fa_ok'], $_SESSION['2fa_pendente'], $_SESSION['2fa_secret_temp'], $_SESSION['csrf_token']);
+
+    unset(
+        $_SESSION['usuario'],
+        $_SESSION['admin_autenticado'],
+        $_SESSION['csrf_token']
+    );
 }
 
-define('REGEX_EMAIL_ADMIN', '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/');
-define('REGEX_SENHA_ADMIN', '/^.{12,}$/');
+// =====================================
+// REGEX
+// =====================================
+
+define(
+    'REGEX_EMAIL_ADMIN',
+    '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/'
+);
+
+define(
+    'REGEX_CHAT_ID',
+    '/^[0-9]{6,}$/'
+);
+
+// =====================================
+// LOGIN
+// =====================================
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
-    $senha = trim($_POST['senha'] ?? '');
-
-    if ($email === '' || $senha === '') {
-        $resposta = ['ok' => false, 'msg' => 'Preencha e-mail e senha.'];
-    } elseif (!preg_match(REGEX_EMAIL_ADMIN, $email)) {
-        $resposta = ['ok' => false, 'msg' => 'Informe um e-mail valido.'];
-    } elseif (!preg_match(REGEX_SENHA_ADMIN, $senha)) {
-        $resposta = ['ok' => false, 'msg' => 'A senha deve ter pelo menos 12 caracteres.'];
-    } else {
-        try {
-            $sql = sprintf(
-                'SELECT id_usuario, nome, email, senha_hash, status_cadastro, %s, chave_2fa FROM usuario WHERE email = ? LIMIT 1',
-                obterSelecaoPerfilUsuario($pdo, '')
-            );
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$email]);
-            $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            $tipoUsuario = (string) ($usuario['tipo'] ?? '');
-            $ehAdmin = $tipoUsuario !== '' && stripos($tipoUsuario, 'admin') !== false;
-
-            if (!$usuario || !$ehAdmin || !password_verify($senha, (string) $usuario['senha_hash'])) {
-                $resposta = ['ok' => false, 'msg' => 'Credenciais invalidas ou acesso sem permissao de administrador.'];
-            } elseif (($usuario['status_cadastro'] ?? '') === 'pendente') {
-                $resposta = [
-                    'ok' => true,
-                    'msg' => 'Conta pendente de confirmacao. Redirecionando...',
-                    'redirect' => './cadastro_concluido.php?email=' . urlencode($usuario['email']) . '&tipo=admin&origem=login'
-                ];
-            } elseif (($usuario['status_cadastro'] ?? '') === 'bloqueado') {
-                $resposta = ['ok' => false, 'msg' => 'Sua conta de administrador esta bloqueada.'];
-            } else {
-                $_SESSION['usuario'] = [
-                    'id_usuario' => $usuario['id_usuario'],
-                    'nome' => $usuario['nome'],
-                    'email' => $usuario['email'],
-                    'tipo' => $usuario['tipo'],
-                ];
-
-                $_SESSION['2fa_ok'] = false;
-                $_SESSION['2fa_pendente'] = true;
-
-                $redirect = empty($usuario['chave_2fa'])
-                    ? '../../api/2fatores/ativar_2fa.php'
-                    : '../../api/2fatores/verificar_2fa.php';
-
-                $resposta = [
-                    'ok' => true,
-                    'msg' => 'Credenciais validadas. Continue com a autenticacao em duas etapas.',
-                    'redirect' => $redirect,
-                ];
-            }
-        } catch (PDOException $e) {
-            error_log('admin login.php PDOException: ' . $e->getMessage());
-            $resposta = ['ok' => false, 'msg' => 'Erro interno ao processar o login do admin.'];
-        }
-    }
 
     header('Content-Type: application/json; charset=UTF-8');
-    echo json_encode($resposta);
+
+    $email = filter_var(
+        trim($_POST['email'] ?? ''),
+        FILTER_SANITIZE_EMAIL
+    );
+
+    $chat_id = trim($_POST['chat_id'] ?? '');
+
+    // =====================================
+    // VALIDAÇÕES
+    // =====================================
+
+    if ($email === '' || $chat_id === '') {
+
+        echo json_encode([
+            'ok' => false,
+            'msg' => 'Preencha todos os campos.'
+        ]);
+
+        exit();
+    }
+
+    if (!preg_match(REGEX_EMAIL_ADMIN, $email)) {
+
+        echo json_encode([
+            'ok' => false,
+            'msg' => 'Informe um e-mail válido.'
+        ]);
+
+        exit();
+    }
+
+    if (!preg_match(REGEX_CHAT_ID, $chat_id)) {
+
+        echo json_encode([
+            'ok' => false,
+            'msg' => 'Informe um Chat ID válido.'
+        ]);
+
+        exit();
+    }
+
+    try {
+
+        // =====================================
+        // BUSCA ADMIN
+        // =====================================
+
+        $sql = "
+            SELECT
+                id_usuario,
+                nome,
+                email,
+                tipo,
+                status_cadastro,
+                telegram_chat_id,
+                telegram_2fa_ativo
+            FROM usuario
+            WHERE email = ?
+            LIMIT 1
+        ";
+
+        $stmt = $pdo->prepare($sql);
+
+        $stmt->execute([$email]);
+
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // =====================================
+        // USUÁRIO NÃO EXISTE
+        // =====================================
+
+        if (!$usuario) {
+
+            echo json_encode([
+                'ok' => false,
+                'msg' => 'Administrador não encontrado.'
+            ]);
+
+            exit();
+        }
+
+        // =====================================
+        // VERIFICA ADMIN
+        // =====================================
+
+        $tipoUsuario = (string) ($usuario['tipo'] ?? '');
+
+        $ehAdmin =
+            $tipoUsuario !== '' &&
+            stripos($tipoUsuario, 'admin') !== false;
+
+        if (!$ehAdmin) {
+
+            echo json_encode([
+                'ok' => false,
+                'msg' => 'Acesso permitido apenas para administradores.'
+            ]);
+
+            exit();
+        }
+
+        // =====================================
+        // VERIFICA STATUS
+        // =====================================
+
+        if (($usuario['status_cadastro'] ?? '') === 'pendente') {
+
+            echo json_encode([
+                'ok' => false,
+                'msg' => 'Conta pendente de confirmação.'
+            ]);
+
+            exit();
+        }
+
+        if (($usuario['status_cadastro'] ?? '') === 'bloqueado') {
+
+            echo json_encode([
+                'ok' => false,
+                'msg' => 'Conta bloqueada.'
+            ]);
+
+            exit();
+        }
+
+        // =====================================
+        // VERIFICA CHAT ID
+        // =====================================
+
+        if (
+            empty($usuario['telegram_chat_id']) ||
+            $usuario['telegram_chat_id'] != $chat_id
+        ) {
+
+            echo json_encode([
+                'ok' => false,
+                'msg' => 'Chat ID inválido.'
+            ]);
+
+            exit();
+        }
+
+        // =====================================
+        // VERIFICA TELEGRAM 2FA
+        // =====================================
+
+        if (!(bool) $usuario['telegram_2fa_ativo']) {
+
+            echo json_encode([
+                'ok' => false,
+                'msg' => 'Telegram 2FA não ativado.'
+            ]);
+
+            exit();
+        }
+
+        // =====================================
+        // LOGIN OK
+        // =====================================
+
+        $_SESSION['usuario'] = [
+            'id_usuario' => $usuario['id_usuario'],
+            'nome' => $usuario['nome'],
+            'email' => $usuario['email'],
+            'tipo' => $usuario['tipo']
+        ];
+
+        $_SESSION['admin_autenticado'] = true;
+
+        echo json_encode([
+            'ok' => true,
+            'msg' => 'Login realizado com sucesso.',
+            'redirect' => './dashboard.php'
+        ]);
+
+    } catch (PDOException $e) {
+        error_log(
+            'admin login telegram: ' .
+            $e->getMessage()
+        );
+
+        echo json_encode([
+            'ok' => false,
+            'msg' => 'Erro interno no servidor.'
+        ]);
+    }
     exit();
 }
 ?>
@@ -95,32 +244,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <span class="eyebrow">Painel administrativo</span>
             <h1>Cruz Azul Admin</h1>
             <p>
-                Acesso restrito para administradores, com verificacao em duas etapas antes da liberacao do painel.
+                Acesse o painel com seu e-mail administrativo e o Chat ID do Telegram vinculado à conta.
             </p>
             <ul class="feature-list">
-                <li>Login exclusivo para contas com permissao administrativa</li>
-                <li>Integracao direta com o 2FA ja existente no projeto</li>
-                <li>Redirecionamento seguro para o dashboard apenas apos validacao completa</li>
+                <li>Acesso restrito a usuários com perfil administrativo</li>
+                <li>Validação do Chat ID cadastrado no Telegram</li>
+                <li>Entrada liberada apenas para contas confirmadas e ativas</li>
             </ul>
         </section>
 
         <section class="login-panel login-panel--form">
             <div class="form-header">
                 <h2>Entrar no admin</h2>
-                <p>Use seu e-mail administrativo e conclua a validacao 2FA para acessar o painel.</p>
+                <p>Informe os dados vinculados ao seu cadastro administrativo.</p>
             </div>
 
             <form id="formLoginAdmin" novalidate>
                 <label for="email">E-mail</label>
-                <input type="email" id="email" name="email" placeholder="admin@dominio.com" required>
-                <div class="erro-campo" id="erroEmail">Informe um e-mail valido.</div>
+                <input type="email" id="email" name="email" placeholder="admin@dominio.com" autocomplete="email" required>
+                <div class="erro-campo" id="erroEmail">Informe um e-mail válido.</div>
 
-                <label for="senha">Senha</label>
-                <div class="senha-wrap">
-                    <input type="password" id="senha" name="senha" placeholder="Minimo 12 caracteres" required>
-                    <button type="button" class="btn-olho" id="btnOlho">Mostrar</button>
-                </div>
-                <div class="erro-campo" id="erroSenha">A senha deve ter pelo menos 12 caracteres.</div>
+                <label for="chat_id">Chat ID do Telegram</label>
+                <input type="text" id="chat_id" name="chat_id" placeholder="Somente números" inputmode="numeric" autocomplete="one-time-code" required>
+                <div class="erro-campo" id="erroChatId">Informe um Chat ID válido.</div>
 
                 <div class="msg" id="mensagem"></div>
 
@@ -128,29 +274,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
 
             <div class="support-links">
-                <a href="../../../public/pages/recuperacao_de_senha.php">Esqueci minha senha</a>
                 <a href="./cadastro_admin.php?reset=1">Cadastrar administrador</a>
+                <a href="./index.php?reset=1">Limpar sessão</a>
             </div>
         </section>
     </main>
 
     <script>
         const REGEX_EMAIL = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-        const REGEX_SENHA = /^.{12,}$/;
+        const REGEX_CHAT_ID = /^[0-9]{6,}$/;
 
         const campoEmail = document.getElementById('email');
-        const campoSenha = document.getElementById('senha');
+        const campoChatId = document.getElementById('chat_id');
         const erroEmail = document.getElementById('erroEmail');
-        const erroSenha = document.getElementById('erroSenha');
+        const erroChatId = document.getElementById('erroChatId');
         const btnEntrar = document.getElementById('btnEntrar');
-        const btnOlho = document.getElementById('btnOlho');
         const msgDiv = document.getElementById('mensagem');
 
         campoEmail.addEventListener('blur', () => validar(campoEmail, REGEX_EMAIL, erroEmail));
-        campoSenha.addEventListener('blur', () => validar(campoSenha, REGEX_SENHA, erroSenha));
+        campoChatId.addEventListener('blur', () => validar(campoChatId, REGEX_CHAT_ID, erroChatId));
 
         campoEmail.addEventListener('input', () => limpar(campoEmail, erroEmail));
-        campoSenha.addEventListener('input', () => limpar(campoSenha, erroSenha));
+        campoChatId.addEventListener('input', () => {
+            campoChatId.value = campoChatId.value.replace(/\D/g, '');
+            limpar(campoChatId, erroChatId);
+        });
 
         function validar(input, regex, erroDiv) {
             if (!regex.test(input.value.trim())) {
@@ -166,32 +314,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function limpar(input, erroDiv) {
             input.classList.remove('invalido');
             erroDiv.classList.remove('visivel');
+            msgDiv.className = 'msg';
+            msgDiv.textContent = '';
         }
-
-        btnOlho.addEventListener('click', () => {
-            const tipo = campoSenha.type === 'password' ? 'text' : 'password';
-            campoSenha.type = tipo;
-            btnOlho.textContent = tipo === 'password' ? 'Mostrar' : 'Ocultar';
-        });
 
         document.getElementById('formLoginAdmin').addEventListener('submit', async (event) => {
             event.preventDefault();
 
             const emailOk = validar(campoEmail, REGEX_EMAIL, erroEmail);
-            const senhaOk = validar(campoSenha, REGEX_SENHA, erroSenha);
-            if (!emailOk || !senhaOk) {
+            const chatIdOk = validar(campoChatId, REGEX_CHAT_ID, erroChatId);
+
+            if (!emailOk || !chatIdOk) {
                 return;
             }
-
-            msgDiv.className = 'msg';
-            msgDiv.textContent = '';
 
             btnEntrar.disabled = true;
             btnEntrar.textContent = 'Validando...';
 
             const dados = new FormData();
             dados.append('email', campoEmail.value.trim());
-            dados.append('senha', campoSenha.value);
+            dados.append('chat_id', campoChatId.value.trim());
 
             try {
                 const response = await fetch('login.php', {
@@ -205,14 +347,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (json.ok) {
                     mostrarMsg(json.msg, 'sucesso');
                     window.setTimeout(() => {
-                        window.location.href = json.redirect || '../index.php';
-                    }, 900);
+                        window.location.href = json.redirect || './dashboard.php';
+                    }, 700);
                 } else {
-                    mostrarMsg(json.msg, 'erro');
+                    mostrarMsg(json.msg || 'Não foi possível entrar.', 'erro');
                 }
             } catch (error) {
                 console.error('Falha ao autenticar admin:', error);
-                mostrarMsg('Erro de conexao. Tente novamente.', 'erro');
+                mostrarMsg('Erro de conexão. Tente novamente.', 'erro');
             } finally {
                 btnEntrar.disabled = false;
                 btnEntrar.textContent = 'Entrar no painel';

@@ -1,58 +1,80 @@
 <?php
 require __DIR__ . '/auth.php';
 
-// ==========================
-// LOGOUT
-// ==========================
 if (isset($_GET['logout'])) {
     session_destroy();
     header("Location: ../index.php");
     exit();
 }
 
-// ==========================
-// CONEXÃO BANCO
-// ==========================
-require '../../api/database.php';
-
-// ==========================
-// QUERY LOGS (simulado com usuários criados)
-// ==========================
-try {
-    $stmt = $pdo->prepare("SELECT id_usuario as id, email as usuario, 'cadastro' as acao, 'info' as nivel, data_criacao as data FROM usuario ORDER BY data_criacao DESC LIMIT 100");
-    $stmt->execute();
-    $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-} catch (PDOException $e) {
-    $logs = [];
-}
+require __DIR__ . '/../../api/database.php';
+/** @var PDO $pdo */
 
 // ==========================
 // FILTROS
 // ==========================
-$busca = $_GET['busca'] ?? "";
-$nivel = $_GET['nivel'] ?? "";
-
-// Filtrar
-$logs_filtrados = array_filter($logs, function($log) use ($busca, $nivel) {
-    $matchBusca = empty($busca) || 
-        stripos($log['usuario'], $busca) !== false || 
-        stripos($log['acao'], $busca) !== false;
-    
-    $matchNivel = empty($nivel) || $log['nivel'] === strtolower($nivel);
-    
-    return $matchBusca && $matchNivel;
-});
+$busca = $_GET['busca'] ?? '';
+$tipo = $_GET['tipo'] ?? '';
+$categoria = $_GET['categoria'] ?? '';
 
 // ==========================
-// FUNÇÃO BADGE
+// QUERY LOGS
 // ==========================
-function badgeClass($nivel) {
-    return match($nivel) {
-        "info" => "info",
-        "alerta" => "alerta",
-        "critico" => "critico",
-        default => "info"
+$sql = "
+SELECT 
+    id_log,
+    tipo,
+    categoria,
+    acao,
+    descricao,
+    tabela_afetada,
+    id_referencia,
+    ip_origem,
+    data_hora
+FROM logs_sistema
+WHERE 1=1
+";
+
+$params = [];
+
+if (!empty($busca)) {
+    $sql .= " AND (
+        descricao LIKE :busca
+        OR acao LIKE :busca
+        OR tabela_afetada LIKE :busca
+    )";
+
+    $params[':busca'] = "%$busca%";
+}
+
+if (!empty($tipo)) {
+    $sql .= " AND tipo = :tipo";
+    $params[':tipo'] = strtoupper($tipo);
+}
+
+if (!empty($categoria)) {
+    $sql .= " AND categoria = :categoria";
+    $params[':categoria'] = strtoupper($categoria);
+}
+
+$sql .= " ORDER BY data_hora DESC LIMIT 200";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
+
+$logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ==========================
+// BADGES
+// ==========================
+function badgeTipo($tipo)
+{
+    return match($tipo) {
+        'INFO' => 'info',
+        'WARNING' => 'warning',
+        'ERROR' => 'error',
+        'CRITICAL' => 'critical',
+        default => 'info'
     };
 }
 ?>
@@ -62,91 +84,183 @@ function badgeClass($nivel) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Logs - Cruz Azul</title>
-<link rel="stylesheet" href="../assets/css/logs.css?v=20260423a">
+<title>Monitoramento de Logs</title>
+
+<link rel="stylesheet" href="../assets/css/logs.css?v=2">
 </head>
 
 <body>
 
 <header class="topbar">
+
     <div>
-        <h1>Cruz Azul Admin</h1>
-        <p>Painel de monitoramento e auditoria</p>
+        <h1>Cruz Azul Security Center</h1>
+        <p>Monitoramento e auditoria do sistema</p>
     </div>
+
     <nav>
         <a href="./dashboard.php">Dashboard</a>
         <a href="./ongs.php">ONGs</a>
         <a class="active" href="./logs.php">Logs</a>
-        <a href="./usuarios.php">Usuarios</a>
-        <a href="./configuracoes.php">Configuracoes</a>
+        <a href="./usuarios.php">Usuários</a>
+        <a href="./configuracoes.php">Configurações</a>
         <a href="./logs.php?logout=true">Sair</a>
     </nav>
+
 </header>
 
 <main class="container">
 
-<section class="page-header">
-    <h2>Logs de seguranca</h2>
-    <p>Visualize eventos recentes da plataforma e filtre por usuario, acao ou nivel de criticidade.</p>
+<section class="hero">
+
+    <div class="hero-card">
+        <span>Total de Logs</span>
+        <strong><?= count($logs) ?></strong>
+    </div>
+
+    <div class="hero-card">
+        <span>Eventos críticos</span>
+        <strong>
+            <?= count(array_filter($logs, fn($l) => $l['tipo'] === 'CRITICAL')) ?>
+        </strong>
+    </div>
+
+    <div class="hero-card">
+        <span>Eventos de segurança</span>
+        <strong>
+            <?= count(array_filter($logs, fn($l) => $l['categoria'] === 'SEGURANCA')) ?>
+        </strong>
+    </div>
+
 </section>
 
-<!-- FILTROS -->
+<section class="filters-box">
+
 <form method="GET" class="filters">
-    <input type="text" name="busca" placeholder="Buscar..." value="<?= htmlspecialchars($busca) ?>">
-    <select name="nivel">
+
+    <input
+        type="text"
+        name="busca"
+        placeholder="Buscar ação, descrição ou tabela..."
+        value="<?= htmlspecialchars($busca) ?>"
+    >
+
+    <select name="tipo">
         <option value="">Todos os níveis</option>
-        <option value="info" <?= $nivel === 'info' ? 'selected' : '' ?>>Info</option>
-        <option value="alerta" <?= $nivel === 'alerta' ? 'selected' : '' ?>>Alerta</option>
-        <option value="critico" <?= $nivel === 'critico' ? 'selected' : '' ?>>Critico</option>
+        <option value="INFO">INFO</option>
+        <option value="WARNING">WARNING</option>
+        <option value="ERROR">ERROR</option>
+        <option value="CRITICAL">CRITICAL</option>
     </select>
-    <div class="filter-actions">
-        <button type="submit">Filtrar</button>
-        <a href="./logs.php" class="btn-clear">Limpar</a>
-    </div>
+
+    <select name="categoria">
+        <option value="">Todas categorias</option>
+        <option value="DOACAO">DOAÇÃO</option>
+        <option value="ESTOQUE">ESTOQUE</option>
+        <option value="DISTRIBUICAO">DISTRIBUIÇÃO</option>
+        <option value="SEGURANCA">SEGURANÇA</option>
+        <option value="LOGIN">LOGIN</option>
+    </select>
+
+    <button type="submit">
+        Filtrar
+    </button>
+
 </form>
 
-<!-- TABELA -->
-<section class="table-box">
-    <div class="table-header">
-        <strong>Eventos encontrados</strong>
-        <span><?= count($logs_filtrados) ?> registro(s)</span>
-    </div>
-    <div class="table-wrapper">
-    <table>
-        <thead>
-            <tr>
-                <th>Data</th>
-                <th>Usuário</th>
-                <th>Ação</th>
-                <th>Nível</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if(empty($logs_filtrados)): ?>
-                <tr><td colspan="4" class="empty">Nenhum log encontrado</td></tr>
-            <?php endif; ?>
-            <?php foreach($logs_filtrados as $log): ?>
-                <tr>
-                    <td><?= htmlspecialchars($log['data']) ?></td>
-                    <td><?= htmlspecialchars($log['usuario']) ?></td>
-                    <td><?= htmlspecialchars($log['acao']) ?></td>
-                    <td>
-                        <span class="badge <?= badgeClass($log['nivel']) ?>">
-                            <?= strtoupper($log['nivel']) ?>
-                        </span>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-    </div>
 </section>
-</main>
 
-<footer>
-<p>© 2026 Cruz Azul</p>
-</footer>
-<script src="../assets/js/logs.js"></script>
+<section class="logs-table-box">
+
+<div class="table-header">
+    <h2>Eventos registrados</h2>
+</div>
+
+<div class="table-wrapper">
+
+<table>
+
+<thead>
+
+<tr>
+    <th>ID</th>
+    <th>Data</th>
+    <th>Nível</th>
+    <th>Categoria</th>
+    <th>Ação</th>
+    <th>Descrição</th>
+    <th>Tabela</th>
+    <th>Referência</th>
+    <th>IP</th>
+</tr>
+
+</thead>
+
+<tbody>
+
+<?php if(empty($logs)): ?>
+
+<tr>
+<td colspan="9" class="empty">
+Nenhum log encontrado.
+</td>
+</tr>
+
+<?php endif; ?>
+
+<?php foreach($logs as $log): ?>
+
+<tr>
+
+<td>#<?= $log['id_log'] ?></td>
+
+<td>
+<?= date('d/m/Y H:i:s', strtotime($log['data_hora'])) ?>
+</td>
+
+<td>
+<span class="badge <?= badgeTipo($log['tipo']) ?>">
+<?= $log['tipo'] ?>
+</span>
+</td>
+
+<td>
+<?= htmlspecialchars($log['categoria']) ?>
+</td>
+
+<td class="bold">
+<?= htmlspecialchars($log['acao']) ?>
+</td>
+
+<td>
+<?= htmlspecialchars($log['descricao']) ?>
+</td>
+
+<td>
+<?= htmlspecialchars($log['tabela_afetada']) ?>
+</td>
+
+<td>
+<?= $log['id_referencia'] ?>
+</td>
+
+<td>
+<?= $log['ip_origem'] ?? 'N/A' ?>
+</td>
+
+</tr>
+
+<?php endforeach; ?>
+
+</tbody>
+
+</table>
+
+</div>
+
+</section>
+
+</main>
 
 </body>
 </html>
