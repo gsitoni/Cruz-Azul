@@ -140,31 +140,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  
     if ($tipo === 'doador') {
  
-        // --- Telefone ---
+        // --- Telefone (opcional — só valida se preenchido) ---
         $telefone_digits = preg_replace('/\D/', '', $novo_telefone);
-        if ($telefone_digits === '') {
-            $erros[] = "O telefone não pode estar vazio.";
-        } elseif (!preg_match('/^\d{10,11}$/', $telefone_digits)) {
-            $erros[] = "Telefone inválido. Use DDD + número (10 ou 11 dígitos).";
+        if ($telefone_digits !== '') {
+            if (!preg_match('/^\d{10,11}$/', $telefone_digits)) {
+                $erros[] = "Telefone inválido. Use DDD + número (10 ou 11 dígitos).";
+            } else {
+                $novo_telefone = $telefone_digits;
+            }
         } else {
-            $novo_telefone = $telefone_digits;
+            $novo_telefone = null; // salva NULL no banco
         }
  
-        // --- CPF (mesma lógica do cadastro.php) ---
-        if ($novo_cpf === '') {
-            $erros[] = "O CPF não pode estar vazio.";
-        } elseif (!validarCPF($novo_cpf)) {
-            $erros[] = "O CPF informado não é válido.";
-        } else {
-            // Verifica CPF duplicado em outro doador
-            $stmtCpf = $pdo->prepare(
-                "SELECT d.id_doador FROM doador d
-                  WHERE d.cpf = ? AND d.id_usuario <> ? LIMIT 1"
-            );
-            $stmtCpf->execute([$novo_cpf, $id_usuario]);
-            if ($stmtCpf->fetch()) {
-                $erros[] = "Este CPF já está cadastrado em outra conta.";
+        // --- CPF (opcional — só valida se preenchido) ---
+        if ($novo_cpf !== '') {
+            if (!validarCPF($novo_cpf)) {
+                $erros[] = "O CPF informado não é válido.";
+            } else {
+                // Verifica CPF duplicado em outro doador
+                $stmtCpf = $pdo->prepare(
+                    "SELECT d.id_doador FROM doador d
+                      WHERE d.cpf = ? AND d.id_usuario <> ? LIMIT 1"
+                );
+                $stmtCpf->execute([$novo_cpf, $id_usuario]);
+                if ($stmtCpf->fetch()) {
+                    $erros[] = "Este CPF já está cadastrado em outra conta.";
+                }
             }
+        } else {
+            $novo_cpf = null; // salva NULL no banco
         }
  
         // --- Data de nascimento (mesma lógica do cadastro.php) ---
@@ -305,7 +309,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  
         <!-- CPF -->
         <div class="campo">
-            <label for="cpf">CPF <span class="campo-hint-label">(apenas números)</span></label>
+            <label for="cpf">CPF <span class="campo-hint-label">(opcional — apenas números)</span></label>
             <div class="campo-com-acao">
                 <input type="text" id="cpf" name="cpf" maxlength="14"
                        value="<?= e($perfil['cpf'] ?? '') ?>"
@@ -318,14 +322,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  
         <!-- Telefone -->
         <div class="campo">
-            <label for="telefone">Telefone / WhatsApp</label>
+            <label for="telefone">Telefone / WhatsApp <span class="campo-hint-label">(opcional)</span></label>
             <div class="campo-com-acao">
                 <input type="tel" id="telefone" name="telefone" maxlength="20"
                        value="<?= e($perfil['telefone'] ?? '') ?>">
                 <button type="button" class="btn-apagar-campo"
                         data-campo="telefone" data-label="telefone" title="Apagar telefone">🗑</button>
             </div>
-            <p class="hint">Somente números com DDD (ex.: 11987654321).</p>
+            <p class="hint">Somente números com DDD (ex.: 11987654321). Deixe vazio para remover.</p>
         </div>
  
         <!-- Data de nascimento -->
@@ -541,4 +545,3 @@ function confirmarExclusaoParcial() {
 </script>
 </body>
 </html>
- 

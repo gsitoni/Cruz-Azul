@@ -72,7 +72,8 @@ function e(string $v): string {
 }
  
 // Formata CPF: 000.000.000-00
-function formatarCPF(string $cpf): string {
+function formatarCPF(?string $cpf): string {
+    if ($cpf === null || $cpf === '') return '—';
     $cpf = preg_replace('/[^0-9]/', '', $cpf);
     if (strlen($cpf) === 11) {
         return substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
@@ -81,7 +82,8 @@ function formatarCPF(string $cpf): string {
 }
  
 // Formata telefone: (00) 00000-0000
-function formatarTelefone(string $tel): string {
+function formatarTelefone(?string $tel): string {
+    if ($tel === null || $tel === '') return '—';
     $tel = preg_replace('/[^0-9]/', '', $tel);
     if (strlen($tel) === 11) {
         return '(' . substr($tel, 0, 2) . ') ' . substr($tel, 2, 5) . '-' . substr($tel, 7);
@@ -92,12 +94,14 @@ function formatarTelefone(string $tel): string {
 }
  
 // Formata data: YYYY-MM-DD → DD/MM/YYYY e calcula idade
-function formatarData(string $data): string {
+function formatarData(?string $data): string {
+    if ($data === null || $data === '') return '—';
     $dt = DateTime::createFromFormat('Y-m-d', $data);
     return $dt ? $dt->format('d/m/Y') : e($data);
 }
  
-function calcularIdade(string $data): int {
+function calcularIdade(?string $data): int {
+    if ($data === null || $data === '') return 0;
     $dt = DateTime::createFromFormat('Y-m-d', $data);
     return $dt ? (int)(new DateTime())->diff($dt)->y : 0;
 }
@@ -245,4 +249,3 @@ if (isset($_GET['status']) && $_GET['status'] === 'atualizado') {
 </div>
 </body>
 </html>
- 
