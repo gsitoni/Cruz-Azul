@@ -121,3 +121,4 @@ if (!empty($_SESSION['usuario']['id_usuario'])) {
 } else {
     echo json_encode(['ok' => false, 'msg' => 'Não autorizado.']);
 }
+ 
