@@ -13,8 +13,7 @@ if (isset($_GET['logout'])) {
 // ==========================
 // CONEXÃO BANCO
 // ==========================
-require __DIR__ . '/../../api/database.php';
-/** @var PDO $pdo */
+require '../../api/database.php';
 
 // ==========================
 // AÇÕES POST

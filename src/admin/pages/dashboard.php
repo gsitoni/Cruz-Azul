@@ -8,7 +8,6 @@ if (isset($_GET['logout'])) {
 }
 
 require __DIR__ . '/../../api/database.php';
-/** @var PDO $pdo */
 
 try {
     $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM ong WHERE status_elegibilidade = 'pendente'");

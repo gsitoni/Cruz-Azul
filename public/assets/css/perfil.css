@@ -1,0 +1,436 @@
+/* =============================================================
+   perfil.css  –  public/assets/css/perfil.css
+   Usado por: perfil.php | editar_perfil.php | editar_perfil_ong.php
+   ============================================================= */
+ 
+ 
+/* ─────────────────────────────────────────────────────────────
+   BASE
+───────────────────────────────────────────────────────────── */
+ 
+body {
+    font-family: sans-serif;
+    background: #f4f6f9;
+}
+ 
+ 
+/* ─────────────────────────────────────────────────────────────
+   CONTAINER
+   .perfil-container--visualizar  → perfil.php        (620px)
+   .perfil-container--editar      → editar_perfil.php (560px)
+   .perfil-container--ong         → editar_perfil_ong (800px)
+───────────────────────────────────────────────────────────── */
+ 
+.perfil-container {
+    margin: 50px auto;
+    padding: 32px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .07);
+}
+ 
+.perfil-container--visualizar { max-width: 620px; }
+ 
+.perfil-container--editar {
+    max-width: 560px;
+    padding: 28px;
+}
+ 
+.perfil-container--ong {
+    max-width: 800px;
+    margin-top: 28px;
+    padding: 28px 22px;
+    border-color: #dfe3ea;
+    border-radius: 12px;
+}
+ 
+.perfil-container h1 {
+    margin-top: 0;
+    margin-bottom: 24px;
+    color: #1a3a5c;
+    font-size: 1.5rem;
+}
+ 
+.perfil-container--ong h1 {
+    font-size: 1.75rem;
+    color: #111;
+}
+ 
+ 
+/* ─────────────────────────────────────────────────────────────
+   ALERTAS
+───────────────────────────────────────────────────────────── */
+ 
+.alerta-ok {
+    background: #d4edda;
+    color: #155724;
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    border: 1px solid #c3e6cb;
+}
+ 
+.alerta-erro {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    border: 1px solid #f5c6cb;
+    font-size: .9rem;
+}
+ 
+.alerta-erro ul {
+    margin: 6px 0 0 18px;
+    padding: 0;
+}
+ 
+ 
+/* ─────────────────────────────────────────────────────────────
+   SEÇÕES (perfil.php)
+───────────────────────────────────────────────────────────── */
+ 
+.secao-titulo {
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #007bff;
+    margin: 24px 0 12px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #e9f0fb;
+}
+ 
+ 
+/* ─────────────────────────────────────────────────────────────
+   GRID E GRUPOS DE CAMPOS
+───────────────────────────────────────────────────────────── */
+ 
+.campos-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 24px;
+}
+ 
+/* Visualização (perfil.php) */
+.campo-grupo        { margin-bottom: 16px; }
+.campo-grupo.full   { grid-column: 1 / -1; }
+ 
+.campo-label {
+    display: block;
+    font-size: .78rem;
+    font-weight: 700;
+    color: #6c757d;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+ 
+.campo-valor            { font-size: 1rem; color: #212529; }
+.campo-valor small      { color: #888; }
+.campo-valor.tipo-conta { text-transform: capitalize; }
+ 
+/* Formulários (editar_perfil / editar_perfil_ong) */
+.campo { margin-bottom: 18px; }
+.perfil-container--ong .campo { margin-bottom: 15px; }
+ 
+ 
+/* ─────────────────────────────────────────────────────────────
+   CAMPO COM BOTÃO DE APAGAR (linha input + 🗑)
+───────────────────────────────────────────────────────────── */
+ 
+.campo-com-acao {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+ 
+/* O input ocupa todo o espaço restante */
+.campo-com-acao input,
+.campo-com-acao textarea {
+    flex: 1;
+    min-width: 0; /* evita overflow em grids */
+}
+ 
+/* Variante para textarea: alinha o botão ao topo */
+.campo-com-acao--textarea {
+    align-items: flex-start;
+}
+ 
+.btn-apagar-campo--textarea {
+    margin-top: 4px;
+}
+ 
+/* Botão 🗑 */
+.btn-apagar-campo {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #dc3545;
+    transition: background .15s, border-color .15s;
+    line-height: 1;
+}
+ 
+.btn-apagar-campo:hover:not(:disabled) {
+    background: #fff5f5;
+    border-color: #dc3545;
+}
+ 
+.btn-apagar-campo:disabled {
+    cursor: default;
+    opacity: .6;
+}
+ 
+/* Estado de confirmação (✓) */
+.btn-apagar-campo--ok {
+    background: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+ 
+/* Input que teve o dado apagado */
+.campo-apagado {
+    background: #f8f9fa;
+    color: #adb5bd;
+    font-style: italic;
+}
+ 
+/* Input somente leitura (CPF, data nascimento) */
+.input-readonly {
+    background: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+ 
+/* Input com erro de validação inline */
+.campo-invalido {
+    border-color: #dc3545 !important;
+    outline-color: #dc3545 !important;
+    background: #fff8f8;
+}
+ 
+/* Rótulo secundário ao lado do label */
+.campo-hint-label {
+    font-weight: normal;
+    font-size: .82rem;
+    color: #888;
+}
+ 
+ 
+/* ─────────────────────────────────────────────────────────────
+   LABELS E INPUTS
+───────────────────────────────────────────────────────────── */
+ 
+label {
+    display: block;
+    font-weight: bold;
+    color: #444;
+    margin-bottom: 4px;
+    font-size: .95rem;
+}
+ 
+.perfil-container--ong label {
+    font-size: .875rem;
+    margin-bottom: 6px;
+}
+ 
+input[type="email"],
+input[type="text"],
+input[type="password"],
+input[type="tel"],
+input[type="date"],
+textarea {
+    width: 100%;
+    padding: 9px 11px;
+    box-sizing: border-box;
+    border: 1px solid #bbb;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-family: inherit;
+}
+ 
+.perfil-container--ong input[type="email"],
+.perfil-container--ong input[type="text"],
+.perfil-container--ong textarea {
+    padding: 9px 10px;
+    border-color: #cfd6df;
+    border-radius: 7px;
+    font-size: .9rem;
+}
+ 
+input:focus,
+textarea:focus {
+    outline: 2px solid #007bff;
+    border-color: #007bff;
+}
+ 
+.perfil-container--ong input:focus,
+.perfil-container--ong textarea:focus {
+    outline-color: #0d6efd;
+    border-color: #0d6efd;
+}
+ 
+textarea {
+    min-height: 88px;
+    resize: vertical;
+}
+ 
+.hint {
+    font-size: .85rem;
+    color: #666;
+    margin-top: 3px;
+}
+ 
+.aviso-campo {
+    color: #856404;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+ 
+.separador {
+    border: none;
+    border-top: 1px solid #e0e0e0;
+    margin: 24px 0;
+}
+ 
+ 
+/* ─────────────────────────────────────────────────────────────
+   BADGES DE STATUS (perfil.php)
+───────────────────────────────────────────────────────────── */
+ 
+.badge-status {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: .8rem;
+    font-weight: 600;
+}
+ 
+.badge-ativo    { background: #d4edda; color: #155724; }
+.badge-pendente { background: #fff3cd; color: #856404; }
+.badge-inativo  { background: #f8d7da; color: #721c24; }
+ 
+ 
+/* ─────────────────────────────────────────────────────────────
+   BOTÕES PRINCIPAIS
+───────────────────────────────────────────────────────────── */
+ 
+.acoes {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+}
+ 
+.perfil-container--visualizar .acoes { margin-top: 30px; }
+ 
+.btn-primary {
+    background: #007bff;
+    color: #fff;
+    padding: 10px 22px;
+    border: none;
+    border-radius: 6px;
+    display: inline-block;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: .95rem;
+    cursor: pointer;
+}
+ 
+.btn-primary:hover { background: #0056b3; }
+ 
+.btn-secondary {
+    color: #6c757d;
+    padding: 10px 14px;
+    display: inline-block;
+    text-decoration: none;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: .95rem;
+}
+ 
+.btn-secondary:hover { background: #f8f9fa; }
+ 
+.perfil-container--ong .btn-secondary {
+    border: none;
+    color: #777;
+    font-size: .9rem;
+    text-decoration: underline;
+    padding: 0;
+}
+ 
+.perfil-container--ong .btn-secondary:hover {
+    background: transparent;
+    color: #444;
+}
+ 
+.btn-danger {
+    background: #dc3545;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-top: 4px;
+}
+ 
+.btn-danger:hover { background: #c82333; }
+ 
+ 
+/* ─────────────────────────────────────────────────────────────
+   ZONA DE PERIGO
+───────────────────────────────────────────────────────────── */
+ 
+.zona-perigo {
+    margin-top: 40px;
+    padding: 18px;
+    border: 1px solid #f5c6cb;
+    border-radius: 8px;
+    background: #fff5f5;
+}
+ 
+.zona-perigo h3 {
+    color: #dc3545;
+    margin: 0 0 10px;
+    font-size: 1rem;
+}
+ 
+.zona-perigo p {
+    color: #555;
+    font-size: .875rem;
+    margin: 0 0 8px;
+    line-height: 1.5;
+}
+ 
+ 
+/* ─────────────────────────────────────────────────────────────
+   RESPONSIVO
+───────────────────────────────────────────────────────────── */
+ 
+@media (max-width: 600px) {
+    .campos-grid {
+        grid-template-columns: 1fr;
+    }
+ 
+    .perfil-container,
+    .perfil-container--visualizar,
+    .perfil-container--editar,
+    .perfil-container--ong {
+        margin: 16px;
+        padding: 20px 16px;
+    }
+}
+ 

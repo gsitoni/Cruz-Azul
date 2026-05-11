@@ -1,6 +1,5 @@
 <?php
-require __DIR__ . '/../../api/database.php';
-/** @var PDO $pdo */
+include('../../api/database.php');
 session_start();
 
 

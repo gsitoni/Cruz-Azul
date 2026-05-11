@@ -1,7 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . '/database.php';
-/** @var PDO $pdo */
+include_once 'database.php';
 
 header('Content-Type: application/json');
 
@@ -13,7 +12,7 @@ if (!isset($_SESSION['usuario_id']) || $_SESSION['nivel'] !== 'admin') {
 
 try {
     $query = "SELECT id, nome, email, status FROM usuarios_adm"; 
-    $stmt = $pdo->prepare($query);
+    $stmt = $conn->prepare($query);
     $stmt->execute();
     
     $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
