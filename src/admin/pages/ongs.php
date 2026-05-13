@@ -5,7 +5,7 @@ require __DIR__ . '/auth.php';
 // LOGOUT
 // ==========================
 if (isset($_GET['logout'])) {
-    session_destroy();
+    destruirSessao();
     header("Location: ../index.php");
     exit();
 }
@@ -15,6 +15,7 @@ if (isset($_GET['logout'])) {
 // ==========================
 require __DIR__ . '/../../api/database.php';
 /** @var PDO $pdo */
+require_once __DIR__ . '/../../api/logs_sistema.php';
 
 // ==========================
 // AÇÕES POST
@@ -25,16 +26,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     $acao = $_POST['acao'] ?? '';
-    $id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
+    $id = (int) filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
     
     try {
         if ($acao === 'aprovar' && $id) {
             $stmt = $pdo->prepare("UPDATE ong SET status_elegibilidade = 'ativo' WHERE id_ong = ?");
             $stmt->execute([$id]);
+            registrarLogSistema($pdo, 'INFO', 'ONG', 'ONG aprovada', 'ONG aprovada pelo painel administrativo.', 'ong', $id);
             $_SESSION['msg'] = 'ONG aprovada com sucesso.';
         } elseif ($acao === 'rejeitar' && $id) {
             $stmt = $pdo->prepare("UPDATE ong SET status_elegibilidade = 'rejeitado' WHERE id_ong = ?");
             $stmt->execute([$id]);
+            registrarLogSistema($pdo, 'WARNING', 'ONG', 'ONG rejeitada', 'ONG rejeitada pelo painel administrativo.', 'ong', $id);
             $_SESSION['msg'] = 'ONG rejeitada com sucesso.';
         } else {
             $_SESSION['msg'] = 'Ação inválida ou ONG não encontrada.';

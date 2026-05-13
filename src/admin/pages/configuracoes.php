@@ -1,48 +1,37 @@
 <?php
 require __DIR__ . '/auth.php';
+require_once __DIR__ . '/admin_config.php';
 
-// ==========================
-// LOGOUT
-// ==========================
 if (isset($_GET['logout'])) {
-    session_destroy();
+    destruirSessao();
     header("Location: ../index.php");
     exit();
 }
 
-// ==========================
-// CONFIGURAÇÕES (simuladas)
-// ==========================
-$config = [
-    'nome_sistema' => 'Cruz Azul',
-    'email_admin' => 'admin@cruzazul.com',
-    'email_noreply' => 'noreply@cruzazul.com',
-    'tentativas_login' => 5,
-    'timeout_sessao' => 3600,
-    'notificacoes_email' => true,
-    'autenticacao_2fa' => true,
-];
-
-// ==========================
-// SALVAR CONFIGURAÇÕES
-// ==========================
+$config = adminConfigCarregar();
 $msg = '';
 $erro = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        $erro = 'CSRF token inválido';
+        $erro = 'CSRF token invalido';
     } else {
-        // Simular salvamento
-        $config['nome_sistema'] = filter_input(INPUT_POST, 'nome_sistema', FILTER_SANITIZE_STRING) ?: $config['nome_sistema'];
-        $config['email_admin'] = filter_input(INPUT_POST, 'email_admin', FILTER_SANITIZE_EMAIL) ?: $config['email_admin'];
-        $config['email_noreply'] = filter_input(INPUT_POST, 'email_noreply', FILTER_SANITIZE_EMAIL) ?: $config['email_noreply'];
-        $config['tentativas_login'] = filter_input(INPUT_POST, 'tentativas_login', FILTER_SANITIZE_NUMBER_INT) ?: $config['tentativas_login'];
-        $config['timeout_sessao'] = filter_input(INPUT_POST, 'timeout_sessao', FILTER_SANITIZE_NUMBER_INT) ?: $config['timeout_sessao'];
-        $config['notificacoes_email'] = isset($_POST['notificacoes_email']);
-        $config['autenticacao_2fa'] = isset($_POST['autenticacao_2fa']);
-        
-        $msg = 'Configurações salvas com sucesso!';
+        $novaConfig = [
+            'nome_sistema' => $_POST['nome_sistema'] ?? $config['nome_sistema'],
+            'email_admin' => $_POST['email_admin'] ?? $config['email_admin'],
+            'email_noreply' => $_POST['email_noreply'] ?? $config['email_noreply'],
+            'tentativas_login' => $_POST['tentativas_login'] ?? $config['tentativas_login'],
+            'timeout_sessao' => $_POST['timeout_sessao'] ?? $config['timeout_sessao'],
+            'notificacoes_email' => isset($_POST['notificacoes_email']),
+            'autenticacao_2fa' => isset($_POST['autenticacao_2fa']),
+        ];
+
+        if (adminConfigSalvar($novaConfig)) {
+            $config = adminConfigCarregar();
+            $msg = 'Configuracoes salvas com sucesso!';
+        } else {
+            $erro = 'Nao foi possivel salvar as configuracoes.';
+        }
     }
 }
 ?>
@@ -52,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Configurações - Cruz Azul</title>
+<title>Configuracoes - Cruz Azul</title>
 <link rel="stylesheet" href="../assets/css/configuracoes.css?v=20260423a">
 </head>
 
@@ -60,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <header class="topbar">
     <div>
-        <h1>Cruz Azul Admin</h1>
+        <h1><?= htmlspecialchars($config['nome_sistema']) ?> Admin</h1>
         <p>Parametros de seguranca e operacao</p>
     </div>
     <nav>
@@ -81,13 +70,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <?php if($msg): ?>
 <div class="alert alert-success">
-    ✓ <?= htmlspecialchars($msg) ?>
+    <?= htmlspecialchars($msg) ?>
 </div>
 <?php endif; ?>
 
 <?php if($erro): ?>
 <div class="alert alert-error">
-    ✗ <?= htmlspecialchars($erro) ?>
+    <?= htmlspecialchars($erro) ?>
 </div>
 <?php endif; ?>
 
@@ -99,47 +88,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="form-group">
             <label for="nome_sistema">Nome do Sistema:</label>
-            <input type="text" id="nome_sistema" name="nome_sistema" 
+            <input type="text" id="nome_sistema" name="nome_sistema"
                    value="<?= htmlspecialchars($config['nome_sistema']) ?>" required>
         </div>
 
         <div class="form-group">
             <label for="email_admin">Email do Administrador:</label>
-            <input type="email" id="email_admin" name="email_admin" 
+            <input type="email" id="email_admin" name="email_admin"
                    value="<?= htmlspecialchars($config['email_admin']) ?>" required>
         </div>
 
         <div class="form-group">
             <label for="email_noreply">Email No-Reply:</label>
-            <input type="email" id="email_noreply" name="email_noreply" 
+            <input type="email" id="email_noreply" name="email_noreply"
                    value="<?= htmlspecialchars($config['email_noreply']) ?>" required>
         </div>
 
         <div class="form-group">
-            <label for="tentativas_login">Tentativas de Login Máximas:</label>
-            <input type="number" id="tentativas_login" name="tentativas_login" 
-                   value="<?= htmlspecialchars($config['tentativas_login']) ?>" min="1" max="10" required>
+            <label for="tentativas_login">Tentativas de Login Maximas:</label>
+            <input type="number" id="tentativas_login" name="tentativas_login"
+                   value="<?= htmlspecialchars((string) $config['tentativas_login']) ?>" min="1" max="10" required>
         </div>
 
         <div class="form-group">
-            <label for="timeout_sessao">Timeout da Sessão (segundos):</label>
-            <input type="number" id="timeout_sessao" name="timeout_sessao" 
-                   value="<?= htmlspecialchars($config['timeout_sessao']) ?>" min="300" max="86400" required>
+            <label for="timeout_sessao">Timeout da Sessao (segundos):</label>
+            <input type="number" id="timeout_sessao" name="timeout_sessao"
+                   value="<?= htmlspecialchars((string) $config['timeout_sessao']) ?>" min="300" max="86400" required>
         </div>
 
         <div class="form-group">
             <label>
-                <input type="checkbox" name="notificacoes_email" 
-                       <?= $config['notificacoes_email'] ? 'checked' : '' ?>> 
-                Habilitar notificações por email
+                <input type="checkbox" name="notificacoes_email"
+                       <?= $config['notificacoes_email'] ? 'checked' : '' ?>>
+                Habilitar notificacoes por email
             </label>
         </div>
 
         <div class="form-group">
             <label>
-                <input type="checkbox" name="autenticacao_2fa" 
-                       <?= $config['autenticacao_2fa'] ? 'checked' : '' ?>> 
-                Exigir autenticação 2FA para admins
+                <input type="checkbox" name="autenticacao_2fa"
+                       <?= $config['autenticacao_2fa'] ? 'checked' : '' ?>>
+                Exigir autenticacao 2FA para admins
             </label>
         </div>
 
@@ -153,6 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p><strong>Versao PHP:</strong> <?= htmlspecialchars(phpversion()) ?></p>
         <p><strong>2FA de administradores:</strong> <?= $config['autenticacao_2fa'] ? 'Ativado' : 'Desativado' ?></p>
         <p><strong>Notificacoes por email:</strong> <?= $config['notificacoes_email'] ? 'Ativadas' : 'Desativadas' ?></p>
+        <p><strong>Tentativas de login:</strong> <?= (int) $config['tentativas_login'] ?></p>
         <p><strong>Timeout de sessao:</strong> <?= (int) $config['timeout_sessao'] ?> segundos</p>
     </div>
 </section>
@@ -160,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </main>
 
 <footer>
-<p>© 2026 Cruz Azul</p>
+<p>&copy; 2026 Cruz Azul</p>
 </footer>
 
 </body>
