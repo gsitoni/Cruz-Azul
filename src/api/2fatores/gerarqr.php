@@ -1,13 +1,22 @@
 <?php
 require __DIR__ . '/qrcode.php';
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 header('Expires: 0');
 
+$usuarioSessao = $_SESSION['usuario_temp'] ?? $_SESSION['usuario'] ?? [];
 $secret = strtoupper(trim((string) ($_GET['secret'] ?? ($_SESSION['2fa_secret_temp'] ?? ''))));
-$email = trim((string) ($_GET['email'] ?? ($_SESSION['usuario']['email'] ?? '')));
+$email = trim((string) ($_GET['email'] ?? ($usuarioSessao['email'] ?? '')));
 
 if ($secret === '' || !preg_match('/^[A-Z2-7]+$/', $secret)) {
     http_response_code(400);

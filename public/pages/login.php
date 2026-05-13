@@ -1,5 +1,13 @@
 <?php
 require '../../src/api/database.php';
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 
 header('X-Content-Type-Options: nosniff');
@@ -54,12 +62,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif (($usuario['status_cadastro'] ?? '') === 'bloqueado') {
                 $resposta = ['ok' => false, 'msg' => 'Sua conta esta bloqueada. Entre em contato com o suporte.'];
             } else {
-                $_SESSION['usuario'] = [
+                session_regenerate_id(true);
+
+                $_SESSION['usuario_temp'] = [
                     'id_usuario' => $usuario['id_usuario'],
                     'nome' => $usuario['nome'],
                     'email' => $usuario['email'],
                     'tipo' => $usuario['tipo'],
                 ];
+                unset($_SESSION['usuario']);
 
                 $_SESSION['2fa_ok'] = false;
                 $_SESSION['2fa_pendente'] = true;

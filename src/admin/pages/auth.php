@@ -1,5 +1,9 @@
 <?php
 
+require_once __DIR__ . '/admin_config.php';
+
+$adminConfig = adminConfigCarregar();
+
 // =====================================
 // CONFIG SESSÃO SEGURA
 // =====================================
@@ -8,7 +12,7 @@ session_set_cookie_params([
     'lifetime' => 0,
     'path' => '/',
     'domain' => '',
-    'secure' => true,
+    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
     'httponly' => true,
     'samesite' => 'Strict'
 ]);
@@ -63,9 +67,7 @@ function usuarioEhAdmin(): bool {
         return false;
     }
 
-    return (
-        ($_SESSION['usuario']['tipo'] ?? '') === 'admin'
-    );
+    return stripos((string) ($_SESSION['usuario']['tipo'] ?? ''), 'admin') !== false;
 }
 
 // =====================================
@@ -89,15 +91,14 @@ function destruirSessao(): void {
 
         $params = session_get_cookie_params();
 
-        setcookie(
-            session_name(),
-            '',
-            time() - 42000,
-            $params["path"],
-            $params["domain"],
-            $params["secure"],
-            $params["httponly"]
-        );
+        setcookie(session_name(), '', [
+            'expires' => time() - 42000,
+            'path' => $params['path'],
+            'domain' => $params['domain'],
+            'secure' => $params['secure'],
+            'httponly' => $params['httponly'],
+            'samesite' => $params['samesite'] ?? 'Strict',
+        ]);
     }
 
     session_destroy();
@@ -120,6 +121,20 @@ if (!usuarioLogado()) {
 // NÃO ADMIN
 // =====================================
 
+$timeoutSessao = (int) ($adminConfig['timeout_sessao'] ?? 3600);
+$ultimoAcesso = (int) ($_SESSION['admin_ultimo_acesso'] ?? time());
+
+if ((time() - $ultimoAcesso) > $timeoutSessao) {
+
+    destruirSessao();
+
+    header('Location: ' . urlLoginAdmin());
+
+    exit();
+}
+
+$_SESSION['admin_ultimo_acesso'] = time();
+
 if (!usuarioEhAdmin()) {
 
     destruirSessao();
@@ -133,7 +148,7 @@ if (!usuarioEhAdmin()) {
 // NÃO AUTENTICOU TELEGRAM
 // =====================================
 
-if (!adminAutenticadoTelegram()) {
+if (!empty($adminConfig['autenticacao_2fa']) && !adminAutenticadoTelegram()) {
 
     destruirSessao();
 

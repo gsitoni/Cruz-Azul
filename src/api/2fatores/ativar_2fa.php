@@ -3,19 +3,29 @@
 require __DIR__ . '/../database.php';
 require __DIR__ . '/2fa.php';
 
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 header('Expires: 0');
 
-if (empty($_SESSION['usuario']['id_usuario'])) {
+$usuarioSessao = $_SESSION['usuario_temp'] ?? $_SESSION['usuario'] ?? null;
+
+if (empty($usuarioSessao['id_usuario'])) {
     header('Location: ../../../public/pages/login.php');
     exit();
 }
 
-$idUsuario = (int) $_SESSION['usuario']['id_usuario'];
-$email = (string) ($_SESSION['usuario']['email'] ?? '');
+$idUsuario = (int) $usuarioSessao['id_usuario'];
+$email = (string) ($usuarioSessao['email'] ?? '');
 $erro = '';
 
 if (empty($_SESSION['2fa_secret_temp']) || !preg_match('/^[A-Z2-7]+$/', (string) $_SESSION['2fa_secret_temp'])) {
@@ -35,10 +45,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare('UPDATE usuario SET chave_2fa = ? WHERE id_usuario = ?');
         $stmt->execute([$secret, $idUsuario]);
 
+        session_regenerate_id(true);
+        $_SESSION['usuario'] = $usuarioSessao;
         $_SESSION['usuario']['chave_2fa'] = $secret;
         $_SESSION['2fa_ok'] = true;
         $_SESSION['2fa_pendente'] = false;
         unset($_SESSION['2fa_secret_temp']);
+        unset($_SESSION['usuario_temp']);
 
         $destino = (stripos((string) ($_SESSION['usuario']['tipo'] ?? ''), 'admin') !== false)
             ? '../../admin/pages/dashboard.php'

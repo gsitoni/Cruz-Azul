@@ -2,7 +2,7 @@
 require __DIR__ . '/auth.php';
 
 if (isset($_GET['logout'])) {
-    session_destroy();
+    destruirSessao();
     header("Location: ../index.php");
     exit();
 }
@@ -18,10 +18,52 @@ $tipo = $_GET['tipo'] ?? '';
 $categoria = $_GET['categoria'] ?? '';
 
 // ==========================
+// FILTROS SQL
+// ==========================
+$where = "WHERE 1=1";
+$params = [];
+
+if (!empty($busca)) {
+    $where .= " AND (
+        descricao LIKE :busca
+        OR acao LIKE :busca
+        OR tabela_afetada LIKE :busca
+    )";
+
+    $params[':busca'] = "%$busca%";
+}
+
+if (!empty($tipo)) {
+    $where .= " AND tipo = :tipo";
+    $params[':tipo'] = strtoupper($tipo);
+}
+
+if (!empty($categoria)) {
+    $where .= " AND categoria = :categoria";
+    $params[':categoria'] = strtoupper($categoria);
+}
+
+// ==========================
+// CONTADORES
+// ==========================
+$sqlTotais = "
+SELECT
+    COUNT(*) AS total,
+    SUM(CASE WHEN tipo = 'CRITICAL' THEN 1 ELSE 0 END) AS criticos,
+    SUM(CASE WHEN categoria = 'SEGURANCA' THEN 1 ELSE 0 END) AS seguranca
+FROM logs_sistema
+$where
+";
+
+$stmtTotais = $pdo->prepare($sqlTotais);
+$stmtTotais->execute($params);
+$totais = $stmtTotais->fetch(PDO::FETCH_ASSOC) ?: [];
+
+// ==========================
 // QUERY LOGS
 // ==========================
 $sql = "
-SELECT 
+SELECT
     id_log,
     tipo,
     categoria,
@@ -32,32 +74,10 @@ SELECT
     ip_origem,
     data_hora
 FROM logs_sistema
-WHERE 1=1
+$where
+ORDER BY data_hora DESC
+LIMIT 200
 ";
-
-$params = [];
-
-if (!empty($busca)) {
-    $sql .= " AND (
-        descricao LIKE :busca
-        OR acao LIKE :busca
-        OR tabela_afetada LIKE :busca
-    )";
-
-    $params[':busca'] = "%$busca%";
-}
-
-if (!empty($tipo)) {
-    $sql .= " AND tipo = :tipo";
-    $params[':tipo'] = strtoupper($tipo);
-}
-
-if (!empty($categoria)) {
-    $sql .= " AND categoria = :categoria";
-    $params[':categoria'] = strtoupper($categoria);
-}
-
-$sql .= " ORDER BY data_hora DESC LIMIT 200";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -115,21 +135,17 @@ function badgeTipo($tipo)
 
     <div class="hero-card">
         <span>Total de Logs</span>
-        <strong><?= count($logs) ?></strong>
+        <strong><?= (int) ($totais['total'] ?? 0) ?></strong>
     </div>
 
     <div class="hero-card">
         <span>Eventos críticos</span>
-        <strong>
-            <?= count(array_filter($logs, fn($l) => $l['tipo'] === 'CRITICAL')) ?>
-        </strong>
+        <strong><?= (int) ($totais['criticos'] ?? 0) ?></strong>
     </div>
 
     <div class="hero-card">
         <span>Eventos de segurança</span>
-        <strong>
-            <?= count(array_filter($logs, fn($l) => $l['categoria'] === 'SEGURANCA')) ?>
-        </strong>
+        <strong><?= (int) ($totais['seguranca'] ?? 0) ?></strong>
     </div>
 
 </section>

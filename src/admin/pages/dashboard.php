@@ -2,7 +2,7 @@
 require __DIR__ . '/auth.php';
 
 if (isset($_GET['logout'])) {
-    session_destroy();
+    destruirSessao();
     header("Location: ../index.php");
     exit();
 }
