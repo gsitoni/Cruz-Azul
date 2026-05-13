@@ -104,7 +104,6 @@ $ultimasDoacoes = $stmtDoacoes->fetchAll(PDO::FETCH_ASSOC);
             <p>Veja e exporte todos os seus dados (LGPD).</p>
         </a>
     </div>
-    
 
     <div class="titulo-secao">🏥 Serviços Úteis para a População</div>
     <div class="grid-acoes">

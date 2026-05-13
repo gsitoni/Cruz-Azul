@@ -12,6 +12,7 @@ require '../../vendor/autoload.php';
 require '../../src/api/database.php';
 require '../../src/api/mailer.php';
 require '../../src/api/valida_senha.php';
+require_once '../../config/recaptcha.php';
 
 // Responde requisições AJAX em JSON
 $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
@@ -130,6 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro de Usuário</title>
     <link rel="stylesheet" href="../assets/css/cadastro.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 
 <body>
@@ -162,6 +164,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="lgpd-box">
                 <input type="checkbox" id="lgpd" required>
                 <label for="lgpd">Aceito os <a href="privacidade.php" target="_blank">Termos de Privacidade</a>.</label>
+            </div>
+
+            <div class="g-recaptcha"
+                data-sitekey="<?php echo $RECAPTCHA_SITE_KEY; ?>">
             </div>
 
             <div class="msg" id="mensagem"></div>

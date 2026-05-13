@@ -8,6 +8,8 @@ header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 
 require __DIR__ . '/../../../vendor/autoload.php';
 require __DIR__ . '/../../api/database.php';
+require_once '../../../config/recaptcha.php';
+
 /** @var PDO $pdo */
 require __DIR__ . '/../../api/mailer.php';
 require __DIR__ . '/../../api/valida_senha.php';
@@ -110,6 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro de Administrador</title>
     <link rel="stylesheet" href="../assets/css/cadastro_admin.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
     <div class="container">
@@ -137,6 +140,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span style="font-size: 0.9rem;">Aceito os termos da LGPD e confirmo que sou administrador autorizado.</span>
                 </label>
                 <div class="erro-campo" id="erroLgpd">Você precisa aceitar os termos da LGPD.</div>
+            </div>
+
+            <!-- CAPTCHA -->
+            <div class="g-recaptcha"
+                data-sitekey="<?php echo $RECAPTCHA_SITE_KEY; ?>">
             </div>
 
             <div class="msg" id="mensagem"></div>

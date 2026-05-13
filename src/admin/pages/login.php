@@ -1,4 +1,6 @@
 <?php
+require __DIR__ . '/../../api/database.php';
+require_once '../../../config/recaptcha.php';
 
 session_set_cookie_params([
     'lifetime' => 0,
@@ -10,9 +12,6 @@ session_set_cookie_params([
 ]);
 
 session_start();
-
-require __DIR__ . '/../../api/database.php';
-require_once '../../../config/recaptcha.php';
 
 /** @var PDO $pdo */
 require_once __DIR__ . '/../../api/logs_sistema.php';

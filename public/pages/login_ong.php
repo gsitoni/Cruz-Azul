@@ -1,4 +1,7 @@
 <?php
+require '../../src/api/database.php';
+require_once '../../config/recaptcha.php';
+
 session_set_cookie_params([
     'lifetime' => 0,
     'path' => '/',
@@ -14,8 +17,6 @@ if (isset($_SESSION['ong'])) {
     exit;
 }
 
-require '../../src/api/database.php';
-
 // regex de validação //
 $REGEX_EMAIL = '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/';
 $REGEX_SENHA = '/^.{12,}$/';
@@ -26,6 +27,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $senha = $_POST['senha'] ?? '';
     $resposta = [];
+
+    $captcha = $_POST['g-recaptcha-response'] ?? '';
+
+    if (empty($captcha)) {
+
+        echo json_encode([
+            'ok' => false,
+            'msg' => 'Confirme o CAPTCHA.'
+        ]);
+
+        exit();
+    }
+
+    $verificacao = file_get_contents(
+        "https://www.google.com/recaptcha/api/siteverify?secret="
+        . $RECAPTCHA_SECRET_KEY
+        . "&response="
+        . $captcha
+    );
+
+    $respostaCaptcha = json_decode($verificacao);
+
+    if (
+        !$respostaCaptcha ||
+        !$respostaCaptcha->success
+    ) {
+
+        echo json_encode([
+            'ok' => false,
+            'msg' => 'CAPTCHA inválido.'
+        ]);
+
+        exit();
+    }
 
     // validação com regex
     if (empty($email)) {
@@ -91,6 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login ONG — Cruz Azul</title>
     <link rel="stylesheet" href="../assets/css/login_ong.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
 
