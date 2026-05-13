@@ -1,5 +1,7 @@
 <?php
 require '../../src/api/database.php';
+require_once '../../config/recaptcha.php';
+
 session_set_cookie_params([
     'lifetime' => 0,
     'path' => '/',
@@ -32,6 +34,40 @@ $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
     $senha = trim($_POST['senha'] ?? '');
+
+    $captcha = $_POST['g-recaptcha-response'] ?? '';
+
+    if (empty($captcha)) {
+
+        echo json_encode([
+            'ok' => false,
+            'msg' => 'Confirme o CAPTCHA.'
+        ]);
+
+        exit();
+    }
+
+    $verificacao = file_get_contents(
+        "https://www.google.com/recaptcha/api/siteverify?secret="
+        . $RECAPTCHA_SECRET_KEY
+        . "&response="
+        . $captcha
+    );
+
+    $respostaCaptcha = json_decode($verificacao);
+
+    if (
+        !$respostaCaptcha ||
+        !$respostaCaptcha->success
+    ) {
+
+        echo json_encode([
+            'ok' => false,
+            'msg' => 'CAPTCHA inválido.'
+        ]);
+
+        exit();
+    }
 
     if (empty($email) || empty($senha)) {
         $resposta = ['ok' => false, 'msg' => 'Preencha todos os campos.'];
@@ -106,6 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Cruz Azul</title>
     <link rel="stylesheet" href="../assets/css/login.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 
 <body>
@@ -125,8 +162,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="erro-campo" id="erroSenha">A senha deve ter pelo menos 12 caracteres.</div>
 
-            <div class="msg" id="mensagem"></div>
+                 <!-- CAPTCHA -->
+                <div class="g-recaptcha"
+                    data-sitekey="<?php echo $RECAPTCHA_SITE_KEY; ?>">
+                </div>
 
+             <div class="msg" id="mensagem"></div>
             <button type="submit" id="btnEntrar">Entrar</button>
         </form>
 
@@ -191,9 +232,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             btnEntrar.disabled = true;
             btnEntrar.textContent = 'Aguarde...';
 
+            if (grecaptcha.getResponse() === '') {
+                mostrarMsg('Confirme o CAPTCHA.', 'erro');
+                btnEntrar.disabled = false;
+                btnEntrar.textContent = 'Entrar';
+                return;
+            }
+
             const dados = new FormData();
             dados.append('email', campoEmail.value.trim());
             dados.append('senha', campoSenha.value);
+            dados.append('g-recaptcha-response', grecaptcha.getResponse());
 
             try {
                 const res = await fetch('login.php', {
@@ -209,10 +258,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     setTimeout(() => { window.location.href = json.redirect || 'index.php'; }, 1000);
                 } else {
                     mostrarMsg(json.msg, 'erro');
+                    grecaptcha.reset();
                 }
             } catch (err) {
                 console.error('Falha de rede/requisicao:', err);
                 mostrarMsg('Erro de conexao. Tente novamente.', 'erro');
+                grecaptcha.reset();
             } finally {
                 btnEntrar.disabled = false;
                 btnEntrar.textContent = 'Entrar';

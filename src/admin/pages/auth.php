@@ -41,7 +41,7 @@ header(
 
 function urlLoginAdmin(): string {
 
-    return '../index.php';
+    return './index.php';
 }
 
 // =====================================
