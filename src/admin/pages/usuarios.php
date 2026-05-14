@@ -5,7 +5,7 @@ require __DIR__ . '/auth.php';
 // LOGOUT
 // ==========================
 if (isset($_GET['logout'])) {
-    session_destroy();
+    destruirSessao();
     header("Location: ../index.php");
     exit();
 }
@@ -13,7 +13,9 @@ if (isset($_GET['logout'])) {
 // ==========================
 // CONEXÃO BANCO
 // ==========================
-require '../../api/database.php';
+require __DIR__ . '/../../api/database.php';
+/** @var PDO $pdo */
+require_once __DIR__ . '/../../api/logs_sistema.php';
 
 // ==========================
 // AÇÕES POST
@@ -24,25 +26,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     $acao = $_POST['acao'] ?? '';
-    $id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
+    $id = (int) filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
+    $idAdminAtual = (int) ($_SESSION['usuario']['id_usuario'] ?? 0);
     
     try {
-        if ($acao === 'bloquear' && $id) {
+        if ($id && $id === $idAdminAtual && in_array($acao, ['bloquear', 'excluir'], true)) {
+            $_SESSION['msg'] = 'Voce nao pode bloquear ou excluir a propria conta administrativa.';
+        } elseif ($acao === 'bloquear' && $id) {
             $stmt = $pdo->prepare("UPDATE usuario SET status_cadastro = 'bloqueado' WHERE id_usuario = ?");
             $stmt->execute([$id]);
+            registrarLogSistema($pdo, 'WARNING', 'USUARIO', 'Usuario bloqueado', 'Usuario bloqueado pelo painel administrativo.', 'usuario', $id);
             $_SESSION['msg'] = 'Usuário bloqueado com sucesso.';
         } elseif ($acao === 'desbloquear' && $id) {
             $stmt = $pdo->prepare("UPDATE usuario SET status_cadastro = 'confirmado' WHERE id_usuario = ?");
             $stmt->execute([$id]);
+            registrarLogSistema($pdo, 'INFO', 'USUARIO', 'Usuario desbloqueado', 'Usuario desbloqueado pelo painel administrativo.', 'usuario', $id);
             $_SESSION['msg'] = 'Usuário desbloqueado com sucesso.';
         } elseif ($acao === 'excluir' && $id) {
+            $pdo->beginTransaction();
+
+            $stmt = $pdo->prepare("UPDATE doador SET id_usuario = NULL WHERE id_usuario = ?");
+            $stmt->execute([$id]);
+
+            $stmt = $pdo->prepare("UPDATE ong SET id_usuario = NULL WHERE id_usuario = ?");
+            $stmt->execute([$id]);
+
             $stmt = $pdo->prepare("DELETE FROM usuario WHERE id_usuario = ?");
             $stmt->execute([$id]);
+            registrarLogSistema($pdo, 'CRITICAL', 'USUARIO', 'Usuario excluido', 'Usuario excluido pelo painel administrativo.', 'usuario', $id);
+            $pdo->commit();
             $_SESSION['msg'] = 'Usuário excluído com sucesso.';
         } else {
             $_SESSION['msg'] = 'Ação inválida ou usuário não encontrado.';
         }
     } catch (PDOException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         $_SESSION['msg'] = 'Erro ao processar a solicitação.';
     }
     

@@ -33,6 +33,8 @@ header h1 {
 
 .container {
     background: white;
+    align-items: center;
+    justify-content: center;
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     width: 100%;
@@ -41,14 +43,18 @@ header h1 {
     display: flex;
     flex-direction: column;
     gap: 25px;
+    min-width: 0;
 }
 
-.subtitulo {
-    font-size: 24px;
-    font-weight: 600;
-    color: #0056b3;
-    text-align: center;
-    margin-bottom: 10px;
+.g-recaptcha {
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+.g-recaptcha iframe {
+    width: 100% !important;
+    height: auto !important;
 }
 
 .form {
@@ -69,12 +75,10 @@ header h1 {
 }
 
 .legend {
-    color: white;
-    background-color: #0056b3;
-    padding: 10px 15px;
+    color: #0056b3;
     font-weight: 600;
-    font-size: 14px;
-    margin: 0;
+    font-size: 15px;
+    margin-left: 15px;
 }
 
 .input {
@@ -83,12 +87,7 @@ header h1 {
     border: none;
     outline: none;
     font-size: 15px;
-    background-color: #f8f9fa;
     transition: background-color 0.3s ease;
-}
-
-.input:focus {
-    background-color: #e7f1ff;
 }
 
 .descricao {
@@ -196,9 +195,6 @@ a:hover {
 }
 
 @media (max-width: 480px) {
-    body {
-        padding: 15px;
-    }
 
     header {
         margin-bottom: 20px;
@@ -210,6 +206,7 @@ a:hover {
     }
 
     .container {
+        width: 100%;
         padding: 25px 15px;
         gap: 18px;
     }
@@ -218,9 +215,25 @@ a:hover {
         font-size: 18px;
     }
 
+    .email_box {
+        max-width: 100%;
+    }
+
+    #link_codigo {
+        display: block;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .g-recaptcha {
+        transform: scale(0.82);
+        transform-origin: center;
+    }
+
     .botoes {
         flex-direction: column;
         gap: 10px;
+        width: 100%;
     }
 
     .botoes button {

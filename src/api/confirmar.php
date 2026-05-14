@@ -4,6 +4,7 @@ header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 
 require __DIR__ . '/database.php';
+/** @var PDO $pdo */
 
 $token = trim($_GET['token'] ?? '');
 $tipoSolicitado = strtolower(trim($_GET['tipo'] ?? ''));

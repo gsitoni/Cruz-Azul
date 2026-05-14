@@ -3,14 +3,24 @@
 require __DIR__ . '/../database.php';
 require __DIR__ . '/2fa.php';
 
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 
-if (empty($_SESSION['usuario']['id_usuario'])) {
+$usuarioSessao = $_SESSION['usuario_temp'] ?? $_SESSION['usuario'] ?? null;
+
+if (empty($usuarioSessao['id_usuario'])) {
     header('Location: ../../../public/pages/login.php');
     exit();
 }
 
-$idUsuario = (int) $_SESSION['usuario']['id_usuario'];
+$idUsuario = (int) $usuarioSessao['id_usuario'];
 $stmt = $pdo->prepare('SELECT chave_2fa FROM usuario WHERE id_usuario = ? LIMIT 1');
 $stmt->execute([$idUsuario]);
 $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -30,9 +40,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!verificarTOTP($secret, $codigo)) {
         $erro = 'Codigo invalido. Tente novamente.';
     } else {
+        session_regenerate_id(true);
+        $_SESSION['usuario'] = $usuarioSessao;
         $_SESSION['2fa_ok'] = true;
         $_SESSION['2fa_pendente'] = false;
         $_SESSION['usuario']['chave_2fa'] = $secret;
+        unset($_SESSION['usuario_temp']);
 
         $destino = (stripos((string) ($_SESSION['usuario']['tipo'] ?? ''), 'admin') !== false)
             ? '../../admin/pages/dashboard.php'

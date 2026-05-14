@@ -1,0 +1,9 @@
+{
+    "nome_sistema": "Cruz Azul",
+    "email_admin": "admin@cruzazul.com",
+    "email_noreply": "noreply@cruzazul.com",
+    "tentativas_login": 5,
+    "timeout_sessao": 3600,
+    "notificacoes_email": true,
+    "autenticacao_2fa": true
+}

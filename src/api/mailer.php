@@ -7,6 +7,7 @@
 require __DIR__ . '/../../vendor/phpmailer/PHPMailer-master/src/PHPMailer.php';
 require __DIR__ . '/../../vendor/phpmailer/PHPMailer-master/src/Exception.php';
 require __DIR__ . '/../../vendor/phpmailer/PHPMailer-master/src/SMTP.php';
+require_once __DIR__ . '/../../config/secret_manager.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -26,6 +27,9 @@ function obterBaseUrl(): string {
 }
 
 function criarMailer(): PHPMailer {
+    $smtpUser = caSecretResolve('mask:v1:QTmMAlxW72ju_qBYpngdMLAxVjgdpSFwTKtg7ArOFDIBS1w3Ef6mtkVURK3S5092MpPXqg');
+    $smtpPass = caSecretResolve('mask:v1:S9D3pmxQMQQS06VJO0CwSZUqqWHxTkSXS0Zc8t0weQqoVQw2EaK6Xe5jIoFc4AU');
+
     $mail = new PHPMailer(true);
     $mail->isSMTP();
     $mail->CharSet    = 'UTF-8';
@@ -34,9 +38,9 @@ function criarMailer(): PHPMailer {
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
     $mail->Host       = 'smtp.gmail.com';
     $mail->Port       = 465;
-    $mail->Username   = 'cruz.azulttggb@gmail.com';
-    $mail->Password   = 'qfen qtww axcx teqm';
-    $mail->setFrom('cruz.azulttggb@gmail.com', 'Cruz Azul');
+    $mail->Username   = $smtpUser;
+    $mail->Password   = $smtpPass;
+    $mail->setFrom($smtpUser, 'Cruz Azul');
     return $mail;
 }
 

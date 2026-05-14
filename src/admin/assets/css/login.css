@@ -115,12 +115,7 @@ body {
 
 form {
     display: grid;
-    gap: 12px;
-}
-
-#etapaEmail {
-    display: grid;
-    gap: 12px;
+    gap: 10px;
 }
 
 label {
@@ -147,6 +142,31 @@ input.invalido {
     box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.12);
 }
 
+.senha-wrap {
+    position: relative;
+}
+
+.senha-wrap input {
+    padding-right: 106px;
+}
+
+.btn-olho {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    border: 0;
+    border-radius: 10px;
+    padding: 9px 14px;
+    background: #e7eef7;
+    color: #21425f;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.g-recaptcha {
+    margin: 10px;
+}
 
 .erro-campo {
     display: none;
@@ -183,7 +203,7 @@ input.invalido {
     border: 1px solid rgba(220, 53, 69, 0.2);
 }
 
-#btnEntrar, #btnValidar, #btnReenviar {
+#btnEntrar {
     border: 0;
     border-radius: 14px;
     padding: 15px 18px;
@@ -193,40 +213,26 @@ input.invalido {
     font-weight: 800;
     cursor: pointer;
     transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
-    width: 100%;
 }
 
-#btnEntrar:hover:not(:disabled),
-#btnValidar:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(13, 110, 253, 0.3);
+#btnEntrar:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 30px rgba(13, 110, 253, 0.25);
 }
 
-#btnEntrar:disabled,
-#btnValidar:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+#btnEntrar:disabled {
+    cursor: wait;
+    opacity: 0.8;
     transform: none;
-}
-
-#link_cadastro {
-    text-align: center;
-    margin-top: 20px;
-    display: block;
-    color: var(--primary);
-    text-decoration: none;
-    font-weight: 700;
-}
-
-#link_cadastro:hover {
-    text-decoration: underline;
+    box-shadow: none;
 }
 
 .support-links {
     margin-top: 24px;
     display: flex;
+    justify-content: center;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 25px;
 }
 
 .support-links a {

@@ -50,6 +50,10 @@
             .lgpd-box input { width: auto; margin-top: 3px; }
             .lgpd-box label { margin-top: 0; font-weight: normal; font-size: 12px; }
 
+            .g-recaptcha {
+                margin-top: 15px;
+            }
+
             button {
                 margin-top: 18px;
                 width: 100%;

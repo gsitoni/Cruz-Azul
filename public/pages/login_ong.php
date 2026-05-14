@@ -1,12 +1,21 @@
 <?php
+require '../../src/api/database.php';
+require_once '../../config/recaptcha.php';
+
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 
 if (isset($_SESSION['ong'])) {
     header('Location: home_ong.php');
     exit;
 }
-
-require '../../src/api/database.php';
 
 // regex de validação //
 $REGEX_EMAIL = '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/';
@@ -18,6 +27,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $senha = $_POST['senha'] ?? '';
     $resposta = [];
+
+    $captcha = $_POST['g-recaptcha-response'] ?? '';
+
+    if (empty($captcha)) {
+
+        echo json_encode([
+            'ok' => false,
+            'msg' => 'Confirme o CAPTCHA.'
+        ]);
+
+        exit();
+    }
+
+    $verificacao = file_get_contents(
+        "https://www.google.com/recaptcha/api/siteverify?secret="
+        . $RECAPTCHA_SECRET_KEY
+        . "&response="
+        . $captcha
+    );
+
+    $respostaCaptcha = json_decode($verificacao);
+
+    if (
+        !$respostaCaptcha ||
+        !$respostaCaptcha->success
+    ) {
+
+        echo json_encode([
+            'ok' => false,
+            'msg' => 'CAPTCHA inválido.'
+        ]);
+
+        exit();
+    }
 
     // validação com regex
     if (empty($email)) {
@@ -50,6 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         } else {
             // login OK — salva os dados na sessão
+            session_regenerate_id(true);
+
             $_SESSION['ong'] = [
                 'id'           => $ong['id_ong'],
                 'nome'         => $ong['nome'],
@@ -81,6 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login ONG — Cruz Azul</title>
     <link rel="stylesheet" href="../assets/css/login_ong.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
 
@@ -114,6 +160,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="button" class="btn-olho" id="btnOlho">Mostrar</button>
         </div>
         <div class="erro-campo" id="erroSenha"></div>
+
+        <!-- CAPTCHA -->
+        <div class="g-recaptcha"
+            data-sitekey="<?php echo $RECAPTCHA_SITE_KEY; ?>">
+        </div>
 
         <div class="mensagem" id="mensagem"></div>
 
@@ -213,6 +264,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!emailOk || !senhaOk) return;
 
+        if (grecaptcha.getResponse() === '') {
+            mensagem.textContent = 'Confirme o CAPTCHA.';
+            mensagem.className   = 'mensagem erro';
+            return;
+        }
+
         // limpa mensagem anterior
         mensagem.className = 'mensagem';
 
@@ -224,6 +281,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         var dados = new FormData();
         dados.append('email', campoEmail.value.trim());
         dados.append('senha', campoSenha.value);
+        dados.append('g-recaptcha-response', grecaptcha.getResponse());
 
         try {
             var res  = await fetch('login_ong.php', {
@@ -250,6 +308,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } finally {
             btn.disabled    = false;
             btn.textContent = 'Entrar';
+            grecaptcha.reset();
         }
     });
 </script>

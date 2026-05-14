@@ -58,6 +58,7 @@ $ultimasDoacoes = $stmtDoacoes->fetchAll(PDO::FETCH_ASSOC);
         <a href="home_usuario.php">Início</a>
         <a href="doar.php">Fazer doação</a>
         <a href="servicos_publicos.php">Serviços Públicos</a>
+        <a href="vulnerabilidade.php">Vulnerabilidades</a>
         <a href="minhas_doacoes.php">Minhas doações</a>
         <a href="ongs.php">ONGs</a>
         <a href="logout.php">Sair</a>
@@ -97,6 +98,11 @@ $ultimasDoacoes = $stmtDoacoes->fetchAll(PDO::FETCH_ASSOC);
             <div class="icone">👤</div>
             <h3>Meu perfil</h3>
             <p>Edite seus dados cadastrais.</p>
+        </a>
+        <a href="meus_dados.php" class="card-acao">
+            <div class="icone">🗂️</div>
+            <h3>Meus Dados</h3>
+            <p>Veja e exporte todos os seus dados (LGPD).</p>
         </a>
     </div>
 

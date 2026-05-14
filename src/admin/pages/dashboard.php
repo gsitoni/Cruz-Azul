@@ -2,12 +2,13 @@
 require __DIR__ . '/auth.php';
 
 if (isset($_GET['logout'])) {
-    session_destroy();
-    header("Location: ../index.php");
+    destruirSessao();
+    header("Location: ./index.php");
     exit();
 }
 
 require __DIR__ . '/../../api/database.php';
+/** @var PDO $pdo */
 
 try {
     $stmt = $pdo->prepare("SELECT COUNT(*) AS total FROM ong WHERE status_elegibilidade = 'pendente'");

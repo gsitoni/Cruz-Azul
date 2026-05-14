@@ -41,16 +41,22 @@ header h1 {
     display: flex;
     flex-direction: column;
     gap: 25px;
+    min-width: 0;
 }
 
-.subtitulo {
-    font-size: 24px;
-    font-weight: 600;
-    color: #0056b3;
-    text-align: center;
-    margin: 0;
+.inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
 }
 
+.email_box {
+    width: 100%;
+}
+
+.condicoes {
+    width: 100%;
 .form {
     width: 100%;
     display: flex;
@@ -101,12 +107,10 @@ header h1 {
 }
 
 .legend {
-    color: white;
-    background-color: #0056b3;
-    padding: 10px 15px;
+    color: #0056b3;
     font-weight: 600;
-    font-size: 14px;
-    margin: 0;
+    font-size: 15px;
+    margin-left: 15px;
 }
 
 .inputs {
@@ -118,17 +122,15 @@ header h1 {
 .input {
     width: 100%;
     padding: 12px 15px;
-    border: 2px solid #ddd;
     border-radius: 6px;
     outline: none;
+    border: none;
     font-size: 15px;
-    background-color: #f8f9fa;
     transition: all 0.3s ease;
 }
 
 .input:focus {
     border-color: #0056b3;
-    background-color: #e7f1ff;
     box-shadow: 0 0 8px rgba(0, 86, 179, 0.2);
 }
 
@@ -267,10 +269,15 @@ a:hover {
         padding: 12px;
     }
 
+    .email_box {
+        width: 100%;
+    }
+
     .botoes {
         flex-direction: column;
         gap: 10px;
         margin-top: 15px;
+        width: 100%;
     }
 
     .botoes button {
