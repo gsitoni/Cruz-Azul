@@ -131,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="text" id="chat_id" name="chat_id" placeholder="Digite seu Chat ID (apenas números)" pattern="[0-9]+" required>
             <div class="erro-campo" id="erroChatId">Digite um Chat ID válido (apenas números).</div>
             <small style="color: #666; font-size: 0.85rem; margin-top: 5px; display: block;">
-                Para obter seu Chat ID, envie uma mensagem para <a href="https://t.me/userinfobot" target="_blank" style="color: var(--primary);">@userinfobot</a> no Telegram.
+                Para obter seu Chat ID, envie uma mensagem para <a href="https://t.me/botfather" target="_blank" style="color: var(--primary);">@botfather</a> no Telegram.
             </small>
 
             <div style="margin: 20px 0;">

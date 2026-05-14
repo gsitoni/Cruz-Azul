@@ -7,7 +7,7 @@ if (
     !isset($_SESSION['usuario_temp'])
 ) {
 
-    header('Location: login.php');
+    header('Location: index.php');
 
     exit();
 }

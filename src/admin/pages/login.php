@@ -33,6 +33,14 @@ if (!empty($_GET['reset'])) {
     );
 }
 
+if (
+    !empty($_SESSION['usuario']) &&
+    !empty($_SESSION['admin_autenticado'])
+) {
+    header('Location: ./dashboard.php');
+    exit();
+}
+
 // =====================================
 // REGEX
 // =====================================
@@ -443,7 +451,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             dados.append('g-recaptcha-response', grecaptcha.getResponse());
 
             try {
-                const response = await fetch('login.php', {
+                const response = await fetch('index.php', {
                     method: 'POST',
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     body: dados

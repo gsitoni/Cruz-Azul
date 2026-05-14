@@ -115,7 +115,7 @@ body {
 
 form {
     display: grid;
-    gap: 12px;
+    gap: 10px;
 }
 
 label {
@@ -164,6 +164,10 @@ input.invalido {
     cursor: pointer;
 }
 
+.g-recaptcha {
+    margin: 10px;
+}
+
 .erro-campo {
     display: none;
     margin-top: -4px;
@@ -200,7 +204,6 @@ input.invalido {
 }
 
 #btnEntrar {
-    margin-top: 8px;
     border: 0;
     border-radius: 14px;
     padding: 15px 18px;

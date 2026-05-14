@@ -4,7 +4,7 @@ require_once __DIR__ . '/admin_config.php';
 
 if (isset($_GET['logout'])) {
     destruirSessao();
-    header("Location: ../index.php");
+    header("Location: ./index.php");
     exit();
 }
 

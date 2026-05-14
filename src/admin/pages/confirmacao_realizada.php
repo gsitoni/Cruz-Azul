@@ -51,7 +51,7 @@ if ($status === 'sucesso') {
             </p>
 
             <div class="actions">
-                <a href="./login.php" class="button">Ir para o login do admin</a>
+                <a href="./index.php" class="button">Ir para o login do admin</a>
                 <a href="../index.php" class="button button--secondary">Voltar ao portal admin</a>
             </div>
 

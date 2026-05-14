@@ -9,7 +9,7 @@ $email = trim($_GET['email'] ?? '');
 $origem = $_GET['origem'] ?? 'cadastro';
 
 if ($email === '') {
-    header('Location: ./login.php');
+    header('Location: ./index.php');
     exit();
 }
 
@@ -70,7 +70,7 @@ if ($origem === 'login') {
             </div>
 
             <div class="actions">
-                <a href="./login.php" class="button button--primary"><?= htmlspecialchars($acaoPrincipal, ENT_QUOTES, 'UTF-8') ?></a>
+                <a href="./index.php" class="button button--primary"><?= htmlspecialchars($acaoPrincipal, ENT_QUOTES, 'UTF-8') ?></a>
                 <a href="../index.php" class="button button--secondary"><?= htmlspecialchars($acaoSecundaria, ENT_QUOTES, 'UTF-8') ?></a>
             </div>
         </section>
