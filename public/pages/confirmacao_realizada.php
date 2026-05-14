@@ -10,7 +10,7 @@ $icone = '??';
 $titulo = 'Status da confirmacao';
 
 if ($status === 'sucesso') {
-    $icone = '?';
+    $icone = '';
     $titulo = 'Confirmacao concluida';
 } elseif ($status === 'erro') {
     $icone = '??';

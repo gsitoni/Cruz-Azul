@@ -25,6 +25,17 @@ try {
     <link rel="stylesheet" href="../assets/css/vulnerabilidade.css">
 </head>
 <body>
+    <nav class="main-nav">
+        <a href="home_usuario.php" class="logo">🤝 Cruz Azul</a>
+        <div class="nav-links">
+            <a href="home_usuario.php">Início</a>
+            <a href="doar.php">Fazer doação</a>
+            <a href="servicos_publicos.php">Serviços Públicos</a>
+            <a href="minhas_doacoes.php">Minhas doações</a>
+            <a href="ongs.php">ONGs</a>
+            <a href="logout.php">Sair</a>
+        </div>
+    </nav>
     <header class="page-header">
         <div class="page-title">
             <span>IBGE & Vulnerabilidade</span>
@@ -124,7 +135,6 @@ try {
                             <li>
                                 <strong><?php echo htmlspecialchars($ong['nome']); ?></strong><br>
                                 <?php echo htmlspecialchars($ong['endereco']); ?><br>
-                                <?php echo htmlspecialchars($ong['telefone']); ?> | <?php echo htmlspecialchars($ong['email']); ?>
                             </li>
                         <?php endforeach; ?>
                     <?php endif; ?>

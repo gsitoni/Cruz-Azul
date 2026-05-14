@@ -31,18 +31,19 @@ if ($status === 'sucesso') {
     <link rel="stylesheet" href="../assets/css/confirmacao_realizada.css">
 </head>
 <body>
-    <main class="confirmation-shell">
-        <section class="confirmation-card">
-            <div class="badge">Painel administrativo</div>
-            <div class="icon" aria-hidden="true"><?= htmlspecialchars($icone, ENT_QUOTES, 'UTF-8') ?></div>
-            <h1><?= htmlspecialchars($titulo, ENT_QUOTES, 'UTF-8') ?></h1>
-            <p class="lead"><?= htmlspecialchars($descricao, ENT_QUOTES, 'UTF-8') ?></p>
+    <header>
+        <h1>Painel administrativo</h1>
+    </header>
+    <div class="container">
+        <div class="card">
+            <div class="icone"><?= htmlspecialchars($icone, ENT_QUOTES, 'UTF-8') ?></div>
+            <h2><?= htmlspecialchars($titulo, ENT_QUOTES, 'UTF-8') ?></h2>
 
-            <div class="message message--<?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?>">
+            <div class="mensagem <?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?>">
                 <?= htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8') ?>
             </div>
 
-            <p class="account">
+            <p class="submensagem">
                 <?php if ($email !== ''): ?>
                     Conta vinculada a <strong><?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?></strong>.
                 <?php else: ?>
@@ -50,17 +51,16 @@ if ($status === 'sucesso') {
                 <?php endif; ?>
             </p>
 
-            <div class="actions">
-                <a href="./index.php" class="button">Ir para o login do admin</a>
-                <a href="../index.php" class="button button--secondary">Voltar ao portal admin</a>
+            <div class="botoes">
+                <a href="./index.php" class="botao">Ir para o login do admin</a>
             </div>
 
             <?php if ($tipo === 'admin' && $status !== 'sucesso'): ?>
-                <p class="support">
+                <p class="nota">
                     Se o problema persistir, refaca o cadastro administrativo para gerar um novo link de confirmacao.
                 </p>
             <?php endif; ?>
-        </section>
-    </main>
+        </div>
+    </div>
 </body>
 </html>
