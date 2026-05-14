@@ -161,6 +161,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <div class="erro-campo" id="erroSenha"></div>
 
+        <!-- CAPTCHA -->
+        <div class="g-recaptcha"
+            data-sitekey="<?php echo $RECAPTCHA_SITE_KEY; ?>">
+        </div>
+
         <div class="mensagem" id="mensagem"></div>
 
         <button type="submit" id="btnEntrar">Entrar</button>
@@ -259,6 +264,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!emailOk || !senhaOk) return;
 
+        if (grecaptcha.getResponse() === '') {
+            mensagem.textContent = 'Confirme o CAPTCHA.';
+            mensagem.className   = 'mensagem erro';
+            return;
+        }
+
         // limpa mensagem anterior
         mensagem.className = 'mensagem';
 
@@ -270,6 +281,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         var dados = new FormData();
         dados.append('email', campoEmail.value.trim());
         dados.append('senha', campoSenha.value);
+        dados.append('g-recaptcha-response', grecaptcha.getResponse());
 
         try {
             var res  = await fetch('login_ong.php', {
@@ -296,6 +308,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } finally {
             btn.disabled    = false;
             btn.textContent = 'Entrar';
+            grecaptcha.reset();
         }
     });
 </script>
