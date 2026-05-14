@@ -115,9 +115,13 @@
 
         /* dois campos lado a lado */
         .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex;
+            flex-direction: column;
             gap: 0 14px;
+        }
+
+        .g-recaptcha {
+            margin-top: 15px;
         }
 
         .grupo {

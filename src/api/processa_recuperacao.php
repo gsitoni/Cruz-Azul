@@ -4,6 +4,7 @@
 //  Segurança: CSRF, rate-limit, session segura, XSS
 // ============================================================
 $secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+require_once '../../config/recaptcha.php';
 
 session_set_cookie_params([
     'lifetime' => 0,
@@ -61,6 +62,30 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     header('Location: ../../public/pages/recuperacao_de_senha.php?status=erro');
     exit();
 }
+
+$captcha = $_POST['g-recaptcha-response'] ?? '';
+
+if (empty($captcha)) {
+    header('Location: ../../public/pages/recuperacao_de_senha.php?status=erro');
+    exit();
+}
+
+$verificacao = file_get_contents(
+    "https://www.google.com/recaptcha/api/siteverify?secret="
+    . $RECAPTCHA_SECRET_KEY
+    . "&response="
+    . $captcha
+);
+
+$respostaCaptcha = json_decode($verificacao);
+
+if (!$respostaCaptcha ||
+    !isset($respostaCaptcha->success) ||
+    $respostaCaptcha->success !== true) {
+    header('Location: ../../public/pages/recuperacao_de_senha.php?status=erro');
+    exit();
+}
+
 
 // Verifica se email existe — mas sempre redireciona igual (evita enumeração)
 $stmt = $pdo->prepare("SELECT id_usuario, nome FROM usuario WHERE email = ? LIMIT 1");

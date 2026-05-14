@@ -21,6 +21,8 @@ header('X-Frame-Options: DENY');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 
+require_once '../../config/recaptcha.php';
+
 // Gera CSRF
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -46,6 +48,7 @@ if (isset($_GET['status'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recuperação de senha – Cruz Azul</title>
     <link rel="stylesheet" href="../assets/css/recuperacao_de_senha.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
 
@@ -77,6 +80,11 @@ if (isset($_GET['status'])) {
             <input class="input" id="email_recuperacao" name="email_recuperacao"
                    type="email" required maxlength="254">
         </fieldset>
+
+        <!-- CAPTCHA -->
+        <div class="g-recaptcha"
+            data-sitekey="<?php echo $RECAPTCHA_SITE_KEY; ?>">
+        </div>
 
         <a href="codigo_de_verificacao.php" id="link_codigo">
             Já possuo o código de verificação

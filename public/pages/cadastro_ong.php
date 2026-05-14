@@ -8,6 +8,7 @@ header('X-Content-Type-Options: nosniff');
 require '../../src/api/database.php';
 require '../../src/api/valida_senha.php';
 require '../../src/api/mailer.php';
+require_once '../../config/recaptcha.php';
 
 // regex de validação//
 $REGEX_EMAIL = '/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/';
@@ -31,6 +32,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $descricao = trim($_POST['descricao'] ?? '');
     $senha     = $_POST['senha']          ?? '';
     $senha2    = $_POST['senha2']         ?? '';
+
+    $captcha = $_POST['g-recaptcha-response'] ?? '';
+
+    if (empty($captcha)) {
+
+        echo json_encode([
+            'ok' => false,
+            'msg' => 'Confirme o CAPTCHA.'
+        ]);
+
+        exit();
+    }
+
+    $verificacao = file_get_contents(
+        "https://www.google.com/recaptcha/api/siteverify?secret="
+        . $RECAPTCHA_SECRET_KEY
+        . "&response="
+        . $captcha
+    );
+
+    $respostaCaptcha = json_decode($verificacao);
+
+    if (
+        !$respostaCaptcha ||
+        !$respostaCaptcha->success
+    ) {
+
+        echo json_encode([
+            'ok' => false,
+            'msg' => 'CAPTCHA inválido.'
+        ]);
+
+        exit();
+    }
+
 
     // validação campo a campo
     if (strlen($nome) < 3) {
@@ -138,6 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro de ONG — Cruz Azul</title>
     <link rel="stylesheet" href="../assets/css/cadastro_ong.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
 
@@ -263,6 +300,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="password" id="senha2" name="senha2" placeholder="Repita a senha">
                     <button type="button" class="btn-olho" id="olho2">Mostrar</button>
                 </div>
+
+                 <!-- CAPTCHA -->
+                <div class="g-recaptcha"
+                    data-sitekey="<?php echo $RECAPTCHA_SITE_KEY; ?>">
+                </div>
+
                 <div class="erro-campo" id="erroSenha2"></div>
             </div>
         </div>
@@ -278,7 +321,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script>
     //  regex do ──
     var REGEX_EMAIL = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-    var REGEX_SENHA = /^.{6,}$/;
+    var REGEX_SENHA = /^.{12,}$/;
     var REGEX_CNPJ  = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/;
 //  var REGEX_TEL   = /^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/;
     var REGEX_CEP   = /^\d{5}-?\d{3}$/;
@@ -393,7 +436,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!REGEX_SENHA.test(document.getElementById('senha').value)) {
-            mostrarErro('senha', 'erroSenha', 'Senha deve ter pelo menos 6 caracteres.');
+            mostrarErro('senha', 'erroSenha', 'Senha deve ter pelo menos 12 caracteres.');
             tudo_ok = false;
         }
 
@@ -417,6 +460,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         btn.disabled    = true;
         btn.textContent = 'Aguarde...';
 
+        if (grecaptcha.getResponse() === '') {
+            var msg = document.getElementById('mensagem');
+            msg.textContent = 'Confirme o CAPTCHA.';
+            msg.className = 'mensagem erro';
+            btn.disabled = false;
+            btn.textContent = 'Cadastrar ONG';
+            return;
+        }
+
         try {
             var res  = await fetch('cadastro_ong.php', {
                 method: 'POST',
@@ -431,6 +483,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             msg.className  = 'mensagem ' + (json.ok ? 'sucesso' : 'erro');
 
             if (json.ok) {
+                grecaptcha.reset();
                 this.reset();
                 setTimeout(() => {
                     window.location.href = 'cadastro_concluido.php?email=' + encodeURIComponent(document.getElementById('email').value.trim()) + '&tipo=ong';
@@ -441,6 +494,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             var msg = document.getElementById('mensagem');
             msg.textContent = 'Erro de conexão. Tente novamente.';
             msg.className   = 'mensagem erro';
+            grecaptcha.reset();
         } finally {
             btn.disabled    = false;
             btn.textContent = 'Cadastrar ONG';
