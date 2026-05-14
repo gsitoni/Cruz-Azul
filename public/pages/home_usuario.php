@@ -98,6 +98,11 @@ $ultimasDoacoes = $stmtDoacoes->fetchAll(PDO::FETCH_ASSOC);
             <h3>Meu perfil</h3>
             <p>Edite seus dados cadastrais.</p>
         </a>
+        <a href="meus_dados.php" class="card-acao">
+            <div class="icone">🗂️</div>
+            <h3>Meus Dados</h3>
+            <p>Veja e exporte todos os seus dados (LGPD).</p>
+        </a>
     </div>
 
     <div class="titulo-secao">🏥 Serviços Úteis para a População</div>
