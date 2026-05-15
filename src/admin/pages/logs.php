@@ -113,7 +113,7 @@ function badgeTipo($tipo)
 
 <header class="topbar">
 
-    <div>
+    <div>HELLO
         <h1>Cruz Azul Security Center</h1>
         <p>Monitoramento e auditoria do sistema</p>
     </div>

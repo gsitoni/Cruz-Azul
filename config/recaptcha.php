@@ -1,4 +1,8 @@
 <?php
-$RECAPTCHA_SITE_KEY = "6LfD1OYsAAAAAAAoawO2YVshZO1nNUQK0Mc8-e4T";
-$RECAPTCHA_SECRET_KEY = "6LfD1OYsAAAAAKKyAqbMIf1MjMy0vi0t21MLLBpN";
+// https://www.google.com/recaptcha/admin/create
+
+require_once __DIR__ . '/secret_manager.php';
+
+$RECAPTCHA_SITE_KEY = '6LdNLeosAAAAAE9JDSy7PcCrEPSbfo1ymYdNzns1';
+$RECAPTCHA_SECRET_KEY = '6LdNLeosAAAAAAXLpKeRtYqy_KnUTJGjPrItop-0';
 ?>

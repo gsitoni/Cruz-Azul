@@ -1,7 +1,9 @@
 <?php
 require __DIR__ . '/../../api/database.php';
+require __DIR__ . '/../../api/telegram.php'; // Bot funcional necessário para o OTP
 require_once '../../../config/recaptcha.php';
 
+// Configurações de cookies e segurança do código novo
 session_set_cookie_params([
     'lifetime' => 0,
     'path' => '/',
@@ -25,11 +27,11 @@ header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 
 
 if (!empty($_GET['reset'])) {
-
     unset(
         $_SESSION['usuario'],
         $_SESSION['admin_autenticado'],
-        $_SESSION['csrf_token']
+        $_SESSION['csrf_token'],
+        $_SESSION['otp_email']
     );
 }
 
@@ -39,6 +41,13 @@ if (
 ) {
     header('Location: ./dashboard.php');
     exit();
+}
+
+$status = (string) ($_GET['status'] ?? '');
+$mensagemStatus = '';
+
+if ($status === 'senha_redefinida') {
+    $mensagemStatus = 'Senha redefinida com sucesso. Faça login com a nova senha quando solicitado.';
 }
 
 // =====================================
@@ -55,271 +64,195 @@ define(
     '/^[0-9]{6,}$/'
 );
 
+// =====================================
+// HELPERS
+// =====================================
+
+function json_out(bool $ok, string $msg, array $extra = []): never
+{
+    header('Content-Type: application/json; charset=UTF-8');
+    echo json_encode(['ok' => $ok, 'msg' => $msg] + $extra);
+    exit();
+}
+
 function registrarTentativaAdmin(): void
 {
     $_SESSION['admin_login_tentativas'] = (int) ($_SESSION['admin_login_tentativas'] ?? 0) + 1;
 }
 
+function buscar_admin(PDO $pdo, string $email): array|false
+{
+    $stmt = $pdo->prepare("
+        SELECT id_usuario, nome, email, tipo,
+               status_cadastro, telegram_chat_id, telegram_2fa_ativo
+        FROM usuario WHERE email = ? LIMIT 1
+    ");
+    $stmt->execute([$email]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
 // =====================================
-// LOGIN
+// LOGIN / OTP PROCESSAMENTO
 // =====================================
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    header('Content-Type: application/json; charset=UTF-8');
-
-    $captcha = $_POST['g-recaptcha-response'] ?? '';
-
-    if (empty($captcha)) {
-
-        echo json_encode([
-            'ok' => false,
-            'msg' => 'Confirme o CAPTCHA.'
-        ]);
-
-        exit();
-    }
-
-    $verificacao = file_get_contents(
-        "https://www.google.com/recaptcha/api/siteverify?secret="
-        . $RECAPTCHA_SECRET_KEY
-        . "&response="
-        . $captcha
-    );
-
-    $resposta = json_decode($verificacao);
-
-    if (!$resposta->success) {
-
-        echo json_encode([
-            'ok' => false,
-            'msg' => 'CAPTCHA inválido.'
-        ]);
-
-        exit();
-    }
-
-
-    $email = filter_var(
-        trim($_POST['email'] ?? ''),
-        FILTER_SANITIZE_EMAIL
-    );
-
-    $chat_id = trim($_POST['chat_id'] ?? '');
-    $exige2fa = !empty($adminConfig['autenticacao_2fa']);
+    $etapa = $_POST['etapa'] ?? '1';
     $maxTentativas = (int) ($adminConfig['tentativas_login'] ?? 5);
     $_SESSION['admin_login_tentativas'] = (int) ($_SESSION['admin_login_tentativas'] ?? 0);
 
-    // =====================================
-    // VALIDAÇÕES
-    // =====================================
-
     if ($_SESSION['admin_login_tentativas'] >= $maxTentativas) {
-
-        echo json_encode([
-            'ok' => false,
-            'msg' => 'Limite de tentativas excedido. Limpe a sessao ou tente novamente mais tarde.'
-        ]);
-
-        exit();
+        json_out(false, 'Limite de tentativas excedido.');
     }
 
-    if ($email === '' || ($exige2fa && $chat_id === '')) {
+    // =====================================
+    // ETAPA 1 — Valida Captcha e envia OTP
+    // =====================================
+    if ($etapa === '1') {
+        
+        $captcha = $_POST['g-recaptcha-response'] ?? '';
 
-        registrarTentativaAdmin();
-        echo json_encode([
-            'ok' => false,
-            'msg' => 'Preencha todos os campos.'
-        ]);
-
-        exit();
-    }
-
-    if (!preg_match(REGEX_EMAIL_ADMIN, $email)) {
-
-        registrarTentativaAdmin();
-        echo json_encode([
-            'ok' => false,
-            'msg' => 'Informe um e-mail válido.'
-        ]);
-
-        exit();
-    }
-
-    if ($exige2fa && !preg_match(REGEX_CHAT_ID, $chat_id)) {
-
-        registrarTentativaAdmin();
-        echo json_encode([
-            'ok' => false,
-            'msg' => 'Informe um Chat ID válido.'
-        ]);
-
-        exit();
-    }
-
-    try {
-
-        // =====================================
-        // BUSCA ADMIN
-        // =====================================
-
-        $sql = "
-            SELECT
-                id_usuario,
-                nome,
-                email,
-                tipo,
-                status_cadastro,
-                telegram_chat_id,
-                telegram_2fa_ativo
-            FROM usuario
-            WHERE email = ?
-            LIMIT 1
-        ";
-
-        $stmt = $pdo->prepare($sql);
-
-        $stmt->execute([$email]);
-
-        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        // =====================================
-        // USUÁRIO NÃO EXISTE
-        // =====================================
-
-        if (!$usuario) {
-
-            registrarTentativaAdmin();
-            registrarLogSistema($pdo, 'WARNING', 'LOGIN', 'Login admin falhou', 'Tentativa com administrador inexistente.', 'usuario');
-            echo json_encode([
-                'ok' => false,
-                'msg' => 'Administrador não encontrado.'
-            ]);
-
-            exit();
+        if (empty($captcha)) {
+            json_out(false, 'Confirme o CAPTCHA.');
         }
 
-        // =====================================
-        // VERIFICA ADMIN
-        // =====================================
-
-        $tipoUsuario = (string) ($usuario['tipo'] ?? '');
-
-        $ehAdmin =
-            $tipoUsuario !== '' &&
-            stripos($tipoUsuario, 'admin') !== false;
-
-        if (!$ehAdmin) {
-
-            registrarTentativaAdmin();
-            registrarLogSistema($pdo, 'WARNING', 'SEGURANCA', 'Acesso admin negado', 'Usuario sem perfil admin tentou acessar o painel.', 'usuario', (int) $usuario['id_usuario'], (int) $usuario['id_usuario']);
-            echo json_encode([
-                'ok' => false,
-                'msg' => 'Acesso permitido apenas para administradores.'
-            ]);
-
-            exit();
-        }
-
-        // =====================================
-        // VERIFICA STATUS
-        // =====================================
-
-        if (($usuario['status_cadastro'] ?? '') === 'pendente') {
-
-            registrarTentativaAdmin();
-            registrarLogSistema($pdo, 'WARNING', 'LOGIN', 'Login admin pendente', 'Conta administrativa pendente tentou acessar o painel.', 'usuario', (int) $usuario['id_usuario'], (int) $usuario['id_usuario']);
-            echo json_encode([
-                'ok' => false,
-                'msg' => 'Conta pendente de confirmação.'
-            ]);
-
-            exit();
-        }
-
-        if (($usuario['status_cadastro'] ?? '') === 'bloqueado') {
-
-            registrarTentativaAdmin();
-            registrarLogSistema($pdo, 'WARNING', 'LOGIN', 'Login admin bloqueado', 'Conta administrativa bloqueada tentou acessar o painel.', 'usuario', (int) $usuario['id_usuario'], (int) $usuario['id_usuario']);
-            echo json_encode([
-                'ok' => false,
-                'msg' => 'Conta bloqueada.'
-            ]);
-
-            exit();
-        }
-
-        // =====================================
-        // VERIFICA CHAT ID
-        // =====================================
-
-        if (
-            $exige2fa &&
-            (empty($usuario['telegram_chat_id']) || $usuario['telegram_chat_id'] != $chat_id)
-        ) {
-
-            registrarTentativaAdmin();
-            registrarLogSistema($pdo, 'WARNING', 'SEGURANCA', 'Chat ID admin invalido', 'Tentativa de login admin com Chat ID invalido.', 'usuario', (int) $usuario['id_usuario'], (int) $usuario['id_usuario']);
-            echo json_encode([
-                'ok' => false,
-                'msg' => 'Chat ID inválido.'
-            ]);
-
-            exit();
-        }
-
-        // =====================================
-        // VERIFICA TELEGRAM 2FA
-        // =====================================
-
-        if ($exige2fa && !(bool) $usuario['telegram_2fa_ativo']) {
-
-            registrarTentativaAdmin();
-            registrarLogSistema($pdo, 'WARNING', 'SEGURANCA', '2FA admin inativo', 'Conta admin tentou entrar sem Telegram 2FA ativo.', 'usuario', (int) $usuario['id_usuario'], (int) $usuario['id_usuario']);
-            echo json_encode([
-                'ok' => false,
-                'msg' => 'Telegram 2FA não ativado.'
-            ]);
-
-            exit();
-        }
-
-        // =====================================
-        // LOGIN OK
-        // =====================================
-
-        session_regenerate_id(true);
-
-        $_SESSION['usuario'] = [
-            'id_usuario' => $usuario['id_usuario'],
-            'nome' => $usuario['nome'],
-            'email' => $usuario['email'],
-            'tipo' => $usuario['tipo']
-        ];
-
-        $_SESSION['admin_autenticado'] = true;
-        $_SESSION['admin_ultimo_acesso'] = time();
-        $_SESSION['admin_login_tentativas'] = 0;
-        registrarLogSistema($pdo, 'INFO', 'LOGIN', 'Login admin realizado', 'Administrador acessou o painel.', 'usuario', (int) $usuario['id_usuario'], (int) $usuario['id_usuario']);
-
-        echo json_encode([
-            'ok' => true,
-            'msg' => 'Login realizado com sucesso.',
-            'redirect' => './dashboard.php'
-        ]);
-
-    } catch (PDOException $e) {
-        error_log(
-            'admin login telegram: ' .
-            $e->getMessage()
+        $verificacao = file_get_contents(
+            "https://www.google.com/recaptcha/api/siteverify?secret="
+            . $RECAPTCHA_SECRET_KEY
+            . "&response="
+            . $captcha
         );
+        $resposta = json_decode($verificacao);
 
-        echo json_encode([
-            'ok' => false,
-            'msg' => 'Erro interno no servidor.'
-        ]);
+        if (!$resposta->success) {
+            json_out(false, 'CAPTCHA inválido.');
+        }
+
+        $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
+
+        if (!preg_match(REGEX_EMAIL_ADMIN, $email)) {
+            registrarTentativaAdmin();
+            json_out(false, 'Informe um e-mail válido.');
+        }
+
+        try {
+            $usuario = buscar_admin($pdo, $email);
+
+            if (!$usuario) {
+                registrarTentativaAdmin();
+                registrarLogSistema($pdo, 'WARNING', 'LOGIN', 'Login admin falhou', 'Tentativa com administrador inexistente.', 'usuario');
+                json_out(false, 'Administrador não encontrado.');
+            }
+
+            // VERIFICA ADMIN
+            $tipoUsuario = (string) ($usuario['tipo'] ?? '');
+            if (stripos($tipoUsuario, 'admin') === false) {
+                registrarTentativaAdmin();
+                registrarLogSistema($pdo, 'WARNING', 'SEGURANCA', 'Acesso admin negado', 'Usuario sem perfil admin tentou acessar o painel.', 'usuario', (int) $usuario['id_usuario']);
+                json_out(false, 'Acesso permitido apenas para administradores.');
+            }
+
+            // VERIFICA STATUS
+            if (($usuario['status_cadastro'] ?? '') === 'pendente') {
+                json_out(false, 'Conta pendente de confirmação.');
+            }
+            if (($usuario['status_cadastro'] ?? '') === 'bloqueado') {
+                json_out(false, 'Conta bloqueada.');
+            }
+
+            // VERIFICA TELEGRAM 2FA ATIVO
+            if (!(bool) $usuario['telegram_2fa_ativo'] || empty($usuario['telegram_chat_id'])) {
+                json_out(false, 'Telegram 2FA não ativado para esta conta.');
+            }
+
+            // GERAÇÃO DO OTP (Lógica do bot funcional)
+            $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+            $pdo->prepare("UPDATE otp_telegram SET usado = 1 WHERE id_usuario = ? AND usado = 0 AND expira_em > NOW()")
+                ->execute([$usuario['id_usuario']]);
+                
+            $pdo->prepare("
+                INSERT INTO otp_telegram (id_usuario, telegram_chat_id, codigo, expira_em)
+                VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 5 MINUTE))
+            ")->execute([$usuario['id_usuario'], $usuario['telegram_chat_id'], $otp]);
+
+            // DISPARO DO BOT
+            $enviado = telegram_enviar_otp((string)$usuario['telegram_chat_id'], $otp);
+            
+            if (!$enviado) {
+                json_out(false, 'Erro ao enviar código pelo Telegram. Tente novamente.');
+            }
+
+            $_SESSION['otp_email'] = $email;
+            json_out(true, 'Código enviado! Verifique o Telegram.');
+
+        } catch (PDOException $e) {
+            error_log('admin otp etapa1: ' . $e->getMessage());
+            json_out(false, 'Erro interno no servidor.');
+        }
     }
-    exit();
+
+    // =====================================
+    // ETAPA 2 — valida OTP digitado
+    // =====================================
+    if ($etapa === '2') {
+        $email  = $_SESSION['otp_email'] ?? '';
+        $codigo = trim($_POST['codigo'] ?? '');
+
+        if (!$email || !preg_match('/^\d{6}$/', $codigo)) {
+            json_out(false, 'Dados inválidos.');
+        }
+
+        try {
+            $usuario = buscar_admin($pdo, $email);
+
+            $stmt = $pdo->prepare("
+                SELECT id, codigo, tentativas FROM otp_telegram
+                WHERE id_usuario = ? AND usado = 0 AND expira_em > NOW()
+                ORDER BY criado_em DESC LIMIT 1
+            ");
+            $stmt->execute([$usuario['id_usuario']]);
+            $otp_row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$otp_row) {
+                json_out(false, 'Código expirado. Solicite um novo.');
+            }
+
+            if ($otp_row['tentativas'] >= 5) {
+                $pdo->prepare("UPDATE otp_telegram SET usado = 1 WHERE id = ?")->execute([$otp_row['id']]);
+                json_out(false, 'Muitas tentativas. Solicite um novo código.');
+            }
+
+            $pdo->prepare("UPDATE otp_telegram SET tentativas = tentativas + 1 WHERE id = ?")->execute([$otp_row['id']]);
+
+            if (!hash_equals($otp_row['codigo'], $codigo)) {
+                json_out(false, 'Código incorreto. Tente novamente.');
+            }
+
+            // LOGIN OK
+            $pdo->prepare("UPDATE otp_telegram SET usado = 1 WHERE id = ?")->execute([$otp_row['id']]);
+            
+            session_regenerate_id(true);
+            $_SESSION['usuario'] = [
+                'id_usuario' => $usuario['id_usuario'],
+                'nome'       => $usuario['nome'],
+                'email'      => $usuario['email'],
+                'tipo'       => $usuario['tipo'],
+            ];
+            $_SESSION['admin_autenticado'] = true;
+            $_SESSION['admin_login_tentativas'] = 0;
+            
+            unset($_SESSION['otp_email']);
+            
+            registrarLogSistema($pdo, 'INFO', 'LOGIN', 'Login admin realizado', 'Administrador acessou o painel via 2FA.', 'usuario', (int) $usuario['id_usuario'], (int) $usuario['id_usuario']);
+
+            json_out(true, 'Login realizado com sucesso.', ['redirect' => './dashboard.php']);
+
+        } catch (PDOException $e) {
+            error_log('admin otp etapa2: ' . $e->getMessage());
+            json_out(false, 'Erro interno.');
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -329,6 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login do Admin - Cruz Azul</title>
     <link rel="stylesheet" href="../assets/css/login.css">
+    <!-- Script do reCAPTCHA do código novo -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
@@ -347,141 +281,223 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </section>
 
         <section class="login-panel login-panel--form">
-            <div class="form-header">
-                <h2>Entrar no admin</h2>
-                <p>Informe os dados vinculados ao seu cadastro administrativo.</p>
+            
+            <!-- Mensagem de Status (vinda do código novo) -->
+            <?php if ($mensagemStatus !== ''): ?>
+                <div class="msg sucesso" id="mensagemStatus">
+                    <?= htmlspecialchars($mensagemStatus, ENT_QUOTES, 'UTF-8') ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- ETAPA 1: E-mail + CAPTCHA -->
+            <div id="etapa1">
+                <div class="form-header">
+                    <h2>Entrar no admin</h2>
+                    <p>Informe o e-mail cadastrado. Você receberá um código pelo Telegram.</p>
+                </div>
+                <form id="formEtapa1" novalidate>
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" name="email"
+                           placeholder="admin@dominio.com"
+                           autocomplete="email" required>
+                    <div class="erro-campo" id="erroEmail">Informe um e-mail válido.</div>
+
+                    <!-- CAPTCHA (Adicionado do código novo para proteger o envio de OTP) -->
+                    <div class="g-recaptcha" 
+                         data-sitekey="<?php echo $RECAPTCHA_SITE_KEY; ?>"
+                         style="margin-bottom: 1rem;">
+                    </div>
+
+                    <div class="msg" id="msgEtapa1"></div>
+                    
+                    <button type="submit" id="btnEnviar">Enviar código pelo Telegram</button>
+                </form>
             </div>
 
-            <form id="formLoginAdmin" novalidate>
-                <label for="email">E-mail</label>
-                <input type="email" id="email" name="email" placeholder="admin@dominio.com" autocomplete="email" required>
-                <div class="erro-campo" id="erroEmail">Informe um e-mail válido.</div>
-
-                <?php if (!empty($adminConfig['autenticacao_2fa'])): ?>
-                <label for="chat_id">Chat ID do Telegram</label>
-                <input type="text" id="chat_id" name="chat_id" placeholder="Somente números" inputmode="numeric" autocomplete="one-time-code" required>
-                <div class="erro-campo" id="erroChatId">Informe um Chat ID válido.</div>
-
-                <?php endif; ?>
-
-                <!-- CAPTCHA -->
-                <div class="g-recaptcha"
-                    data-sitekey="<?php echo $RECAPTCHA_SITE_KEY; ?>">
+            <!-- ETAPA 2: Código OTP (Mantida do código antigo) -->
+            <div id="etapa2" style="display:none">
+                <div class="form-header">
+                    <h2>Código recebido?</h2>
+                    <p>Digite os 6 dígitos enviados pelo Telegram para
+                       <strong id="emailExibido"></strong>.
+                    </p>
                 </div>
-
-             <div class="msg" id="mensagem"></div>
-
-                <button type="submit" id="btnEntrar">
-                    Entrar no painel
+                <form id="formEtapa2" novalidate>
+                    <label for="codigo">Código de 6 dígitos</label>
+                    <input type="text" id="codigo" name="codigo"
+                           placeholder="000000" inputmode="numeric"
+                           maxlength="6" autocomplete="one-time-code" required>
+                    <div class="erro-campo" id="erroCodigo">Informe os 6 dígitos.</div>
+                    
+                    <p style="font-size:.85rem;color:#666;margin:.25rem 0 1rem">
+                        Expira em <span id="countdown">5:00</span>
+                    </p>
+                    
+                    <div class="msg" id="msgEtapa2"></div>
+                    
+                    <button type="submit" id="btnVerificar" class="btn-primario">Verificar código</button>
+                </form>
+                
+                <button id="btnReenviar"
+                        style="background:none;border:none;color:#1a73e8;cursor:pointer;font-size:.9rem;text-decoration:underline;margin-top:.75rem">
+                    Não recebi — reenviar
                 </button>
+            </div>
 
             <div class="support-links">
                 <a href="./cadastro_admin.php?reset=1">Cadastrar administrador</a>
+                <a href="./recuperar_senha.php?reset=1">Recuperar senha</a>
                 <a href="./index.php?reset=1">Limpar sessão</a>
             </div>
+
         </section>
     </main>
+</body>
+</html>
 
     <script>
-        const EXIGE_2FA = <?= !empty($adminConfig['autenticacao_2fa']) ? 'true' : 'false' ?>;
-        const REGEX_EMAIL = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-        const REGEX_CHAT_ID = /^[0-9]{6,}$/;
+    const REGEX_EMAIL = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 
-        const campoEmail = document.getElementById('email');
-        const campoChatId = document.getElementById('chat_id');
-        const erroEmail = document.getElementById('erroEmail');
-        const erroChatId = document.getElementById('erroChatId');
-        const btnEntrar = document.getElementById('btnEntrar');
-        const msgDiv = document.getElementById('mensagem');
+    const campoEmail  = document.getElementById('email');
+    const erroEmail   = document.getElementById('erroEmail');
+    const btnEnviar   = document.getElementById('btnEnviar');
+    const msgEtapa1   = document.getElementById('msgEtapa1');
+    const msgEtapa2   = document.getElementById('msgEtapa2');
 
-        campoEmail.addEventListener('blur', () => validar(campoEmail, REGEX_EMAIL, erroEmail));
-        if (EXIGE_2FA) {
-            campoChatId.addEventListener('blur', () => validar(campoChatId, REGEX_CHAT_ID, erroChatId));
+    let countdownTimer = null;
+
+    campoEmail.addEventListener('blur',  () => validarEmail());
+    campoEmail.addEventListener('input', () => limpar(campoEmail, erroEmail, msgEtapa1));
+
+    function validarEmail() {
+        if (!REGEX_EMAIL.test(campoEmail.value.trim())) {
+            campoEmail.classList.add('invalido');
+            erroEmail.classList.add('visivel');
+            return false;
+        }
+        limpar(campoEmail, erroEmail, msgEtapa1);
+        return true;
+    }
+
+    function limpar(input, erroDiv, msgDiv) {
+        input.classList.remove('invalido');
+        erroDiv.classList.remove('visivel');
+        if (msgDiv) { msgDiv.className = 'msg'; msgDiv.textContent = ''; }
+    }
+
+    function mostrarMsg(div, texto, tipo) {
+        div.textContent = texto;
+        div.className   = 'msg ' + tipo;
+    }
+
+    // ── ETAPA 1 ──────────────────────────────────────────────
+    document.getElementById('formEtapa1').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!validarEmail()) return;
+
+        // Validação do CAPTCHA (Injetado do código novo)
+        if (grecaptcha.getResponse() === '') {
+            mostrarMsg(msgEtapa1, 'Confirme o CAPTCHA.', 'erro');
+            return;
         }
 
-        campoEmail.addEventListener('input', () => limpar(campoEmail, erroEmail));
-        if (EXIGE_2FA) {
-            campoChatId.addEventListener('input', () => {
-                campoChatId.value = campoChatId.value.replace(/\D/g, '');
-                limpar(campoChatId, erroChatId);
-            });
-        }
+        btnEnviar.disabled    = true;
+        btnEnviar.textContent = 'Enviando...';
 
-        function validar(input, regex, erroDiv) {
-            if (!regex.test(input.value.trim())) {
-                input.classList.add('invalido');
-                erroDiv.classList.add('visivel');
-                return false;
+        const dados = new FormData();
+        dados.append('etapa', '1');
+        dados.append('email', campoEmail.value.trim());
+        // Envio do token do captcha para o PHP
+        dados.append('g-recaptcha-response', grecaptcha.getResponse());
+
+        try {
+            // Alterado para index.php conforme o fluxo do seu sistema novo
+            const res  = await fetch('index.php', { method: 'POST', body: dados });
+            const json = await res.json();
+
+            if (json.ok) {
+                mostrarMsg(msgEtapa1, json.msg, 'sucesso');
+                document.getElementById('emailExibido').textContent = campoEmail.value.trim();
+                document.getElementById('etapa1').style.display = 'none';
+                document.getElementById('etapa2').style.display = '';
+                iniciarContagem();
+            } else {
+                mostrarMsg(msgEtapa1, json.msg || 'Erro ao enviar código.', 'erro');
+                grecaptcha.reset(); // Reseta captcha em caso de erro
             }
+        } catch {
+            mostrarMsg(msgEtapa1, 'Erro de conexão. Tente novamente.', 'erro');
+            grecaptcha.reset();
+        } finally {
+            btnEnviar.disabled    = false;
+            btnEnviar.textContent = 'Enviar código pelo Telegram';
+        }
+    });
 
-            limpar(input, erroDiv);
-            return true;
+    // ── ETAPA 2 ──────────────────────────────────────────────
+    document.getElementById('formEtapa2').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const campoCodigo = document.getElementById('codigo');
+        const erroCodigo  = document.getElementById('erroCodigo');
+        const btnVerificar = document.getElementById('btnVerificar');
+
+        if (!/^\d{6}$/.test(campoCodigo.value.trim())) {
+            campoCodigo.classList.add('invalido');
+            erroCodigo.classList.add('visivel');
+            return;
         }
 
-        function limpar(input, erroDiv) {
-            input.classList.remove('invalido');
-            erroDiv.classList.remove('visivel');
-            msgDiv.className = 'msg';
-            msgDiv.textContent = '';
+        btnVerificar.disabled    = true;
+        btnVerificar.textContent = 'Verificando...';
+
+        const dados = new FormData();
+        dados.append('etapa',  '2');
+        dados.append('codigo', campoCodigo.value.trim());
+
+        try {
+            const res  = await fetch('index.php', { method: 'POST', body: dados });
+            const json = await res.json();
+
+            if (json.ok) {
+                mostrarMsg(msgEtapa2, json.msg, 'sucesso');
+                clearInterval(countdownTimer);
+                setTimeout(() => { window.location.href = json.redirect || './dashboard.php'; }, 700);
+            } else {
+                mostrarMsg(msgEtapa2, json.msg || 'Código inválido.', 'erro');
+            }
+        } catch {
+            mostrarMsg(msgEtapa2, 'Erro de conexão. Tente novamente.', 'erro');
+        } finally {
+            btnVerificar.disabled    = false;
+            btnVerificar.textContent = 'Verificar código';
         }
+    });
 
-        document.getElementById('formLoginAdmin').addEventListener('submit', async (event) => {
-            event.preventDefault();
+    // ── REENVIAR ─────────────────────────────────────────────
+    document.getElementById('btnReenviar').addEventListener('click', () => {
+        document.getElementById('etapa2').style.display = 'none';
+        document.getElementById('etapa1').style.display = '';
+        grecaptcha.reset(); // Garante que o usuário valide o captcha ao tentar de novo
+        clearInterval(countdownTimer);
+    });
 
-            const emailOk = validar(campoEmail, REGEX_EMAIL, erroEmail);
-            const chatIdOk = !EXIGE_2FA || validar(campoChatId, REGEX_CHAT_ID, erroChatId);
-
-            if (!emailOk || !chatIdOk) {
-                return;
+    // ── COUNTDOWN ────────────────────────────────────────────
+    function iniciarContagem() {
+        clearInterval(countdownTimer);
+        let secs = 300;
+        const el = document.getElementById('countdown');
+        countdownTimer = setInterval(() => {
+            secs--;
+            const m = String(Math.floor(secs / 60)).padStart(1, '0');
+            const s = String(secs % 60).padStart(2, '0');
+            el.textContent = m + ':' + s;
+            if (secs <= 0) {
+                clearInterval(countdownTimer);
+                mostrarMsg(msgEtapa2, 'Código expirado. Clique em "Não recebi" para reenviar.', 'erro');
             }
-
-            btnEntrar.disabled = true;
-            btnEntrar.textContent = 'Validando...';
-
-            if (grecaptcha.getResponse() === '') {
-                mostrarMsg('Confirme o CAPTCHA.', 'erro');
-                btnEntrar.disabled = false;
-                btnEntrar.textContent = 'Entrar no painel';
-                return;
-            }
-
-            const dados = new FormData();
-            dados.append('email', campoEmail.value.trim());
-            dados.append('chat_id', EXIGE_2FA ? campoChatId.value.trim() : '');
-            dados.append('g-recaptcha-response', grecaptcha.getResponse());
-
-            try {
-                const response = await fetch('index.php', {
-                    method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    body: dados
-                });
-
-                const json = await response.json();
-
-                if (json.ok) {
-                    mostrarMsg(json.msg, 'sucesso');
-                    window.setTimeout(() => {
-                        window.location.href = json.redirect || './dashboard.php';
-                    }, 700);
-                } else {
-                    mostrarMsg(json.msg || 'Não foi possível entrar.', 'erro');
-                    grecaptcha.reset();
-                }
-            } catch (error) {
-                console.error('Falha ao autenticar admin:', error);
-                mostrarMsg('Erro de conexão. Tente novamente.', 'erro');
-                grecaptcha.reset();
-            } finally {
-                btnEntrar.disabled = false;
-                btnEntrar.textContent = 'Entrar no painel';
-            }
-        });
-
-        function mostrarMsg(texto, tipo) {
-            msgDiv.textContent = texto;
-            msgDiv.className = 'msg ' + tipo;
-        }
-    </script>
+        }, 1000);
+    }
+</script>
 </body>
 </html>

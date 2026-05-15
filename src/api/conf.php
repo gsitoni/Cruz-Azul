@@ -1,0 +1,4 @@
+<?php
+
+define('TELEGRAM_TOKEN', '8375612779:AAFHJ0Ag7dUrGxvHTPsXYL9oegjREfPawS8');
+?>

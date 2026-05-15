@@ -14,6 +14,7 @@ require '../../src/api/mailer.php';
 require '../../src/api/valida_senha.php';
 require_once '../../config/recaptcha.php';
 
+
 // Responde requisições AJAX em JSON
 $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';

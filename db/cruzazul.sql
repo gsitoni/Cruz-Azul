@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 16/04/2026 às 16:11
+-- Tempo de geração: 14/05/2026 às 20:12
 -- Versão do servidor: 10.4.32-MariaDB
 -- Versão do PHP: 8.2.12
 
@@ -25,6 +25,22 @@ DELIMITER $$
 --
 -- Procedimentos
 --
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_gerar_otp_telegram` (IN `p_id_usuario` INT UNSIGNED, IN `p_telegram_chat_id` VARCHAR(64))   BEGIN
+  DECLARE v_codigo CHAR(6);
+  DECLARE v_ativo TINYINT(1);
+
+  SELECT telegram_2fa_ativo INTO v_ativo FROM usuario WHERE id_usuario = p_id_usuario;
+  IF v_ativo = 0 OR v_ativo IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Telegram 2FA não está ativo para este usuário.';
+  END IF;
+
+  UPDATE otp_telegram SET usado = 1 WHERE id_usuario = p_id_usuario AND usado = 0;
+  SET v_codigo = LPAD(FLOOR(RAND() * 1000000), 6, '0');
+  INSERT INTO otp_telegram (id_usuario, telegram_chat_id, codigo, expira_em)
+  VALUES (p_id_usuario, p_telegram_chat_id, v_codigo, DATE_ADD(NOW(), INTERVAL 5 MINUTE));
+  SELECT v_codigo AS codigo, DATE_ADD(NOW(), INTERVAL 5 MINUTE) AS expira_em;
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_marcar_lotes_vencidos` ()   BEGIN
     UPDATE estoque
     SET status_operacional = 'vencido'
@@ -34,10 +50,43 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_marcar_lotes_vencidos` ()   BEGI
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_suspender_beneficiarios_expirados` ()   BEGIN
-    UPDATE ong
-    SET status_elegibilidade = 'suspenso'
-    WHERE status_elegibilidade = 'ativo'
-      AND data_atualizacao < DATE_SUB(NOW(), INTERVAL 6 MONTH);
+  UPDATE ong
+  SET status_elegibilidade = 'suspenso'
+  WHERE status_elegibilidade IN ('ativo', 'aprovado')
+    AND data_atualizacao < DATE_SUB(NOW(), INTERVAL 6 MONTH);
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_validar_otp_telegram` (IN `p_id_usuario` INT UNSIGNED, IN `p_codigo` CHAR(6), OUT `p_valido` TINYINT(1))   BEGIN
+  DECLARE v_id       int UNSIGNED DEFAULT NULL;
+  DECLARE v_expira   datetime     DEFAULT NULL;
+  DECLARE v_usado    tinyint(1)   DEFAULT 1;
+  DECLARE v_tentativas tinyint(3) DEFAULT 0;
+
+  SELECT id, expira_em, usado, tentativas
+    INTO v_id, v_expira, v_usado, v_tentativas
+    FROM otp_telegram
+   WHERE id_usuario = p_id_usuario
+     AND codigo     = p_codigo
+     AND usado      = 0
+   ORDER BY criado_em DESC
+   LIMIT 1;
+
+  IF v_id IS NULL THEN
+    SET p_valido = 0;
+  ELSEIF v_expira < NOW() THEN
+    SET p_valido = 0;
+    UPDATE otp_telegram SET tentativas = tentativas + 1 WHERE id = v_id;
+  ELSEIF v_tentativas >= 5 THEN
+    SET p_valido = 0;
+  ELSE
+    -- Marca como usado e confirma a conta se ainda pendente
+    UPDATE otp_telegram SET usado = 1 WHERE id = v_id;
+    UPDATE usuario
+       SET status_cadastro = 'confirmado'
+     WHERE id_usuario = p_id_usuario
+       AND status_cadastro = 'pendente';
+    SET p_valido = 1;
+  END IF;
 END$$
 
 DELIMITER ;
@@ -57,7 +106,7 @@ CREATE TABLE `distribuicao` (
   `data_hora` datetime NOT NULL DEFAULT current_timestamp(),
   `comprovante_url` text NOT NULL,
   `criado_em` datetime NOT NULL DEFAULT current_timestamp()
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Despejando dados para a tabela `distribuicao`
@@ -138,7 +187,7 @@ CREATE TABLE `doacao` (
   `estado_conservacao` enum('novo','usado','desgastado') DEFAULT NULL,
   `data_doacao` date NOT NULL,
   `criado_em` datetime NOT NULL DEFAULT current_timestamp()
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Despejando dados para a tabela `doacao`
@@ -166,37 +215,6 @@ CREATE TRIGGER `tg_doacao_cria_lote` AFTER INSERT ON `doacao` FOR EACH ROW BEGIN
     );
 END
 $$
-DELIMITER ;
-DELIMITER $$
-
-CREATE TRIGGER `tg_log_doacao`
-AFTER INSERT ON `doacao`
-FOR EACH ROW
-BEGIN
-
-    INSERT INTO logs_sistema (
-        tipo,
-        categoria,
-        acao,
-        descricao,
-        tabela_afetada,
-        id_referencia
-    )
-    VALUES (
-        'INFO',
-        'DOACAO',
-        'Nova doação cadastrada',
-        CONCAT(
-            'Doação do item ',
-            NEW.item,
-            ' cadastrada.'
-        ),
-        'doacao',
-        NEW.id_doacao
-    );
-
-END$$
-
 DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `tg_doacao_valida_insert` BEFORE INSERT ON `doacao` FOR EACH ROW BEGIN
@@ -235,6 +253,33 @@ CREATE TRIGGER `tg_doacao_valida_update` BEFORE UPDATE ON `doacao` FOR EACH ROW 
             SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Item não-perecível exige estado de conservação.';
         END IF;
     END IF;
+END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `tg_log_doacao` AFTER INSERT ON `doacao` FOR EACH ROW BEGIN
+
+    INSERT INTO logs_sistema (
+        tipo,
+        categoria,
+        acao,
+        descricao,
+        tabela_afetada,
+        id_referencia
+    )
+    VALUES (
+        'INFO',
+        'DOACAO',
+        'Nova doação cadastrada',
+        CONCAT(
+            'Doação do item ',
+            NEW.item,
+            ' cadastrada.'
+        ),
+        'doacao',
+        NEW.id_doacao
+    );
+
 END
 $$
 DELIMITER ;
@@ -280,7 +325,7 @@ CREATE TABLE `estoque` (
   `status_operacional` enum('disponivel','quarentena','avariado','vencido','esgotado') NOT NULL DEFAULT 'disponivel',
   `criado_em` datetime NOT NULL DEFAULT current_timestamp(),
   `atualizado_em` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Despejando dados para a tabela `estoque`
@@ -288,6 +333,34 @@ CREATE TABLE `estoque` (
 
 INSERT INTO `estoque` (`id_lote`, `codigo_lote`, `id_doacao`, `item`, `quantidade_atual`, `localizacao_fisica`, `data_validade`, `status_operacional`, `criado_em`, `atualizado_em`) VALUES
 (2, 'LOT-20260411-0003', 3, 'Óleo de soja', 46.836, 'A DEFINIR', '2026-07-13', 'disponivel', '2026-04-11 11:22:45', '2026-04-11 11:25:50');
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela `logs_sistema`
+--
+
+CREATE TABLE `logs_sistema` (
+  `id_log` bigint(20) UNSIGNED NOT NULL,
+  `id_usuario` int(10) UNSIGNED DEFAULT NULL,
+  `tipo` enum('INFO','WARNING','ERROR','CRITICAL') NOT NULL DEFAULT 'INFO',
+  `categoria` enum('LOGIN','CADASTRO','DOACAO','ESTOQUE','DISTRIBUICAO','ONG','VOLUNTARIO','USUARIO','SISTEMA','SEGURANCA') NOT NULL,
+  `acao` varchar(255) NOT NULL,
+  `descricao` text DEFAULT NULL,
+  `tabela_afetada` varchar(100) DEFAULT NULL,
+  `id_referencia` int(10) UNSIGNED DEFAULT NULL,
+  `ip_origem` varchar(45) DEFAULT NULL,
+  `user_agent` text DEFAULT NULL,
+  `data_hora` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Despejando dados para a tabela `logs_sistema`
+--
+
+INSERT INTO `logs_sistema` (`id_log`, `id_usuario`, `tipo`, `categoria`, `acao`, `descricao`, `tabela_afetada`, `id_referencia`, `ip_origem`, `user_agent`, `data_hora`) VALUES
+(1, NULL, 'INFO', 'LOGIN', 'Login admin realizado', 'Administrador acessou o painel via 2FA.', 'usuario', 52, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-14 14:50:32'),
+(2, 54, 'INFO', 'LOGIN', 'Login admin realizado', 'Administrador acessou o painel via 2FA.', 'usuario', 54, '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', '2026-05-14 15:08:43');
 
 -- --------------------------------------------------------
 
@@ -326,6 +399,51 @@ INSERT INTO `ong` (`id_ong`, `id_usuario`, `nome`, `cnpj`, `localizacao`, `class
 -- --------------------------------------------------------
 
 --
+-- Estrutura para tabela `otp_telegram`
+--
+
+CREATE TABLE `otp_telegram` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `id_usuario` int(10) UNSIGNED NOT NULL,
+  `telegram_chat_id` varchar(64) NOT NULL,
+  `codigo` char(6) NOT NULL,
+  `expira_em` datetime NOT NULL,
+  `usado` tinyint(1) NOT NULL DEFAULT 0,
+  `tentativas` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
+  `criado_em` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Despejando dados para a tabela `otp_telegram`
+--
+
+INSERT INTO `otp_telegram` (`id`, `id_usuario`, `telegram_chat_id`, `codigo`, `expira_em`, `usado`, `tentativas`, `criado_em`) VALUES
+(20, 54, '8002103373', '630806', '2026-05-14 15:13:34', 1, 1, '2026-05-14 15:08:34');
+
+--
+-- Acionadores `otp_telegram`
+--
+DELIMITER $$
+CREATE TRIGGER `tg_otp_valida_uso` BEFORE UPDATE ON `otp_telegram` FOR EACH ROW BEGIN
+  IF OLD.usado = 1 THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'Este código OTP já foi utilizado.';
+  END IF;
+  IF OLD.expira_em < NOW() THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'Código OTP expirado.';
+  END IF;
+  IF OLD.tentativas >= 5 THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'Número máximo de tentativas atingido.';
+  END IF;
+END
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
 -- Estrutura para tabela `usuario`
 --
 
@@ -333,15 +451,17 @@ CREATE TABLE `usuario` (
   `id_usuario` int(10) UNSIGNED NOT NULL,
   `nome` varchar(200) NOT NULL,
   `email` varchar(254) NOT NULL,
-  `senha_hash` text NOT NULL,
-
-  `telegram_chat_id` VARCHAR(50) DEFAULT NULL,
-  `telegram_2fa_ativo` BOOLEAN DEFAULT FALSE,
-
+  `senha_hash` text DEFAULT NULL,
+  `telegram_chat_id` varchar(50) DEFAULT NULL,
+  `telegram_2fa_ativo` tinyint(1) DEFAULT 0,
   `status_cadastro` enum('pendente','confirmado','bloqueado') NOT NULL DEFAULT 'pendente',
   `token_confirmacao` varchar(255) DEFAULT NULL,
   `token_recuperacao` varchar(255) DEFAULT NULL,
   `token_expira_em` datetime DEFAULT NULL,
+  `pergunta_seguranca` varchar(255) DEFAULT NULL,
+  `resposta_seguranca_hash` varchar(255) DEFAULT NULL,
+  `tentativas_recuperacao` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `bloqueado_ate` datetime DEFAULT NULL,
   `chave_2fa` varchar(64) DEFAULT NULL,
   `data_criacao` datetime NOT NULL DEFAULT current_timestamp(),
   `tipo` enum('usuario','admin','ong','doador') NOT NULL DEFAULT 'usuario'
@@ -351,61 +471,12 @@ CREATE TABLE `usuario` (
 -- Despejando dados para a tabela `usuario`
 --
 
-INSERT INTO `usuario` (`id_usuario`, `nome`, `email`, `senha_hash`, `status_cadastro`, `token_confirmacao`, `token_recuperacao`, `token_expira_em`, `chave_2fa`, `data_criacao`, `tipo`) VALUES
-(1, '', 'usuario1655@terra.com.br', 'a2ca37fe6fdc490b8f7ce841e1701a169d2b1697c6b5b5c63f94abb8f9b6d6dd', 'confirmado', NULL, NULL, NULL, NULL, '2026-04-11 11:21:32', ''),
-(2, '', 'teste@teste.com', '$2y$10$35jJlOeRUIRvNodUNE3QNu0Bds70sgshRhCGaoRf3rWYHvwMRsW3S', 'confirmado', NULL, NULL, NULL, NULL, '2026-04-11 21:09:44', ''),
-(3, 'nome', 'ablu@gmail.com', '$2y$10$lFtaI.y4kU5wlO7sdJs4beD2iLlRSje41ATpdcVdsoEhrDKkG1VkO', 'pendente', '8062f5936f559de19f6b20e2d916798f6119261e71ad5feab8287d05ceca70b5', NULL, NULL, NULL, '2026-04-12 14:54:31', ''),
-(5, 'nome', 'email@teste.com', '$2y$10$S4Q4Je8gRKoNrkcNUoHRSOQ9A2gaqt3lyrxyE1LAwU49plENZN/5G', 'pendente', 'a412968ba7042df1848118e531f1213f52c9be769ded05b75a16871009c69543', NULL, NULL, NULL, '2026-04-12 15:01:30', '');
-
--- --------------------------------------------------------
-
---
--- Estrutura para tabela `logs_sistema`
---
-
-CREATE TABLE `logs_sistema` (
-  `id_log` bigint(20) UNSIGNED NOT NULL,
-
-  `id_usuario` int(10) UNSIGNED DEFAULT NULL,
-
-  `tipo` enum(
-    'INFO',
-    'WARNING',
-    'ERROR',
-    'CRITICAL'
-  ) NOT NULL DEFAULT 'INFO',
-
-  `categoria` enum(
-    'LOGIN',
-    'CADASTRO',
-    'DOACAO',
-    'ESTOQUE',
-    'DISTRIBUICAO',
-    'ONG',
-    'VOLUNTARIO',
-    'USUARIO',
-    'SISTEMA',
-    'SEGURANCA'
-  ) NOT NULL,
-
-  `acao` varchar(255) NOT NULL,
-
-  `descricao` text DEFAULT NULL,
-
-  `tabela_afetada` varchar(100) DEFAULT NULL,
-
-  `id_referencia` int(10) UNSIGNED DEFAULT NULL,
-
-  `ip_origem` varchar(45) DEFAULT NULL,
-
-  `user_agent` text DEFAULT NULL,
-
-  `data_hora` datetime NOT NULL
-  DEFAULT current_timestamp()
-
-) ENGINE=InnoDB
-DEFAULT CHARSET=utf8mb4
-COLLATE=utf8mb4_unicode_ci;
+INSERT INTO `usuario` (`id_usuario`, `nome`, `email`, `senha_hash`, `telegram_chat_id`, `telegram_2fa_ativo`, `status_cadastro`, `token_confirmacao`, `token_recuperacao`, `token_expira_em`, `pergunta_seguranca`, `resposta_seguranca_hash`, `tentativas_recuperacao`, `bloqueado_ate`, `chave_2fa`, `data_criacao`, `tipo`) VALUES
+(1, '', 'usuario1655@terra.com.br', 'a2ca37fe6fdc490b8f7ce841e1701a169d2b1697c6b5b5c63f94abb8f9b6d6dd', NULL, 0, 'confirmado', NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, '2026-04-11 11:21:32', ''),
+(2, '', 'teste@teste.com', '$2y$10$35jJlOeRUIRvNodUNE3QNu0Bds70sgshRhCGaoRf3rWYHvwMRsW3S', NULL, 0, 'confirmado', NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, '2026-04-11 21:09:44', ''),
+(3, 'nome', 'ablu@gmail.com', '$2y$10$lFtaI.y4kU5wlO7sdJs4beD2iLlRSje41ATpdcVdsoEhrDKkG1VkO', NULL, 0, 'pendente', '8062f5936f559de19f6b20e2d916798f6119261e71ad5feab8287d05ceca70b5', NULL, NULL, NULL, NULL, 0, NULL, NULL, '2026-04-12 14:54:31', ''),
+(5, 'nome', 'email@teste.com', '$2y$10$S4Q4Je8gRKoNrkcNUoHRSOQ9A2gaqt3lyrxyE1LAwU49plENZN/5G', NULL, 0, 'pendente', 'a412968ba7042df1848118e531f1213f52c9be769ded05b75a16871009c69543', NULL, NULL, NULL, NULL, 0, NULL, NULL, '2026-04-12 15:01:30', ''),
+(54, 'mark', 'mark.oliveira2511@gmail.com', '', '8002103373', 1, 'confirmado', 'bd35d18021469861eceb1ee478d72676e378b5675efaecf8dc29d1e94f8e73cd', NULL, NULL, 'nome_primeiro_pet', '$2y$10$/n6OAfB2bd1hgDFG2R/FCOEF2XSyXDQVYnBQ.GBVtThCkMoEkjGW.', 0, NULL, NULL, '2026-05-14 14:58:56', 'admin');
 
 -- --------------------------------------------------------
 
@@ -432,6 +503,7 @@ CREATE TABLE `voluntario` (
 
 INSERT INTO `voluntario` (`id_voluntario`, `nome`, `cpf`, `telefone`, `email`, `funcao`, `disponibilidade`, `data_entrada`, `status_operacional`, `criado_em`) VALUES
 (3, 'Ryan Mendonça', '052.481.973-41', '11973140807', 'ryan.mendonça430@uol.com.br', 'recepcionista', 'dias_uteis', '2024-01-16', 'ativo', '2026-04-11 11:21:58');
+
 --
 -- Acionadores `voluntario`
 --
@@ -455,25 +527,6 @@ DELIMITER ;
 --
 -- Índices para tabelas despejadas
 --
-
---
--- Índices de tabela `logs_sistema`
---
-
-ALTER TABLE `logs_sistema`
-  ADD PRIMARY KEY (`id_log`),
-
-  ADD KEY `idx_logs_usuario`
-  (`id_usuario`),
-
-  ADD KEY `idx_logs_tipo`
-  (`tipo`),
-
-  ADD KEY `idx_logs_categoria`
-  (`categoria`),
-
-  ADD KEY `idx_logs_data`
-  (`data_hora`);
 
 --
 -- Índices de tabela `distribuicao`
@@ -510,6 +563,16 @@ ALTER TABLE `estoque`
   ADD KEY `idx_estoque_validade` (`data_validade`);
 
 --
+-- Índices de tabela `logs_sistema`
+--
+ALTER TABLE `logs_sistema`
+  ADD PRIMARY KEY (`id_log`),
+  ADD KEY `idx_logs_usuario` (`id_usuario`),
+  ADD KEY `idx_logs_tipo` (`tipo`),
+  ADD KEY `idx_logs_categoria` (`categoria`),
+  ADD KEY `idx_logs_data` (`data_hora`);
+
+--
 -- Índices de tabela `ong`
 --
 ALTER TABLE `ong`
@@ -519,11 +582,21 @@ ALTER TABLE `ong`
   ADD KEY `idx_ong_status` (`status_elegibilidade`);
 
 --
+-- Índices de tabela `otp_telegram`
+--
+ALTER TABLE `otp_telegram`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_otp_usuario` (`id_usuario`),
+  ADD KEY `idx_otp_chat` (`telegram_chat_id`),
+  ADD KEY `idx_otp_expira` (`expira_em`);
+
+--
 -- Índices de tabela `usuario`
 --
 ALTER TABLE `usuario`
   ADD PRIMARY KEY (`id_usuario`),
-  ADD UNIQUE KEY `uq_usuario_email` (`email`);
+  ADD UNIQUE KEY `uq_usuario_email` (`email`),
+  ADD UNIQUE KEY `uq_usuario_telegram_chat_id` (`telegram_chat_id`);
 
 --
 -- Índices de tabela `voluntario`
@@ -540,24 +613,16 @@ ALTER TABLE `voluntario`
 --
 
 --
--- AUTO_INCREMENT de tabela `logs_sistema`
---
-
-ALTER TABLE `logs_sistema`
-  MODIFY `id_log`
-  bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT de tabela `distribuicao`
 --
 ALTER TABLE `distribuicao`
-  MODIFY `id_operacao` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id_operacao` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT de tabela `doacao`
 --
 ALTER TABLE `doacao`
-  MODIFY `id_doacao` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id_doacao` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de tabela `doador`
@@ -569,7 +634,13 @@ ALTER TABLE `doador`
 -- AUTO_INCREMENT de tabela `estoque`
 --
 ALTER TABLE `estoque`
-  MODIFY `id_lote` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id_lote` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT de tabela `logs_sistema`
+--
+ALTER TABLE `logs_sistema`
+  MODIFY `id_log` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de tabela `ong`
@@ -578,10 +649,16 @@ ALTER TABLE `ong`
   MODIFY `id_ong` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
+-- AUTO_INCREMENT de tabela `otp_telegram`
+--
+ALTER TABLE `otp_telegram`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+
+--
 -- AUTO_INCREMENT de tabela `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `id_usuario` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `id_usuario` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
 
 --
 -- AUTO_INCREMENT de tabela `voluntario`
@@ -592,17 +669,6 @@ ALTER TABLE `voluntario`
 --
 -- Restrições para tabelas despejadas
 --
-
---
--- Restrições para tabela `logs_sistema`
---
-
-ALTER TABLE `logs_sistema`
-  ADD CONSTRAINT `fk_logs_usuario`
-  FOREIGN KEY (`id_usuario`)
-  REFERENCES `usuario` (`id_usuario`)
-  ON DELETE SET NULL
-  ON UPDATE CASCADE;
 
 --
 -- Restrições para tabelas `distribuicao`
@@ -631,10 +697,23 @@ ALTER TABLE `estoque`
   ADD CONSTRAINT `fk_estoque_doacao` FOREIGN KEY (`id_doacao`) REFERENCES `doacao` (`id_doacao`);
 
 --
+-- Restrições para tabelas `logs_sistema`
+--
+ALTER TABLE `logs_sistema`
+  ADD CONSTRAINT `fk_logs_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
 -- Restrições para tabelas `ong`
 --
 ALTER TABLE `ong`
   ADD CONSTRAINT `fk_ong_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON UPDATE CASCADE;
+
+--
+-- Restrições para tabelas `otp_telegram`
+--
+ALTER TABLE `otp_telegram`
+  ADD CONSTRAINT `fk_otp_telegram_chat_id` FOREIGN KEY (`telegram_chat_id`) REFERENCES `usuario` (`telegram_chat_id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_otp_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE CASCADE;
 
 DELIMITER $$
 --
@@ -643,6 +722,10 @@ DELIMITER $$
 CREATE DEFINER=`root`@`localhost` EVENT `ev_marcar_lotes_vencidos` ON SCHEDULE EVERY 1 DAY STARTS '2026-04-12 00:00:00' ON COMPLETION NOT PRESERVE ENABLE DO CALL sp_marcar_lotes_vencidos()$$
 
 CREATE DEFINER=`root`@`localhost` EVENT `ev_suspender_beneficiarios` ON SCHEDULE EVERY 1 DAY STARTS '2026-04-12 00:00:00' ON COMPLETION NOT PRESERVE ENABLE DO CALL sp_suspender_beneficiarios_expirados()$$
+
+CREATE DEFINER=`root`@`localhost` EVENT `ev_limpar_otps_expirados` ON SCHEDULE EVERY 1 HOUR STARTS '2026-05-14 12:16:02' ON COMPLETION NOT PRESERVE ENABLE DO DELETE FROM otp_telegram
+     WHERE expira_em < DATE_SUB(NOW(), INTERVAL 1 HOUR)
+        OR usado = 1$$
 
 DELIMITER ;
 COMMIT;
