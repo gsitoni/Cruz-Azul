@@ -153,9 +153,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // VERIFICA STATUS
-            if (($usuario['status_cadastro'] ?? '') === 'pendente') {
-                json_out(false, 'Conta pendente de confirmação.');
-            }
             if (($usuario['status_cadastro'] ?? '') === 'bloqueado') {
                 json_out(false, 'Conta bloqueada.');
             }
@@ -276,7 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <ul class="feature-list">
                 <li>Acesso restrito a usuários com perfil administrativo</li>
                 <li>Validação do Chat ID cadastrado no Telegram</li>
-                <li>Entrada liberada apenas para contas confirmadas e ativas</li>
+                <li>Entrada liberada apenas para contas administrativas ativas</li>
             </ul>
         </section>
 
@@ -346,8 +343,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="support-links">
                 <a href="./cadastro_admin.php?reset=1">Cadastrar administrador</a>
-                <a href="./recuperar_senha.php?reset=1">Recuperar senha</a>
-                <a href="./index.php?reset=1">Limpar sessão</a>
             </div>
 
         </section>
