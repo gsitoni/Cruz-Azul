@@ -31,16 +31,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     try {
         if ($id && $id === $idAdminAtual && in_array($acao, ['bloquear', 'excluir'], true)) {
+            registrarLogSistema($pdo, 'CRITICAL', 'SEGURANCA', 'SELF_ADMIN_ACTION_BLOCKED', 'Administrador tentou alterar a propria conta.', 'usuario', $id, $idAdminAtual, [
+                'requested_action' => $acao,
+                'impact' => 'self_lockout_prevented',
+            ], 'BLOCKED');
             $_SESSION['msg'] = 'Voce nao pode bloquear ou excluir a propria conta administrativa.';
         } elseif ($acao === 'bloquear' && $id) {
             $stmt = $pdo->prepare("UPDATE usuario SET status_cadastro = 'bloqueado' WHERE id_usuario = ?");
             $stmt->execute([$id]);
-            registrarLogSistema($pdo, 'WARNING', 'USUARIO', 'Usuario bloqueado', 'Usuario bloqueado pelo painel administrativo.', 'usuario', $id);
+            registrarLogSistema($pdo, 'WARNING', 'USUARIO', 'USER_STATUS_CHANGED', 'Usuario bloqueado pelo painel administrativo.', 'usuario', $id, null, [
+                'before' => 'confirmado',
+                'after' => 'bloqueado',
+                'impact' => 'login_denied',
+            ], 'SUCCESS');
             $_SESSION['msg'] = 'Usuário bloqueado com sucesso.';
         } elseif ($acao === 'desbloquear' && $id) {
             $stmt = $pdo->prepare("UPDATE usuario SET status_cadastro = 'confirmado' WHERE id_usuario = ?");
             $stmt->execute([$id]);
-            registrarLogSistema($pdo, 'INFO', 'USUARIO', 'Usuario desbloqueado', 'Usuario desbloqueado pelo painel administrativo.', 'usuario', $id);
+            registrarLogSistema($pdo, 'INFO', 'USUARIO', 'USER_STATUS_CHANGED', 'Usuario desbloqueado pelo painel administrativo.', 'usuario', $id, null, [
+                'before' => 'bloqueado',
+                'after' => 'confirmado',
+                'impact' => 'login_allowed',
+            ], 'SUCCESS');
             $_SESSION['msg'] = 'Usuário desbloqueado com sucesso.';
         } elseif ($acao === 'excluir' && $id) {
             $pdo->beginTransaction();
@@ -53,7 +65,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $stmt = $pdo->prepare("DELETE FROM usuario WHERE id_usuario = ?");
             $stmt->execute([$id]);
-            registrarLogSistema($pdo, 'CRITICAL', 'USUARIO', 'Usuario excluido', 'Usuario excluido pelo painel administrativo.', 'usuario', $id);
+            registrarLogSistema($pdo, 'CRITICAL', 'USUARIO', 'USER_DELETED', 'Usuario excluido pelo painel administrativo.', 'usuario', $id, null, [
+                'before' => 'usuario_existente',
+                'after' => 'usuario_removido',
+                'impact' => 'account_deleted',
+            ], 'SUCCESS');
             $pdo->commit();
             $_SESSION['msg'] = 'Usuário excluído com sucesso.';
         } else {

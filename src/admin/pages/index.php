@@ -102,6 +102,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['admin_login_tentativas'] = (int) ($_SESSION['admin_login_tentativas'] ?? 0);
 
     if ($_SESSION['admin_login_tentativas'] >= $maxTentativas) {
+        registrarLogSistema($pdo, 'CRITICAL', 'SEGURANCA', 'BRUTE_FORCE_SUSPECTED', 'Limite de tentativas de login admin excedido.', 'usuario', null, null, [
+            'attempts' => $_SESSION['admin_login_tentativas'],
+            'limit' => $maxTentativas,
+            'etapa' => $etapa,
+        ], 'FAIL');
         json_out(false, 'Limite de tentativas excedido.');
     }
 
@@ -113,6 +118,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $captcha = $_POST['g-recaptcha-response'] ?? '';
 
         if (empty($captcha)) {
+            registrarLogSistema($pdo, 'WARNING', 'SEGURANCA', 'INVALID_CAPTCHA', 'Tentativa de login admin sem CAPTCHA.', 'usuario', null, null, [
+                'etapa' => '1',
+            ], 'FAIL');
             json_out(false, 'Confirme o CAPTCHA.');
         }
 
@@ -125,6 +133,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resposta = json_decode($verificacao);
 
         if (!$resposta->success) {
+            registrarLogSistema($pdo, 'WARNING', 'SEGURANCA', 'INVALID_CAPTCHA', 'CAPTCHA invalido no login admin.', 'usuario', null, null, [
+                'etapa' => '1',
+            ], 'FAIL');
             json_out(false, 'CAPTCHA inválido.');
         }
 
@@ -132,6 +143,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!preg_match(REGEX_EMAIL_ADMIN, $email)) {
             registrarTentativaAdmin();
+            registrarLogSistema($pdo, 'WARNING', 'AUTH', 'LOGIN_ATTEMPT', 'E-mail invalido no login admin.', 'usuario', null, null, [
+                'email' => $email,
+                'etapa' => '1',
+            ], 'FAIL');
             json_out(false, 'Informe um e-mail válido.');
         }
 
@@ -140,7 +155,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (!$usuario) {
                 registrarTentativaAdmin();
-                registrarLogSistema($pdo, 'WARNING', 'LOGIN', 'Login admin falhou', 'Tentativa com administrador inexistente.', 'usuario');
+                registrarLogSistema($pdo, 'WARNING', 'AUTH', 'LOGIN_ATTEMPT', 'Tentativa com administrador inexistente.', 'usuario', null, null, [
+                    'email' => $email,
+                    'reason' => 'ADMIN_NOT_FOUND',
+                ], 'FAIL');
                 json_out(false, 'Administrador não encontrado.');
             }
 
@@ -148,17 +166,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $tipoUsuario = (string) ($usuario['tipo'] ?? '');
             if (stripos($tipoUsuario, 'admin') === false) {
                 registrarTentativaAdmin();
-                registrarLogSistema($pdo, 'WARNING', 'SEGURANCA', 'Acesso admin negado', 'Usuario sem perfil admin tentou acessar o painel.', 'usuario', (int) $usuario['id_usuario']);
+                registrarLogSistema($pdo, 'CRITICAL', 'SEGURANCA', 'UNAUTHORIZED_ADMIN_ACCESS', 'Usuario sem perfil admin tentou acessar o painel.', 'usuario', (int) $usuario['id_usuario'], (int) $usuario['id_usuario'], [
+                    'email' => $email,
+                    'tipo' => $tipoUsuario,
+                ], 'FAIL');
                 json_out(false, 'Acesso permitido apenas para administradores.');
             }
 
             // VERIFICA STATUS
             if (($usuario['status_cadastro'] ?? '') === 'bloqueado') {
+                registrarLogSistema($pdo, 'WARNING', 'AUTH', 'LOGIN_ATTEMPT', 'Conta bloqueada tentou acessar o admin.', 'usuario', (int) $usuario['id_usuario'], (int) $usuario['id_usuario'], [
+                    'email' => $email,
+                    'status_cadastro' => $usuario['status_cadastro'],
+                ], 'FAIL');
                 json_out(false, 'Conta bloqueada.');
             }
 
             // VERIFICA TELEGRAM 2FA ATIVO
             if (!(bool) $usuario['telegram_2fa_ativo'] || empty($usuario['telegram_chat_id'])) {
+                registrarLogSistema($pdo, 'ERROR', 'SECURITY', 'MISSING_ADMIN_2FA', 'Telegram 2FA nao ativado para esta conta admin.', 'usuario', (int) $usuario['id_usuario'], (int) $usuario['id_usuario'], [
+                    'email' => $email,
+                    'telegram_2fa_ativo' => (bool) $usuario['telegram_2fa_ativo'],
+                    'has_chat_id' => !empty($usuario['telegram_chat_id']),
+                ], 'FAIL');
                 json_out(false, 'Telegram 2FA não ativado para esta conta.');
             }
 
@@ -177,14 +207,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $enviado = telegram_enviar_otp((string)$usuario['telegram_chat_id'], $otp);
             
             if (!$enviado) {
+                registrarLogSistema($pdo, 'ERROR', 'API', 'OTP_DELIVERY_FAIL', 'Erro ao enviar codigo OTP pelo Telegram.', 'otp_telegram', null, (int) $usuario['id_usuario'], [
+                    'provider' => 'telegram',
+                ], 'FAIL');
                 json_out(false, 'Erro ao enviar código pelo Telegram. Tente novamente.');
             }
 
             $_SESSION['otp_email'] = $email;
+            registrarLogSistema($pdo, 'INFO', 'AUTH', 'OTP_SENT', 'Codigo OTP enviado para login admin.', 'otp_telegram', null, (int) $usuario['id_usuario'], [
+                'provider' => 'telegram',
+            ], 'SUCCESS');
             json_out(true, 'Código enviado! Verifique o Telegram.');
 
         } catch (PDOException $e) {
-            error_log('admin otp etapa1: ' . $e->getMessage());
+            registrarLogSistema($pdo, 'ERROR', 'DATABASE', 'ADMIN_LOGIN_STEP1_ERROR', 'Erro interno na etapa 1 do login admin.', 'otp_telegram', null, null, [
+                'exception' => $e->getMessage(),
+            ], 'FAIL');
             json_out(false, 'Erro interno no servidor.');
         }
     }
@@ -197,6 +235,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $codigo = trim($_POST['codigo'] ?? '');
 
         if (!$email || !preg_match('/^\d{6}$/', $codigo)) {
+            registrarLogSistema($pdo, 'WARNING', 'AUTH', 'OTP_VALIDATE', 'Dados invalidos na validacao OTP admin.', 'otp_telegram', null, null, [
+                'has_email_session' => (bool) $email,
+                'codigo_length' => strlen($codigo),
+            ], 'FAIL');
             json_out(false, 'Dados inválidos.');
         }
 
@@ -212,17 +254,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $otp_row = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$otp_row) {
+                registrarLogSistema($pdo, 'WARNING', 'AUTH', 'OTP_VALIDATE', 'Codigo OTP expirado ou inexistente.', 'otp_telegram', null, (int) $usuario['id_usuario'], [
+                    'email' => $email,
+                ], 'FAIL');
                 json_out(false, 'Código expirado. Solicite um novo.');
             }
 
             if ($otp_row['tentativas'] >= 5) {
                 $pdo->prepare("UPDATE otp_telegram SET usado = 1 WHERE id = ?")->execute([$otp_row['id']]);
+                registrarLogSistema($pdo, 'CRITICAL', 'SECURITY', 'OTP_BRUTE_FORCE_SUSPECTED', 'Muitas tentativas de validacao OTP admin.', 'otp_telegram', (int) $otp_row['id'], (int) $usuario['id_usuario'], [
+                    'tentativas' => (int) $otp_row['tentativas'],
+                    'email' => $email,
+                ], 'FAIL');
                 json_out(false, 'Muitas tentativas. Solicite um novo código.');
             }
 
             $pdo->prepare("UPDATE otp_telegram SET tentativas = tentativas + 1 WHERE id = ?")->execute([$otp_row['id']]);
 
             if (!hash_equals($otp_row['codigo'], $codigo)) {
+                registrarLogSistema($pdo, 'WARNING', 'AUTH', 'OTP_VALIDATE', 'Codigo OTP incorreto no login admin.', 'otp_telegram', (int) $otp_row['id'], (int) $usuario['id_usuario'], [
+                    'tentativas' => (int) $otp_row['tentativas'] + 1,
+                    'email' => $email,
+                ], 'FAIL');
                 json_out(false, 'Código incorreto. Tente novamente.');
             }
 
@@ -241,12 +294,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             unset($_SESSION['otp_email']);
             
-            registrarLogSistema($pdo, 'INFO', 'LOGIN', 'Login admin realizado', 'Administrador acessou o painel via 2FA.', 'usuario', (int) $usuario['id_usuario'], (int) $usuario['id_usuario']);
+            registrarLogSistema($pdo, 'INFO', 'AUTH', 'LOGIN_SUCCESS', 'Administrador acessou o painel via 2FA.', 'usuario', (int) $usuario['id_usuario'], (int) $usuario['id_usuario'], [
+                'auth_factor' => 'telegram_otp',
+                'email' => $usuario['email'],
+                'login' => $usuario['nome'] ?? $usuario['email'],
+            ], 'SUCCESS');
 
             json_out(true, 'Login realizado com sucesso.', ['redirect' => './dashboard.php']);
 
         } catch (PDOException $e) {
-            error_log('admin otp etapa2: ' . $e->getMessage());
+            registrarLogSistema($pdo, 'ERROR', 'DATABASE', 'ADMIN_LOGIN_STEP2_ERROR', 'Erro interno na etapa 2 do login admin.', 'otp_telegram', null, null, [
+                'exception' => $e->getMessage(),
+            ], 'FAIL');
             json_out(false, 'Erro interno.');
         }
     }

@@ -32,12 +32,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($acao === 'aprovar' && $id) {
             $stmt = $pdo->prepare("UPDATE ong SET status_elegibilidade = 'ativo' WHERE id_ong = ?");
             $stmt->execute([$id]);
-            registrarLogSistema($pdo, 'INFO', 'ONG', 'ONG aprovada', 'ONG aprovada pelo painel administrativo.', 'ong', $id);
+            registrarLogSistema($pdo, 'INFO', 'ONG', 'ONG_STATUS_CHANGED', 'ONG aprovada pelo painel administrativo.', 'ong', $id, null, [
+                'before' => 'pendente',
+                'after' => 'ativo',
+                'impact' => 'ong_visible_for_operations',
+            ], 'SUCCESS');
             $_SESSION['msg'] = 'ONG aprovada com sucesso.';
         } elseif ($acao === 'rejeitar' && $id) {
             $stmt = $pdo->prepare("UPDATE ong SET status_elegibilidade = 'rejeitado' WHERE id_ong = ?");
             $stmt->execute([$id]);
-            registrarLogSistema($pdo, 'WARNING', 'ONG', 'ONG rejeitada', 'ONG rejeitada pelo painel administrativo.', 'ong', $id);
+            registrarLogSistema($pdo, 'WARNING', 'ONG', 'ONG_STATUS_CHANGED', 'ONG rejeitada pelo painel administrativo.', 'ong', $id, null, [
+                'before' => 'pendente',
+                'after' => 'rejeitado',
+                'impact' => 'ong_access_denied',
+            ], 'SUCCESS');
             $_SESSION['msg'] = 'ONG rejeitada com sucesso.';
         } else {
             $_SESSION['msg'] = 'Ação inválida ou ONG não encontrada.';

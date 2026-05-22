@@ -93,6 +93,11 @@ body{
     font-weight:800;
 }
 
+.critical-card{
+    border-color:#fecaca;
+    background:#fff7f7;
+}
+
 /* FILTROS */
 
 .filters-box{
@@ -212,6 +217,7 @@ tbody tr:hover{
     border-radius:999px;
     font-size:12px;
     font-weight:800;
+    display:inline-block;
 }
 
 .info{
@@ -232,6 +238,68 @@ tbody tr:hover{
 .critical{
     background:#7f1d1d;
     color:#fff;
+}
+
+.debug{
+    background:#e2e8f0;
+    color:#334155;
+}
+
+.category-tag,
+.status-tag,
+.risk-tag{
+    display:inline-block;
+    padding:5px 10px;
+    border-radius:8px;
+    font-size:12px;
+    font-weight:800;
+    white-space:nowrap;
+}
+
+.category-tag{
+    background:#eef2ff;
+    color:#3730a3;
+}
+
+.status-tag.success{
+    background:#dcfce7;
+    color:#166534;
+}
+
+.status-tag.fail,
+.status-tag.blocked{
+    background:#fee2e2;
+    color:#991b1b;
+}
+
+.risk-tag.low{
+    background:#e0f2fe;
+    color:#075985;
+}
+
+.risk-tag.medium{
+    background:#fef3c7;
+    color:#92400e;
+}
+
+.risk-tag.high,
+.risk-tag.critical{
+    background:#7f1d1d;
+    color:#fff;
+}
+
+.mono{
+    font-family: Consolas, "Courier New", monospace;
+    font-size:13px;
+}
+
+.row-critical{
+    background:#fff1f2;
+}
+
+.table-header p{
+    margin-top:6px;
+    color:#64748b;
 }
 
 /* EMPTY */
