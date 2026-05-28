@@ -94,6 +94,14 @@
     <a href="./escolher_tipo.php" class="btn">Começar agora</a>
 </section>
 
+<!-- DEMONSTRAÇÃO DE CRIPTOGRAFIA -->
+<section class="section" style="background:#F8FAFC; padding:32px; border-radius:16px; margin:32px 0;">
+    <h2>Teste de criptografia cliente-servidor</h2>
+    <p>Este exemplo usa <strong>RSA-OAEP</strong> para proteger a chave AES e <strong>AES-GCM</strong> para cifrar a mensagem.</p>
+    <button id="crypto-test-btn" class="btn" style="margin-bottom:16px;">Enviar segredo criptografado</button>
+    <pre id="crypto-test-result" style="white-space: pre-wrap; word-break: break-word; background:#fff; border:1px solid #E5E7EB; border-radius:12px; padding:16px; min-height:80px;"></pre>
+</section>
+
 <!-- FOOTER -->
 <footer>
     <p>© 2026 Cruz Azul ✙</p>
@@ -216,6 +224,78 @@ window.addEventListener('DOMContentLoaded', function () {
         mostrarPopup();
     }
 });
+</script>
+
+<script type="module">
+async function toBase64(uint8) {
+    let binary = "";
+    const chunkSize = 0x8000;
+    for (let i = 0; i < uint8.length; i += chunkSize) {
+        binary += String.fromCharCode(...uint8.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+}
+
+async function runCryptoDemo() {
+    const result = document.getElementById('crypto-test-result');
+    result.textContent = 'Iniciando criptografia...';
+
+    try {
+        const texto = 'segredo';
+        const pubDer = await fetch('../public.der').then(r => {
+            if (!r.ok) throw new Error('Falha ao carregar public.der');
+            return r.arrayBuffer();
+        });
+
+        const pub = await crypto.subtle.importKey(
+            'spki',
+            pubDer,
+            { name: 'RSA-OAEP', hash: 'SHA-1' },
+            false,
+            ['encrypt']
+        );
+
+        const aes = await crypto.subtle.generateKey(
+            { name: 'AES-GCM', length: 256 },
+            true,
+            ['encrypt']
+        );
+
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const msg = new TextEncoder().encode(texto);
+
+        const data = await crypto.subtle.encrypt(
+            { name: 'AES-GCM', iv },
+            aes,
+            msg
+        );
+
+        const aesRaw = await crypto.subtle.exportKey('raw', aes);
+        const key = await crypto.subtle.encrypt(
+            { name: 'RSA-OAEP' },
+            pub,
+            aesRaw
+        );
+
+        const pacote = {
+            key: await toBase64(new Uint8Array(key)),
+            iv: await toBase64(iv),
+            data: await toBase64(new Uint8Array(data))
+        };
+
+        const response = await fetch('./receber.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pacote)
+        });
+
+        result.textContent = await response.text();
+    } catch (error) {
+        result.textContent = 'Erro: ' + error.message;
+    }
+}
+
+document.getElementById('crypto-test-btn').addEventListener('click', runCryptoDemo);
 </script>
 
 </body>
