@@ -109,6 +109,114 @@ setInterval(() => {
     slides[index].classList.add("active");
 }, 3000);
 </script>
+<!-- OVERLAY DE COOKIES -->
+<div id="overlay-cookies" style="
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+">
+    <div style="
+        background: #fff;
+        border-radius: 14px;
+        padding: 32px;
+        max-width: 460px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        font-family: sans-serif;
+    ">
+        <div style="font-size: 2rem; margin-bottom: 12px;">🍪</div>
+        <h2 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 8px;">Uso de cookies</h2>
+        <p style="font-size: .875rem; color: #6B7280; line-height: 1.6; margin-bottom: 24px;">
+            Este site utiliza <strong>apenas cookies técnicos essenciais</strong>
+            (sessão e segurança de formulários). Sem rastreamento, sem publicidade.
+            <br><br>
+            Ao continuar, você concorda com nossa
+            <a href="./privacidade.php" target="_blank" style="color:#0057FF">Política de Privacidade</a>.
+        </p>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="aceitarCookies()" style="
+                flex: 1;
+                background: #0057FF;
+                color: #fff;
+                border: none;
+                padding: 12px;
+                border-radius: 8px;
+                font-size: .875rem;
+                font-weight: 600;
+                cursor: pointer;
+            ">Aceitar e continuar</button>
+            <button onclick="recusarCookies()" style="
+                flex: 1;
+                background: #F3F4F6;
+                color: #374151;
+                border: 1px solid #E5E7EB;
+                padding: 12px;
+                border-radius: 8px;
+                font-size: .875rem;
+                font-weight: 600;
+                cursor: pointer;
+            ">Recusar</button>
+        </div>
+    </div>
+</div>
+
+<!-- TELA DE BLOQUEIO -->
+<div id="tela-bloqueio" style="
+    display: none;
+    position: fixed; inset: 0;
+    background: #F9FAFB;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    font-family: sans-serif;
+    padding: 32px;
+">
+    <div style="font-size: 3rem; margin-bottom: 16px;">🚫</div>
+    <h2 style="font-size: 1.3rem; font-weight: 600; margin-bottom: 8px;">Acesso bloqueado</h2>
+    <p style="font-size: .9rem; color: #6B7280; max-width: 360px; line-height: 1.6; margin-bottom: 24px;">
+        Para acessar o site é necessário aceitar o uso de cookies técnicos essenciais de segurança.
+    </p>
+    <button onclick="mostrarPopup()" style="
+        background: #0057FF;
+        color: #fff;
+        border: none;
+        padding: 12px 28px;
+        border-radius: 8px;
+        font-size: .875rem;
+        font-weight: 600;
+        cursor: pointer;
+    ">Revisar cookies</button>
+</div>
+
+<script>
+function mostrarPopup() {
+    document.getElementById('tela-bloqueio').style.display = 'none';
+    document.getElementById('overlay-cookies').style.display = 'flex';
+}
+
+function aceitarCookies() {
+    localStorage.setItem('cookies_aceitos', 'sim');
+    document.getElementById('overlay-cookies').style.display = 'none';
+}
+
+function recusarCookies() {
+    localStorage.removeItem('cookies_aceitos');
+    document.getElementById('overlay-cookies').style.display = 'none';
+    document.getElementById('tela-bloqueio').style.display = 'flex';
+}
+
+// Verifica assim que a página carrega
+window.addEventListener('DOMContentLoaded', function () {
+    if (localStorage.getItem('cookies_aceitos') !== 'sim') {
+        mostrarPopup();
+    }
+});
+</script>
 
 </body>
 </html>
