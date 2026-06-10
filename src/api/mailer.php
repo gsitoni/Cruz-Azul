@@ -27,8 +27,8 @@ function obterBaseUrl(): string {
 }
 
 function criarMailer(): PHPMailer {
-    $smtpUser = caSecretResolve('mask:v1:ohqujXZiS0xY_Ig4EktJYIOeJl67ECUy4Ji9PWJWtZEDG2GeijFZ2fvGDMY8t7mss1pnAA');
-    $smtpPass = caSecretResolve('mask:v1:N8hbBvnwwdIKc1a5GfaFYpjUV7CrD1ntOoibBvzdI8XMKR8jadoup4Ou42PP6eM');
+    $smtpUser = caSecretResolve('mask:v1:77hKk59j5or2DRNyTsVfjShT-Bd7kFyfIvRUGS0N6WQXn7tTWCveGSPKgqE5f1V3y3T9og');
+    $smtpPass = caSecretResolve('mask:v1:2TNQ3W2wTamfcCQM-Kl9kiyUieWx5gRs__HQHg13SI7woHIs761ArxI27ZtpfUU');
 
     $mail = new PHPMailer(true);
     $mail->isSMTP();
