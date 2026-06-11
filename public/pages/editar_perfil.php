@@ -11,6 +11,41 @@ header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-in
 header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
  
 require_once __DIR__ . '/../../src/api/database.php';
+
+// ── Cifra dado AES-GCM ────────────────────────────────────────
+function cifrarDado(string $dado, string $chaveRaw, string &$iv): string {
+    $ivBytes = random_bytes(12);
+    $tag     = '';
+    $cifrado = openssl_encrypt($dado, 'aes-256-gcm', $chaveRaw, OPENSSL_RAW_DATA, $ivBytes, $tag);
+    $iv      = base64_encode($ivBytes);
+    return base64_encode($cifrado . $tag);
+}
+
+// ── Decifra dado AES-GCM ─────────────────────────────────────
+function decifrarDadoDoador(array &$doador): void {
+    if (empty($doador['chave_aes_cifrada']) || empty($doador['iv_dados'])) return;
+    $privPath = __DIR__ . '/../../src/crypto/private.pem';
+    if (!file_exists($privPath)) return;
+    $priv         = file_get_contents($privPath);
+    $chaveCifrada = base64_decode($doador['chave_aes_cifrada']);
+    $chaveAES     = '';
+    $ok = openssl_private_decrypt($chaveCifrada, $chaveAES, $priv, OPENSSL_PKCS1_OAEP_PADDING);
+    if (!$ok) return;
+    $ivs = explode('|', $doador['iv_dados']);
+    $campos = ['nome', 'cpf', 'telefone', 'data_nascimento'];
+    foreach ($campos as $i => $campo) {
+        // Pula se IV vazio ou campo vazio/nulo
+        if (empty($doador[$campo]) || empty($ivs[$i] ?? '')) continue;
+        $dados   = base64_decode($doador[$campo]);
+        if (strlen($dados) <= 16) continue; // dados muito curtos, não cifrados
+        $iv      = base64_decode($ivs[$i]);
+        $tag     = substr($dados, -16);
+        $cifrado = substr($dados, 0, -16);
+        $plain   = openssl_decrypt($cifrado, 'aes-256-gcm', $chaveAES, OPENSSL_RAW_DATA, $iv, $tag);
+        if ($plain !== false) $doador[$campo] = $plain;
+    }
+}
+
  
 // --- Autenticação ---
 if (!isset($_SESSION['usuario']) || empty($_SESSION['usuario']['id_usuario'])) {
@@ -63,11 +98,12 @@ try {
     }
  
     $stmtDoador = $pdo->prepare(
-        "SELECT id_doador, nome, cpf, telefone, data_nascimento FROM doador WHERE id_usuario = ? LIMIT 1"
+        "SELECT id_doador, nome, cpf, telefone, data_nascimento, iv_dados, chave_aes_cifrada FROM doador WHERE id_usuario = ? LIMIT 1"
     );
     $stmtDoador->execute([$id_usuario]);
     $perfil = $stmtDoador->fetch(PDO::FETCH_ASSOC);
     $tipo   = 'doador';
+    if ($perfil) decifrarDadoDoador($perfil);
  
     if (!$perfil) {
         $stmtONG = $pdo->prepare(
@@ -215,11 +251,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
  
             if ($tipo === 'doador') {
+                // ── Recifra dados com nova chave AES ─────────
+                $chaveAESBanco = random_bytes(32);
+                $iv_nome = $iv_cpf = $iv_tel = $iv_nasc = '';
+                $nome_cifrado  = cifrarDado($novo_nome,       $chaveAESBanco, $iv_nome);
+                $cpf_cifrado   = $novo_cpf  ? cifrarDado($novo_cpf,  $chaveAESBanco, $iv_cpf)  : null;
+                $tel_cifrado   = $novo_telefone ? cifrarDado($novo_telefone, $chaveAESBanco, $iv_tel) : null;
+                $nasc_cifrada  = cifrarDado($nova_data_nasc,  $chaveAESBanco, $iv_nasc);
+                $iv_dados      = ($iv_nome ?: 'x') . '|' . ($iv_cpf ?: 'x') . '|' . ($iv_tel ?: 'x') . '|' . ($iv_nasc ?: 'x');
+
+                // ── Recifra chave AES com RSA público ─────────
+                $privPEM  = file_get_contents(__DIR__ . '/../../src/crypto/private.pem');
+                $pubKey   = openssl_pkey_get_details(openssl_pkey_get_private($privPEM))['key'];
+                $chaveAESCifrada = '';
+                openssl_public_encrypt($chaveAESBanco, $chaveAESCifrada, $pubKey, OPENSSL_PKCS1_OAEP_PADDING);
+                $chaveAESCifradaB64 = base64_encode($chaveAESCifrada);
+
                 $pdo->prepare("
                     UPDATE doador
-                    SET nome = ?, cpf = ?, telefone = ?, data_nascimento = ?
+                    SET nome = ?, cpf = ?, telefone = ?, data_nascimento = ?,
+                        iv_dados = ?, chave_aes_cifrada = ?
                     WHERE id_usuario = ?
-                ")->execute([$novo_nome, $novo_cpf, $novo_telefone, $nova_data_nasc, $id_usuario]);
+                ")->execute([$nome_cifrado, $cpf_cifrado, $tel_cifrado, $nasc_cifrada,
+                             $iv_dados, $chaveAESCifradaB64, $id_usuario]);
             }
  
             if ($tipo === 'ong') {
