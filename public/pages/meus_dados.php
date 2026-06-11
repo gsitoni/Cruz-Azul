@@ -15,6 +15,35 @@ if (!isset($_SESSION['usuario']) || empty($_SESSION['usuario']['id_usuario'])) {
 }
  
 require '../../src/api/database.php';
+
+// ── Helpers de descriptografia (S.3.2) ───────────────────────
+function decifrarDadoDoador(array &$doador): void {
+    if (empty($doador['chave_aes_cifrada']) || empty($doador['iv_dados'])) return;
+
+    $privPath = __DIR__ . '/../../src/crypto/private.pem';
+    if (!file_exists($privPath)) return;
+
+    $priv         = file_get_contents($privPath);
+    $chaveCifrada = base64_decode($doador['chave_aes_cifrada']);
+    $chaveAES     = '';
+    $ok = openssl_private_decrypt($chaveCifrada, $chaveAES, $priv, OPENSSL_PKCS1_OAEP_PADDING);
+    if (!$ok) return;
+
+    $ivs = explode('|', $doador['iv_dados']);
+
+    $campos = ['nome', 'cpf', 'telefone', 'data_nascimento'];
+    foreach ($campos as $i => $campo) {
+        if (!empty($doador[$campo]) && isset($ivs[$i])) {
+            $dados   = base64_decode($doador[$campo]);
+            $iv      = base64_decode($ivs[$i]);
+            $tag     = substr($dados, -16);
+            $cifrado = substr($dados, 0, -16);
+            $plain   = openssl_decrypt($cifrado, 'aes-256-gcm', $chaveAES, OPENSSL_RAW_DATA, $iv, $tag);
+            if ($plain !== false) $doador[$campo] = $plain;
+        }
+    }
+}
+
  
 $id_usuario = (int) $_SESSION['usuario']['id_usuario'];
  
@@ -56,10 +85,11 @@ try {
  
     // Doador
     $stmtDoador = $pdo->prepare(
-        "SELECT nome, cpf, telefone, data_nascimento, criado_em FROM doador WHERE id_usuario = ? LIMIT 1"
+        "SELECT nome, cpf, telefone, data_nascimento, criado_em, iv_dados, chave_aes_cifrada FROM doador WHERE id_usuario = ? LIMIT 1"
     );
     $stmtDoador->execute([$id_usuario]);
     $doador = $stmtDoador->fetch(PDO::FETCH_ASSOC);
+    if ($doador) decifrarDadoDoador($doador);
  
     // Histórico de doações
     $stmtDoacoes = $pdo->prepare(

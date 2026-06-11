@@ -6,6 +6,7 @@ if (!isset($_SESSION['ong'])) {
 }
 
 require '../../src/api/database.php';
+require_once '../../src/crypto/crypto_helpers.php';
 
 function formatarNumero($valor)
 {
@@ -51,7 +52,8 @@ $mapaCategorias = [
 if ($ongId > 0) {
     $stmt = $pdo->prepare('
         SELECT id_ong, nome, email, area_atuacao, status_elegibilidade, cidade, sigla_estado,
-               localizacao, classificacao_risco, endereco, descricao, data_atualizacao
+               localizacao, classificacao_risco, endereco, descricao, data_atualizacao,
+               iv_dados, chave_aes_cifrada
         FROM ong
         WHERE id_ong = ?
     ');
@@ -59,12 +61,17 @@ if ($ongId > 0) {
     $ong = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 
     if ($ong) {
-        $_SESSION['ong']['nome'] = $ong['nome'];
-        $_SESSION['ong']['email'] = $ong['email'];
+        // Decifra campos sensíveis
+        if (!empty($ong['chave_aes_cifrada']) && !empty($ong['iv_dados'])) {
+            decifrarOng($ong);
+        }
+
+        $_SESSION['ong']['nome']         = $ong['nome'];
+        $_SESSION['ong']['email']        = $ong['email'];
         $_SESSION['ong']['area_atuacao'] = $ong['area_atuacao'];
-        $_SESSION['ong']['status'] = $ong['status_elegibilidade'];
-        $_SESSION['ong']['cidade'] = $ong['cidade'];
-        $_SESSION['ong']['estado'] = $ong['sigla_estado'];
+        $_SESSION['ong']['status']       = $ong['status_elegibilidade'];
+        $_SESSION['ong']['cidade']       = $ong['cidade'];
+        $_SESSION['ong']['estado']       = $ong['sigla_estado'];
     }
 
     $stmt = $pdo->prepare('

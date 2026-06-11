@@ -1,17 +1,33 @@
 <?php
+// ============================================================
+//  perfil_ong.php  —  public/pages/perfil_ong.php
+// ============================================================
 session_start();
-// Verifica se a ONG está logada
+
+header("X-Frame-Options: DENY");
+header("X-Content-Type-Options: nosniff");
+header("Referrer-Policy: strict-origin-when-cross-origin");
+header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'none'");
+header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
+
 if (!isset($_SESSION['ong'])) {
     header('Location: login_ong.php');
     exit;
 }
 
 require '../../src/api/database.php';
+require_once '../../src/crypto/crypto_helpers.php';
+
+function e(string $v): string {
+    return htmlspecialchars($v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
 
 $ongId = (int) ($_SESSION['ong']['id'] ?? 0);
 
 $stmt = $pdo->prepare('
-    SELECT nome, email, area_atuacao, localizacao, cidade, sigla_estado, endereco, descricao, status_elegibilidade
+    SELECT nome, email, area_atuacao, localizacao, cidade, sigla_estado,
+           endereco, descricao, status_elegibilidade, cnpj,
+           iv_dados, chave_aes_cifrada
     FROM ong
     WHERE id_ong = ?
 ');
@@ -23,18 +39,26 @@ if (!$ong) {
     exit;
 }
 
-$_SESSION['ong']['nome'] = $ong['nome'];
-$_SESSION['ong']['email'] = $ong['email'];
-$_SESSION['ong']['area_atuacao'] = $ong['area_atuacao'];
-$_SESSION['ong']['status'] = $ong['status_elegibilidade'];
-$_SESSION['ong']['cidade'] = $ong['cidade'];
-$_SESSION['ong']['estado'] = $ong['sigla_estado'];
+// Decifra campos sensíveis se houver chave
+if (!empty($ong['chave_aes_cifrada']) && !empty($ong['iv_dados'])) {
+    decifrarOng($ong);
+}
+
+$_SESSION['ong']['nome']        = $ong['nome'];
+$_SESSION['ong']['email']       = $ong['email'];
+$_SESSION['ong']['area_atuacao']= $ong['area_atuacao'];
+$_SESSION['ong']['status']      = $ong['status_elegibilidade'];
+$_SESSION['ong']['cidade']      = $ong['cidade'];
+$_SESSION['ong']['estado']      = $ong['sigla_estado'];
 
 $localizacao = trim(implode(' / ', array_filter([$ong['cidade'], $ong['sigla_estado']])));
+
 $status = [
-    'pendente' => 'Pendente',
-    'aprovada' => 'Aprovada',
-    'rejeitada' => 'Rejeitada',
+    'pendente'  => 'Pendente',
+    'aprovado'  => 'Aprovado',
+    'rejeitado' => 'Rejeitado',
+    'ativo'     => 'Ativo',
+    'suspenso'  => 'Suspenso',
 ][$ong['status_elegibilidade'] ?? ''] ?? 'Não informado';
 ?>
 <!DOCTYPE html>
@@ -42,31 +66,78 @@ $status = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil da ONG - Cruz Azul</title>
+    <title>Perfil da ONG – Cruz Azul</title>
+    <link rel="stylesheet" href="../assets/css/perfil.css">
 </head>
 <body>
-<div style="max-width: 800px; margin: 18px auto; padding: 0 16px; font-family: Arial, sans-serif;">
-    <div style="background: #fff; border: 1px solid #dfe3ea; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 28px 22px; min-height: 250px;">
+<div class="perfil-container perfil-container--visualizar">
+
     <?php if (isset($_GET['status']) && $_GET['status'] === 'atualizado'): ?>
-        <div style="background: #d4edda; color: #155724; padding: 10px; margin-bottom: 20px; border-radius: 5px;">
-            Informações da ONG atualizadas com sucesso.
-        </div>
+        <div class="alerta-ok">Informações da ONG atualizadas com sucesso.</div>
     <?php endif; ?>
 
-    <h1 style="font-size: 30px; margin-bottom: 20px; color: #111;">Perfil da ONG</h1>
-    <p style="font-size: 16px; margin-bottom: 12px; color: #444;"><strong>E-mail:</strong> <?= htmlspecialchars($ong['email'] ?: 'Não informado') ?></p>
-    <p style="font-size: 16px; margin-bottom: 12px; color: #444;"><strong>Nome:</strong> <?= htmlspecialchars($ong['nome']) ?></p>
-    <p style="font-size: 16px; margin-bottom: 12px; color: #444;"><strong>Status:</strong> <?= htmlspecialchars($status) ?></p>
-    <p style="font-size: 16px; margin-bottom: 12px; color: #444;"><strong>Área de atuação:</strong> <?= htmlspecialchars($ong['area_atuacao'] ?: 'Não informada') ?></p>
-    <p style="font-size: 16px; margin-bottom: 12px; color: #444;"><strong>Cidade / Estado:</strong> <?= htmlspecialchars($localizacao !== '' ? $localizacao : 'Não informado') ?></p>
-    <p style="font-size: 16px; margin-bottom: 12px; color: #444;"><strong>Localização:</strong> <?= htmlspecialchars($ong['localizacao'] ?: 'Não informada') ?></p>
-    <p style="font-size: 16px; margin-bottom: 12px; color: #444;"><strong>Endereço:</strong> <?= htmlspecialchars($ong['endereco'] ?: 'Não informado') ?></p>
-    <p style="font-size: 16px; margin-bottom: 12px; color: #444;"><strong>Descrição:</strong> <?= nl2br(htmlspecialchars($ong['descricao'] ?: 'Sem descrição cadastrada.')) ?></p>
+    <h1>Perfil da ONG</h1>
 
-    <div style="margin-top: 20px; display: flex; gap: 10px;">
-        <a href="editar_perfil_ong.php" style="background: #0d6efd; color: white; padding: 9px 16px; text-decoration: none; border-radius: 7px; font-size: 14px;">Editar Informações</a>
-        <a href="home_ong.php" style="color: #777; padding: 9px 6px; font-size: 14px; text-decoration: underline;">Voltar</a>
+    <div class="secao-titulo">Dados da Instituição</div>
+    <div class="campos-grid">
+        <div class="campo-grupo full">
+            <span class="campo-label">Nome</span>
+            <span class="campo-valor"><?= e($ong['nome'] ?: '—') ?></span>
+        </div>
+        <div class="campo-grupo">
+            <span class="campo-label">CNPJ</span>
+            <span class="campo-valor"><?= e($ong['cnpj'] ?: '—') ?></span>
+        </div>
+        <div class="campo-grupo">
+            <span class="campo-label">Área de atuação</span>
+            <span class="campo-valor"><?= e($ong['area_atuacao'] ?: '—') ?></span>
+        </div>
+        <div class="campo-grupo full">
+            <span class="campo-label">Descrição</span>
+            <span class="campo-valor"><?= nl2br(e($ong['descricao'] ?: 'Sem descrição cadastrada.')) ?></span>
+        </div>
     </div>
+
+    <div class="secao-titulo">Localização</div>
+    <div class="campos-grid">
+        <div class="campo-grupo">
+            <span class="campo-label">Cidade / Estado</span>
+            <span class="campo-valor"><?= e($localizacao ?: '—') ?></span>
+        </div>
+        <div class="campo-grupo">
+            <span class="campo-label">CEP / Localização</span>
+            <span class="campo-valor"><?= e($ong['localizacao'] ?: '—') ?></span>
+        </div>
+        <div class="campo-grupo full">
+            <span class="campo-label">Endereço</span>
+            <span class="campo-valor"><?= e($ong['endereco'] ?: '—') ?></span>
+        </div>
+    </div>
+
+    <div class="secao-titulo">Contato e Status</div>
+    <div class="campos-grid">
+        <div class="campo-grupo full">
+            <span class="campo-label">E-mail</span>
+            <span class="campo-valor"><?= e($ong['email'] ?: '—') ?></span>
+        </div>
+        <div class="campo-grupo">
+            <span class="campo-label">Status</span>
+            <span class="campo-valor">
+                <?php
+                $bc = match($ong['status_elegibilidade'] ?? '') {
+                    'ativo','aprovado' => 'badge-ativo',
+                    'rejeitado','suspenso' => 'badge-inativo',
+                    default => 'badge-pendente'
+                };
+                ?>
+                <span class="badge-status <?= $bc ?>"><?= e($status) ?></span>
+            </span>
+        </div>
+    </div>
+
+    <div class="acoes">
+        <a href="editar_perfil_ong.php" class="btn-primary">Editar Informações</a>
+        <a href="home_ong.php" class="btn-secondary">Voltar</a>
     </div>
 </div>
 </body>
